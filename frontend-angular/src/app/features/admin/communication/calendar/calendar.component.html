@@ -1,0 +1,251 @@
+@if (isExpanded()) {
+  <div class="calendar__backdrop" (click)="closeExpanded()" aria-hidden="true"></div>
+  <div class="calendar__placeholder" aria-hidden="true"></div>
+}
+
+<div class="calendar animate-fade-in" [class.calendar--expanded]="isExpanded()">
+  <!-- Header Section -->
+  <div class="calendar__top">
+    <div class="calendar__header">
+      <div class="calendar__nav-group">
+        <button type="button" class="calendar__nav" (click)="viewMode() === 'week' ? prevWeek() : prevMonth()" aria-label="Précédent">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button type="button" class="calendar__nav" (click)="viewMode() === 'week' ? nextWeek() : nextMonth()" aria-label="Suivant">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+      
+      <div class="calendar__title-group">
+        <h3 class="calendar__title">{{ viewMode() === 'week' ? weekLabel() : monthLabel() }}</h3>
+        <button type="button" class="calendar__today-btn" (click)="goToToday()">
+          <span class="material-symbols-outlined">today</span>
+          Aujourd'hui
+        </button>
+      </div>
+    </div>
+
+    <div class="calendar__actions">
+      <div class="calendar__view">
+        <button type="button" class="calendar__view-btn" [class.is-active]="viewMode() === 'month'" (click)="setView('month')">
+          <span class="material-symbols-outlined">calendar_view_month</span>
+          Mois
+        </button>
+        <button type="button" class="calendar__view-btn" [class.is-active]="viewMode() === 'week'" (click)="setView('week')">
+          <span class="material-symbols-outlined">view_week</span>
+          Semaine
+        </button>
+        <button type="button" class="calendar__view-btn" [class.is-active]="viewMode() === 'agenda'" (click)="setView('agenda')">
+          <span class="material-symbols-outlined">view_agenda</span>
+          Agenda
+        </button>
+      </div>
+
+      <button type="button"
+              class="calendar__expand"
+              (click)="toggleExpanded()"
+              [attr.aria-label]="isExpanded() ? 'Réduire le calendrier' : 'Agrandir le calendrier'">
+        <span class="material-symbols-outlined">{{ isExpanded() ? 'close_fullscreen' : 'open_in_full' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="calendar__body">
+    <!-- Mini Calendar (Month View) -->
+    <div class="calendar__month" [class.calendar__month--hidden]="viewMode() === 'week'">
+      <div class="calendar__weekdays">
+        @for (day of ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']; track day) {
+          <span class="calendar__weekday">{{ day }}</span>
+        }
+      </div>
+      <div class="calendar__grid">
+        @for (week of weeks(); track $index) {
+          @for (cell of week; track cell.dateStr) {
+            <button type="button"
+                    class="calendar__cell"
+                    (click)="selectDate(cell.dateStr)"
+                    [class.calendar__cell--other]="!cell.isCurrentMonth"
+                    [class.calendar__cell--today]="cell.isToday"
+                    [class.calendar__cell--selected]="cell.dateStr === selectedDate()"
+                    [class.calendar__cell--has-event]="cell.eventCount > 0"
+                    [attr.aria-label]="cell.dateStr">
+              <span class="calendar__day">{{ cell.day }}</span>
+              @if (cell.eventCount > 0) {
+                <div class="calendar__dots">
+                  @for (ev of cell.events.slice(0, 3); track ev.id) {
+                    <span class="calendar__dot" [style.background]="getCategoryColor(ev.category)"></span>
+                  }
+                </div>
+              }
+            </button>
+          }
+        }
+      </div>
+
+      <!-- Quick upcoming events -->
+      @if (viewMode() === 'month' && !isExpanded()) {
+        <div class="calendar__upcoming">
+          <div class="upcoming__header">
+            <span class="material-symbols-outlined">schedule</span>
+            Prochainement
+          </div>
+          @if (upcomingEvents().length === 0) {
+            <div class="upcoming__empty">Aucun événement à venir</div>
+          } @else {
+            <div class="upcoming__list">
+              @for (ev of upcomingEvents().slice(0, 3); track ev.id) {
+                <div class="upcoming__item">
+                  <span class="upcoming__dot" [style.background]="getCategoryColor(ev.category)"></span>
+                  <div class="upcoming__info">
+                    <span class="upcoming__title">{{ ev.title }}</span>
+                    <span class="upcoming__date">{{ getDaysUntil(ev) }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Week View -->
+    @if (viewMode() === 'week') {
+      <div class="calendar__week">
+        <div class="week__grid">
+          @for (day of weekDays(); track day.dateStr) {
+            <div class="week__day" 
+                 [class.week__day--today]="day.isToday"
+                 [class.week__day--selected]="day.dateStr === selectedDate()"
+                 (click)="selectDate(day.dateStr)">
+              <div class="week__day-header">
+                <span class="week__day-name">{{ day.dayName }}</span>
+                <span class="week__day-number" [class.week__day-number--today]="day.isToday">{{ day.dayNumber }}</span>
+              </div>
+              <div class="week__day-events">
+                @if (day.events.length === 0) {
+                  <div class="week__no-events">—</div>
+                } @else {
+                  @for (ev of day.events.slice(0, 3); track ev.id) {
+                    <div class="week__event" 
+                         [style.--event-color]="getCategoryColor(ev.category)"
+                         [class.week__event--draft]="!ev.published">
+                      <span class="week__event-time">{{ ev.time || 'Journée' }}</span>
+                      <span class="week__event-title">{{ ev.title }}</span>
+                    </div>
+                  }
+                  @if (day.events.length > 3) {
+                    <div class="week__more">+{{ day.events.length - 3 }} autres</div>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Agenda Panel -->
+    <div class="calendar__agenda" [class.calendar__agenda--full]="viewMode() === 'week'">
+      <div class="agenda__header">
+        @if (viewMode() === 'agenda') {
+          <div class="agenda__title-row">
+            <span class="material-symbols-outlined agenda__icon">event_note</span>
+            <div class="agenda__title">Agenda du mois</div>
+          </div>
+          <div class="agenda__subtitle">{{ monthLabel() }} • {{ monthEvents().length }} événement(s)</div>
+        } @else {
+          <div class="agenda__title-row">
+            <span class="material-symbols-outlined agenda__icon">today</span>
+            <div class="agenda__title">{{ selectedDateLabel() }}</div>
+          </div>
+          <div class="agenda__subtitle">{{ dayEvents().length }} événement(s) ce jour</div>
+        }
+      </div>
+
+      <div class="agenda__list">
+        @if (viewMode() === 'agenda') {
+          @if (monthEvents().length === 0) {
+            <div class="agenda__empty">
+              <span class="material-symbols-outlined agenda__empty-icon">event_busy</span>
+              <span class="agenda__empty-text">Aucun événement sur ce mois</span>
+              <span class="agenda__empty-hint">Créez votre premier événement</span>
+            </div>
+          } @else {
+            @for (ev of monthEvents(); track ev.id) {
+              <div class="agenda__item" 
+                   [class.agenda__item--draft]="!ev.published"
+                   [style.--event-color]="getCategoryColor(ev.category)">
+                <div class="agenda__item-indicator"></div>
+                <div class="agenda__item-content">
+                  <div class="agenda__item-main">
+                    <div class="agenda__item-title">{{ ev.title }}</div>
+                    <div class="agenda__item-details">
+                      <span class="agenda__item-time">
+                        <span class="material-symbols-outlined">schedule</span>
+                        {{ formatTime(ev) }}
+                      </span>
+                      <span class="agenda__item-date">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        {{ formatEventRange(ev) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="agenda__item-meta">
+                    <span class="agenda__category" [style.--cat-color]="getCategoryColor(ev.category)">
+                      {{ getCategoryLabel(ev.category) }}
+                    </span>
+                    <span class="agenda__badge" [class.agenda__badge--published]="ev.published" [class.agenda__badge--draft]="!ev.published">
+                      <span class="material-symbols-outlined">{{ ev.published ? 'check_circle' : 'edit_note' }}</span>
+                      {{ ev.published ? 'Publié' : 'Brouillon' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        } @else {
+          @if (dayEvents().length === 0) {
+            <div class="agenda__empty">
+              <span class="material-symbols-outlined agenda__empty-icon">event_available</span>
+              <span class="agenda__empty-text">Aucun événement ce jour</span>
+              <span class="agenda__empty-hint">Sélectionnez un autre jour ou créez un événement</span>
+            </div>
+          } @else {
+            <div class="agenda__timeline">
+              @for (ev of dayEvents(); track ev.id) {
+                <div class="agenda__timeline-item" 
+                     [class.agenda__timeline-item--draft]="!ev.published"
+                     [style.--event-color]="getCategoryColor(ev.category)">
+                  <div class="agenda__timeline-time">
+                    <span class="agenda__timeline-hour">{{ ev.time || '—' }}</span>
+                    @if (ev.endTime) {
+                      <span class="agenda__timeline-end">{{ ev.endTime }}</span>
+                    }
+                  </div>
+                  <div class="agenda__timeline-connector">
+                    <div class="agenda__timeline-dot"></div>
+                    <div class="agenda__timeline-line"></div>
+                  </div>
+                  <div class="agenda__timeline-content">
+                    <div class="agenda__timeline-title">{{ ev.title }}</div>
+                    @if (ev.description) {
+                      <div class="agenda__timeline-desc">{{ ev.description }}</div>
+                    }
+                    <div class="agenda__timeline-meta">
+                      <span class="agenda__category" [style.--cat-color]="getCategoryColor(ev.category)">
+                        {{ getCategoryLabel(ev.category) }}
+                      </span>
+                      <span class="agenda__badge" [class.agenda__badge--published]="ev.published" [class.agenda__badge--draft]="!ev.published">
+                        {{ ev.published ? 'Publié' : 'Brouillon' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

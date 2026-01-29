@@ -1,0 +1,144 @@
+.stats-users-page { display: flex; flex-direction: column; gap: 1.5rem; }
+.page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.back-link { font-size: 0.9rem; color: var(--korus-text-muted); text-decoration: none; width: 100%; }
+.back-link:hover { color: var(--korus-accent); }
+.page-header h2 { margin: 0.5rem 0 0 0; font-size: 1.5rem; font-weight: 600; color: var(--korus-text); }
+.page-actions { display: flex; gap: 0.5rem; }
+.btn--secondary, .btn--primary { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; }
+.btn--secondary { background: white; border: 1px solid var(--korus-border); color: var(--korus-text); }
+.btn--primary { background: linear-gradient(135deg, var(--korus-accent), var(--korus-accent-dark)); color: white; }
+.card h3 { margin: 0 0 1rem 0; font-size: 1.1rem; font-weight: 600; color: var(--korus-text); }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.stat-row { padding: 0.85rem; background: var(--korus-bg); border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem; }
+.stat-label { font-size: 0.85rem; color: var(--korus-text-muted); }
+.stat-value { font-size: 1rem; font-weight: 600; color: var(--korus-text); }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+  .charts-grid { grid-template-columns: 1fr; }
+}
+
+/* Funnel */
+.funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.funnel__step {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.funnel__label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--korus-text);
+  text-align: right;
+}
+
+.funnel__bar {
+  height: 36px;
+  background: var(--korus-bg);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--korus-border);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.funnel__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--korus-accent), var(--korus-accent-light));
+  border-radius: 14px;
+  transition: width 0.8s var(--ease-spring);
+}
+
+.funnel__value {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: var(--korus-text-dark);
+  text-shadow: 0 0 2px white;
+}
+
+/* Spark bars */
+.spark {
+  position: relative;
+  height: 260px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.06), transparent 40%);
+  border: 1px solid var(--korus-border);
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.spark__grid {
+  position: absolute;
+  inset: 1rem;
+  border-radius: 12px;
+  background-image:
+    linear-gradient(to top, rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+  background-size: 100% 20%, 20% 100%;
+  pointer-events: none;
+}
+
+.spark__bars {
+  position: absolute;
+  inset: 1rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 0.25rem 0.25rem 2.25rem 0.25rem;
+}
+
+.spark__bar {
+  flex: 1;
+  border-radius: 10px 10px 6px 6px;
+  background: linear-gradient(180deg, #fcd34d 0%, var(--korus-accent) 55%, var(--korus-accent-dark) 100%);
+  box-shadow: 0 10px 18px rgba(245, 158, 11, 0.16);
+  opacity: 0.92;
+  transition: transform 0.2s var(--ease-spring), opacity 0.2s var(--ease-spring);
+}
+
+.spark__bar:hover {
+  transform: translateY(-3px);
+  opacity: 1;
+}
+
+.spark__legend {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--korus-text-muted);
+}
+
+.spark__hint {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: white;
+  border: 1px solid var(--korus-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--korus-text);
+  box-shadow: var(--korus-shadow-sm);
+}

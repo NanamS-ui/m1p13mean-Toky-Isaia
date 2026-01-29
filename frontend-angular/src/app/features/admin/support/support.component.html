@@ -1,0 +1,35 @@
+<div class="support-page">
+  <div class="page-header">
+    <h2>Support client (feedback, réclamations)</h2>
+  </div>
+
+  <section class="card">
+    <h3>Feedback et réclamations</h3>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Sujet</th>
+            <th>Utilisateur</th>
+            <th>Date</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of tickets; track t.id) {
+            <tr>
+              <td><span class="badge" [class.badge--feedback]="t.type === 'feedback'" [class.badge--reclamation]="t.type === 'reclamation'">{{ t.type === 'feedback' ? 'Feedback' : 'Réclamation' }}</span></td>
+              <td>{{ t.subject }}</td>
+              <td>{{ t.userEmail }}</td>
+              <td>{{ t.date }}</td>
+              <td><span class="badge" [class]="'badge--' + t.status">{{ t.status === 'open' ? 'Ouvert' : t.status === 'in_progress' ? 'En cours' : 'Fermé' }}</span></td>
+              <td><button type="button" class="btn-link">Voir / Répondre</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

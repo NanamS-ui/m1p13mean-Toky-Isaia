@@ -1,0 +1,69 @@
+<div class="stats-users-page">
+  <div class="page-header">
+    <a routerLink="/admin/statistiques" class="back-link">← Retour au dashboard stats</a>
+    <h2>Statistiques utilisateurs</h2>
+    <div class="page-actions">
+      <button type="button" class="btn btn--secondary">Exporter PDF</button>
+      <button type="button" class="btn btn--primary">Exporter Excel</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <h3>Indicateurs utilisateurs</h3>
+    <div class="stats-grid">
+      @for (stat of userStats; track stat.label) {
+        <div class="stat-row">
+          <span class="stat-label">{{ stat.label }}</span>
+          <span class="stat-value">{{ stat.value }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <div class="charts-grid">
+    <section class="card card--chart">
+      <h3>Conversion (visites → acheteurs)</h3>
+      <div class="funnel">
+        <div class="funnel__step">
+          <span class="funnel__label">Visites</span>
+          <div class="funnel__bar">
+            <div class="funnel__fill" style="width: 100%"></div>
+            <span class="funnel__value">100%</span>
+          </div>
+        </div>
+        <div class="funnel__step">
+          <span class="funnel__label">Ajouts panier</span>
+          <div class="funnel__bar">
+            <div class="funnel__fill" style="width: 42%"></div>
+            <span class="funnel__value">42%</span>
+          </div>
+        </div>
+        <div class="funnel__step">
+          <span class="funnel__label">Achats</span>
+          <div class="funnel__bar">
+            <div class="funnel__fill" style="width: 18%"></div>
+            <span class="funnel__value">18%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card--chart">
+      <h3>Heures de pic (exemple)</h3>
+      <div class="spark">
+        <div class="spark__grid" aria-hidden="true"></div>
+        <div class="spark__bars" aria-hidden="true">
+          @for (h of [2, 3, 4, 6, 8, 12, 10, 7, 5, 4, 3, 2]; track $index) {
+            <div class="spark__bar" [style.height.%]="h * 8"></div>
+          }
+        </div>
+        <div class="spark__legend">
+          <span>12h</span><span>14h</span><span>16h</span><span>18h</span><span>20h</span>
+        </div>
+        <div class="spark__hint">
+          Pic estimé: <strong>18h–20h</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

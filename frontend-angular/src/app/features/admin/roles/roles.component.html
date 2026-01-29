@@ -1,0 +1,21 @@
+<div class="roles-page">
+  <div class="page-header">
+    <h2>Rôles et permissions</h2>
+    <button type="button" class="btn btn--primary">Modifier les permissions</button>
+  </div>
+
+  <section class="card">
+    <h3>Gestion des rôles</h3>
+    <p class="card-desc">Authentification & sécurité — Connexion sécurisée (email + mot de passe), gestion des rôles et permissions.</p>
+    <div class="roles-grid">
+      @for (role of roles; track role.id) {
+        <div class="role-card">
+          <strong>{{ role.name }}</strong>
+          <p>{{ role.description }}</p>
+          <span class="role-perms">{{ role.permissionsCount }} permissions</span>
+          <button type="button" class="btn-link">Voir / Éditer</button>
+        </div>
+      }
+    </div>
+  </section>
+</div>
