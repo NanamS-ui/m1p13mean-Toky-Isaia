@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
-import { adminGuard } from './core/guards/role.guard';
+import { adminGuard, boutiqueGuard, acheteurGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -27,6 +27,16 @@ export const routes: Routes = [
       { path: 'support', loadComponent: () => import('./features/admin/support/support.component').then(m => m.SupportComponent) },
       { path: 'roles', loadComponent: () => import('./features/admin/roles/roles.component').then(m => m.RolesComponent) }
     ]
+  },
+  {
+    path: 'boutique',
+    loadChildren: () => import('./features/boutique/boutique.routes').then(m => m.boutiqueRoutes),
+    canActivate: [authGuard, boutiqueGuard]
+  },
+  {
+    path: 'acheteur',
+    loadChildren: () => import('./features/acheteur/acheteur.routes').then(m => m.acheteurRoutes),
+    canActivate: [authGuard, acheteurGuard]
   },
   { path: '**', redirectTo: 'login' }
 ];

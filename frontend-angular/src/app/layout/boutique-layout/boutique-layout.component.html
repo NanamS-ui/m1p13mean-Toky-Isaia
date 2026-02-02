@@ -1,0 +1,123 @@
+<div class="boutique-layout">
+  <aside class="sidebar" [class.sidebar--collapsed]="!sidebarOpen">
+    <!-- Boutique Brand -->
+    <div class="sidebar__brand">
+      <div class="brand__logo">
+        @if (boutiqueInfo().logo) {
+          <img [src]="boutiqueInfo().logo" alt="Logo boutique" />
+        } @else {
+          <span class="material-symbols-outlined">storefront</span>
+        }
+      </div>
+      @if (sidebarOpen) {
+        <div class="brand__info">
+          <span class="brand__name">{{ boutiqueInfo().name }}</span>
+          <span class="brand__status" [class]="'brand__status--' + boutiqueInfo().status">
+            {{ getStatusLabel(boutiqueInfo().status) }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar__nav">
+      @for (item of navItems; track item.route) {
+        @if (item.children) {
+          <div class="nav-group" [class.nav-group--open]="sidebarOpen && isGroupOpen(item.route)">
+            <div class="nav-parent">
+              <a [routerLink]="item.children[0].route"
+                 routerLinkActive="active"
+                 [routerLinkActiveOptions]="{ exact: false }"
+                 class="nav-item nav-item--parent">
+                <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+                @if (sidebarOpen) {
+                  <span class="nav-item__label">{{ item.label }}</span>
+                }
+              </a>
+              @if (sidebarOpen) {
+                <button type="button"
+                        class="nav-parent__toggle"
+                        (click)="toggleGroup(item.route, $event)">
+                  <span class="material-symbols-outlined">{{ isGroupOpen(item.route) ? 'expand_less' : 'expand_more' }}</span>
+                </button>
+              }
+            </div>
+            @if (sidebarOpen && isGroupOpen(item.route)) {
+              <div class="nav-children">
+                @for (child of item.children; track child.route) {
+                  <a [routerLink]="child.route"
+                     routerLinkActive="active"
+                     [routerLinkActiveOptions]="{ exact: true }"
+                     class="nav-item nav-item--child">
+                    {{ child.label }}
+                  </a>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+            <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+            @if (sidebarOpen) {
+              <span class="nav-item__label">{{ item.label }}</span>
+              @if (item.badge && item.badge > 0) {
+                <span class="nav-item__badge">{{ item.badge }}</span>
+              }
+            }
+          </a>
+        }
+      }
+    </nav>
+
+    <!-- Quick Stats -->
+    @if (sidebarOpen) {
+      <div class="sidebar__stats">
+        <div class="quick-stat">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          <div class="quick-stat__info">
+            <span class="quick-stat__value">{{ pendingOrders }}</span>
+            <span class="quick-stat__label">Commandes en attente</span>
+          </div>
+        </div>
+        <div class="quick-stat">
+          <span class="material-symbols-outlined">chat</span>
+          <div class="quick-stat__info">
+            <span class="quick-stat__value">{{ unreadMessages }}</span>
+            <span class="quick-stat__label">Messages non lus</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Toggle -->
+    <button type="button" class="sidebar__toggle" (click)="sidebarOpen = !sidebarOpen">
+      <span class="material-symbols-outlined">{{ sidebarOpen ? 'chevron_left' : 'chevron_right' }}</span>
+    </button>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <div class="header__left">
+        <h1 class="header__title">Espace Boutique</h1>
+      </div>
+      <div class="header__actions">
+        <button type="button" class="header__btn header__btn--notif">
+          <span class="material-symbols-outlined">notifications</span>
+          @if (unreadMessages > 0) {
+            <span class="header__btn-badge">{{ unreadMessages }}</span>
+          }
+        </button>
+        <div class="user-menu">
+          <span class="material-symbols-outlined user-menu__avatar">account_circle</span>
+          <span class="user-menu__name">{{ user()?.firstName }} {{ user()?.lastName }}</span>
+        </div>
+        <button type="button" class="header__btn header__btn--logout" (click)="auth.logout()">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </div>
+    </header>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

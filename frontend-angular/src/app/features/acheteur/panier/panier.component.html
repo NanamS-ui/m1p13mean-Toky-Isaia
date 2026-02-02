@@ -1,0 +1,167 @@
+<div class="panier-page">
+  <!-- Header -->
+  <div class="panier-header">
+    <h1>
+      <span class="material-symbols-outlined">shopping_cart</span>
+      Mon panier
+    </h1>
+    @if (!isEmpty()) {
+      <p class="panier-header__subtitle">{{ totalItems() }} article(s) dans votre panier</p>
+    }
+  </div>
+
+  @if (isEmpty()) {
+    <!-- Empty Cart -->
+    <div class="empty-cart">
+      <span class="material-symbols-outlined">shopping_cart</span>
+      <h2>Votre panier est vide</h2>
+      <p>Ajoutez des produits à votre panier pour commencer vos achats</p>
+      <a routerLink="/acheteur/produits" class="btn-primary">
+        <span class="material-symbols-outlined">storefront</span>
+        Explorer les produits
+      </a>
+    </div>
+  } @else {
+    <div class="panier-content">
+      <!-- Cart Items by Shop -->
+      <div class="cart-groups">
+        @for (group of cartGroups(); track group.boutiqueId) {
+          <div class="cart-group">
+            <!-- Shop Header -->
+            <div class="group-header">
+              <div class="group-shop">
+                <span class="material-symbols-outlined">store</span>
+                <div class="group-shop-info">
+                  <h3>{{ group.boutiqueName }}</h3>
+                  <a [routerLink]="['/acheteur/boutiques', group.boutiqueId]" class="group-shop-link">
+                    Voir la boutique
+                    <span class="material-symbols-outlined">chevron_right</span>
+                  </a>
+                </div>
+              </div>
+              <div class="group-subtotal">
+                <span class="group-subtotal__label">Sous-total:</span>
+                <span class="group-subtotal__value">{{ formatCurrency(group.subtotal) }}</span>
+              </div>
+            </div>
+
+            <!-- Items List -->
+            <div class="group-items">
+              @for (item of group.items; track item.id) {
+                <div class="cart-item">
+                  <a [routerLink]="['/acheteur/produits', item.productId]" class="item-image">
+                    @if (item.productImage) {
+                      <img [src]="item.productImage" [alt]="item.productName" />
+                    } @else {
+                      <span class="material-symbols-outlined">image</span>
+                    }
+                  </a>
+
+                  <div class="item-info">
+                    <a [routerLink]="['/acheteur/produits', item.productId]" class="item-name">
+                      {{ item.productName }}
+                    </a>
+                    <div class="item-price">
+                      @if (item.promoPrice) {
+                        <span class="price-promo">{{ formatCurrency(item.promoPrice) }}</span>
+                        <span class="price-original">{{ formatCurrency(item.price) }}</span>
+                      } @else {
+                        <span class="price-current">{{ formatCurrency(item.price) }}</span>
+                      }
+                    </div>
+                    @if (!item.inStock) {
+                      <span class="item-stock-warning">
+                        <span class="material-symbols-outlined">warning</span>
+                        Rupture de stock
+                      </span>
+                    }
+                  </div>
+
+                  <div class="item-quantity">
+                    <label class="quantity-label">Quantité:</label>
+                    <div class="quantity-controls">
+                      <button
+                        class="quantity-btn"
+                        (click)="decrementQuantity(item.id)"
+                        [disabled]="item.quantity <= 1"
+                      >
+                        <span class="material-symbols-outlined">remove</span>
+                      </button>
+                      <input
+                        type="number"
+                        [value]="item.quantity"
+                        (change)="updateQuantity(item.id, +$any($event.target).value)"
+                        [min]="1"
+                        class="quantity-input"
+                      />
+                      <button
+                        class="quantity-btn"
+                        (click)="incrementQuantity(item.id)"
+                      >
+                        <span class="material-symbols-outlined">add</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="item-subtotal">
+                    <span class="item-subtotal__label">Sous-total:</span>
+                    <span class="item-subtotal__value">{{ formatCurrency(getItemSubtotal(item)) }}</span>
+                  </div>
+
+                  <button class="item-remove" (click)="removeItem(item.id)" title="Retirer du panier">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Cart Summary -->
+      <div class="cart-summary">
+        <div class="summary-header">
+          <h2>
+            <span class="material-symbols-outlined">receipt</span>
+            Récapitulatif
+          </h2>
+        </div>
+
+        <div class="summary-content">
+          <div class="summary-row">
+            <span class="summary-label">Nombre d'articles:</span>
+            <span class="summary-value">{{ totalItems() }}</span>
+          </div>
+
+          <div class="summary-row summary-row--shops">
+            <span class="summary-label">Boutiques:</span>
+            <span class="summary-value">{{ cartGroups().length }}</span>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row summary-row--total">
+            <span class="summary-label">Total:</span>
+            <span class="summary-value">{{ formatCurrency(total()) }}</span>
+          </div>
+        </div>
+
+        <div class="summary-actions">
+          <button class="btn-checkout" (click)="proceedToCheckout()">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            Passer la commande
+          </button>
+          <button class="btn-continue" routerLink="/acheteur/produits">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Continuer les achats
+          </button>
+        </div>
+
+        <button class="btn-clear" (click)="clearCart()">
+          <span class="material-symbols-outlined">delete_sweep</span>
+          Vider le panier
+        </button>
+      </div>
+    </div>
+  }
+</div>

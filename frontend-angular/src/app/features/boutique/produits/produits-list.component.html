@@ -1,0 +1,212 @@
+<div class="products-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header__info">
+      <h2>Mes Produits</h2>
+      <p>Gérez votre catalogue de produits</p>
+    </div>
+    <a routerLink="/boutique/produits/nouveau" class="btn btn--primary">
+      <span class="material-symbols-outlined">add</span>
+      Nouveau produit
+    </a>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="material-symbols-outlined">inventory_2</span>
+      <div class="stat-card__content">
+        <span class="stat-card__value">{{ stats().total }}</span>
+        <span class="stat-card__label">Total produits</span>
+      </div>
+    </div>
+    <div class="stat-card stat-card--green">
+      <span class="material-symbols-outlined">check_circle</span>
+      <div class="stat-card__content">
+        <span class="stat-card__value">{{ stats().active }}</span>
+        <span class="stat-card__label">Actifs</span>
+      </div>
+    </div>
+    <div class="stat-card stat-card--orange">
+      <span class="material-symbols-outlined">warning</span>
+      <div class="stat-card__content">
+        <span class="stat-card__value">{{ stats().lowStock }}</span>
+        <span class="stat-card__label">Stock faible</span>
+      </div>
+    </div>
+    <div class="stat-card stat-card--red">
+      <span class="material-symbols-outlined">error</span>
+      <div class="stat-card__content">
+        <span class="stat-card__value">{{ stats().outOfStock }}</span>
+        <span class="stat-card__label">Rupture</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <span class="material-symbols-outlined">search</span>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher un produit..." />
+    </div>
+
+    <div class="filters">
+      <select [(ngModel)]="selectedCategory">
+        <option value="">Toutes les catégories</option>
+        @for (cat of categories; track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+
+      <select [(ngModel)]="selectedStatus">
+        <option value="">Tous les statuts</option>
+        <option value="active">Actif</option>
+        <option value="inactive">Inactif</option>
+        <option value="outOfStock">Rupture</option>
+      </select>
+    </div>
+
+    <div class="view-toggle">
+      <button type="button" [class.active]="viewMode() === 'grid'" (click)="setViewMode('grid')">
+        <span class="material-symbols-outlined">grid_view</span>
+      </button>
+      <button type="button" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')">
+        <span class="material-symbols-outlined">view_list</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Products Grid -->
+  @if (viewMode() === 'grid') {
+    <div class="products-grid">
+      @for (product of filteredProducts(); track product.id) {
+        <div class="product-card" [class.product-card--inactive]="product.status !== 'active'">
+          <div class="product-card__image">
+            @if (product.images.length > 0) {
+              <img [src]="product.images[0]" [alt]="product.name" />
+            } @else {
+              <span class="material-symbols-outlined">image</span>
+            }
+            @if (product.promoPrice) {
+              <span class="product-card__promo-badge">Promo</span>
+            }
+            <div class="product-card__actions">
+              <a [routerLink]="['/boutique/produits', product.id]" class="action-btn">
+                <span class="material-symbols-outlined">edit</span>
+              </a>
+              <button type="button" class="action-btn" (click)="toggleProductStatus(product)">
+                <span class="material-symbols-outlined">{{ product.status === 'active' ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+              <button type="button" class="action-btn action-btn--danger" (click)="deleteProduct(product)">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </div>
+          <div class="product-card__content">
+            <span class="product-card__category">{{ product.category }}</span>
+            <h4 class="product-card__name">{{ product.name }}</h4>
+            <div class="product-card__price">
+              @if (product.promoPrice) {
+                <span class="price-promo">{{ formatCurrency(product.promoPrice) }}</span>
+                <span class="price-original">{{ formatCurrency(product.price) }}</span>
+              } @else {
+                <span class="price-current">{{ formatCurrency(product.price) }}</span>
+              }
+            </div>
+            <div class="product-card__footer">
+              <span class="stock-badge" [class]="'stock-badge--' + getStockStatus(product.stock)">
+                @switch (getStockStatus(product.stock)) {
+                  @case ('out') { <span class="material-symbols-outlined">error</span> Rupture }
+                  @case ('low') { <span class="material-symbols-outlined">warning</span> {{ product.stock }} en stock }
+                  @default { <span class="material-symbols-outlined">check</span> {{ product.stock }} en stock }
+                }
+              </span>
+              <span class="product-card__sales">{{ product.sales }} vendus</span>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <span class="material-symbols-outlined">inventory_2</span>
+          <h4>Aucun produit trouvé</h4>
+          <p>Ajoutez votre premier produit ou modifiez vos filtres</p>
+          <a routerLink="/boutique/produits/nouveau" class="btn btn--primary">
+            <span class="material-symbols-outlined">add</span>
+            Ajouter un produit
+          </a>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- List View -->
+    <div class="products-table-wrapper">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>SKU</th>
+            <th>Prix</th>
+            <th>Stock</th>
+            <th>Ventes</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of filteredProducts(); track product.id) {
+            <tr [class.row--inactive]="product.status !== 'active'">
+              <td>
+                <div class="product-cell">
+                  <div class="product-cell__image">
+                    @if (product.images.length > 0) {
+                      <img [src]="product.images[0]" [alt]="product.name" />
+                    } @else {
+                      <span class="material-symbols-outlined">image</span>
+                    }
+                  </div>
+                  <div class="product-cell__info">
+                    <span class="product-cell__name">{{ product.name }}</span>
+                    <span class="product-cell__category">{{ product.category }}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="td-sku">{{ product.sku }}</td>
+              <td class="td-price">
+                @if (product.promoPrice) {
+                  <span class="price-promo">{{ formatCurrency(product.promoPrice) }}</span>
+                  <span class="price-original-sm">{{ formatCurrency(product.price) }}</span>
+                } @else {
+                  {{ formatCurrency(product.price) }}
+                }
+              </td>
+              <td>
+                <span class="stock-badge stock-badge--sm" [class]="'stock-badge--' + getStockStatus(product.stock)">
+                  {{ product.stock }}
+                </span>
+              </td>
+              <td>{{ product.sales }}</td>
+              <td>
+                <span class="status-badge" [class]="'status-badge--' + product.status">
+                  {{ getStatusLabel(product.status) }}
+                </span>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <a [routerLink]="['/boutique/produits', product.id]" class="action-btn action-btn--sm">
+                    <span class="material-symbols-outlined">edit</span>
+                  </a>
+                  <button type="button" class="action-btn action-btn--sm" (click)="toggleProductStatus(product)">
+                    <span class="material-symbols-outlined">{{ product.status === 'active' ? 'visibility_off' : 'visibility' }}</span>
+                  </button>
+                  <button type="button" class="action-btn action-btn--sm action-btn--danger" (click)="deleteProduct(product)">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

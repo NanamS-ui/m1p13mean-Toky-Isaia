@@ -1,0 +1,187 @@
+<div class="accueil-page">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero__content">
+      <h1>Bienvenue, {{ userName() }} !</h1>
+      <p>Découvrez les meilleures offres du centre commercial KORUS</p>
+      <div class="hero__actions">
+        <a routerLink="/acheteur/boutiques" class="btn btn--primary">
+          <span class="material-symbols-outlined">storefront</span>
+          Explorer les boutiques
+        </a>
+        <a routerLink="/acheteur/carte" class="btn btn--outline">
+          <span class="material-symbols-outlined">map</span>
+          Voir la carte
+        </a>
+      </div>
+    </div>
+    <div class="hero__stats">
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ featuredBoutiques().length * 10 }}+</span>
+        <span class="hero-stat__label">Boutiques</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat__value">500+</span>
+        <span class="hero-stat__label">Produits</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat__value">{{ promotions().length }}</span>
+        <span class="hero-stat__label">Promos actives</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="section">
+    <div class="section__header">
+      <h2>
+        <span class="material-symbols-outlined">category</span>
+        Catégories
+      </h2>
+    </div>
+    <div class="categories-grid">
+      @for (cat of categories; track cat.label) {
+        <a routerLink="/acheteur/boutiques" [queryParams]="{category: cat.label}" class="category-card">
+          <span class="material-symbols-outlined">{{ cat.icon }}</span>
+          <span class="category-card__label">{{ cat.label }}</span>
+          <span class="category-card__count">{{ cat.count }}</span>
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- Promotions -->
+  <section class="section">
+    <div class="section__header">
+      <h2>
+        <span class="material-symbols-outlined">local_offer</span>
+        Promotions en cours
+      </h2>
+      <a routerLink="/acheteur/produits" [queryParams]="{promo: true}" class="section__link">
+        Voir toutes
+        <span class="material-symbols-outlined">chevron_right</span>
+      </a>
+    </div>
+    <div class="promos-grid">
+      @for (promo of promotions(); track promo.id) {
+        <div class="promo-card">
+          <div class="promo-card__discount">-{{ promo.discount }}%</div>
+          <div class="promo-card__content">
+            <h4>{{ promo.title }}</h4>
+            <span class="promo-card__boutique">{{ promo.boutique }}</span>
+            <span class="promo-card__timer">
+              <span class="material-symbols-outlined">timer</span>
+              {{ getDaysRemaining(promo.endDate) }} jours restants
+            </span>
+          </div>
+          <a [routerLink]="['/acheteur/boutiques']" class="promo-card__btn">
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </a>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Featured Boutiques -->
+  <section class="section">
+    <div class="section__header">
+      <h2>
+        <span class="material-symbols-outlined">storefront</span>
+        Boutiques populaires
+      </h2>
+      <a routerLink="/acheteur/boutiques" class="section__link">
+        Voir toutes
+        <span class="material-symbols-outlined">chevron_right</span>
+      </a>
+    </div>
+    <div class="boutiques-grid">
+      @for (boutique of featuredBoutiques(); track boutique.id) {
+        <a [routerLink]="['/acheteur/boutiques', boutique.id]" class="boutique-card">
+          <div class="boutique-card__logo">
+            @if (boutique.logo) {
+              <img [src]="boutique.logo" [alt]="boutique.name" />
+            } @else {
+              <span class="material-symbols-outlined">store</span>
+            }
+            @if (boutique.isOpen) {
+              <span class="boutique-card__status boutique-card__status--open">Ouvert</span>
+            } @else {
+              <span class="boutique-card__status boutique-card__status--closed">Fermé</span>
+            }
+          </div>
+          <div class="boutique-card__content">
+            <h4>{{ boutique.name }}</h4>
+            <span class="boutique-card__category">{{ boutique.category }}</span>
+            <div class="boutique-card__rating">
+              <span class="material-symbols-outlined">star</span>
+              {{ boutique.rating }}
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="section">
+    <div class="section__header">
+      <h2>
+        <span class="material-symbols-outlined">trending_up</span>
+        Produits tendances
+      </h2>
+      <a routerLink="/acheteur/produits" class="section__link">
+        Voir tous
+        <span class="material-symbols-outlined">chevron_right</span>
+      </a>
+    </div>
+    <div class="products-grid">
+      @for (product of featuredProducts(); track product.id) {
+        <a [routerLink]="['/acheteur/produits', product.id]" class="product-card">
+          <div class="product-card__image">
+            @if (product.image) {
+              <img [src]="product.image" [alt]="product.name" />
+            } @else {
+              <span class="material-symbols-outlined">image</span>
+            }
+            @if (product.promoPrice) {
+              <span class="product-card__promo">Promo</span>
+            }
+          </div>
+          <div class="product-card__content">
+            <span class="product-card__boutique">{{ product.boutique }}</span>
+            <h4>{{ product.name }}</h4>
+            <div class="product-card__price">
+              @if (product.promoPrice) {
+                <span class="price-promo">{{ formatCurrency(product.promoPrice) }}</span>
+                <span class="price-original">{{ formatCurrency(product.price) }}</span>
+              } @else {
+                <span class="price-current">{{ formatCurrency(product.price) }}</span>
+              }
+            </div>
+          </div>
+          <button class="product-card__cart" (click)="$event.preventDefault()">
+            <span class="material-symbols-outlined">add_shopping_cart</span>
+          </button>
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- Quick Actions -->
+  <section class="quick-actions">
+    <a routerLink="/acheteur/carte" class="quick-action quick-action--map">
+      <span class="material-symbols-outlined">map</span>
+      <div class="quick-action__content">
+        <h4>Carte interactive</h4>
+        <p>Trouvez votre chemin dans le centre</p>
+      </div>
+    </a>
+    <a routerLink="/acheteur/commandes" class="quick-action quick-action--orders">
+      <span class="material-symbols-outlined">local_shipping</span>
+      <div class="quick-action__content">
+        <h4>Mes commandes</h4>
+        <p>Suivez vos livraisons</p>
+      </div>
+    </a>
+  </section>
+</div>

@@ -1,0 +1,217 @@
+@if (loading()) {
+  <div class="loading-state">
+    <span class="material-symbols-outlined">hourglass_empty</span>
+    <p>Chargement de la commande...</p>
+  </div>
+} @else if (!order()) {
+  <div class="error-state">
+    <span class="material-symbols-outlined">error_outline</span>
+    <h2>Commande introuvable</h2>
+    <p>La commande demandée n'existe pas ou a été supprimée.</p>
+    <a routerLink="/acheteur/commandes" class="btn-back">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Retour aux commandes
+    </a>
+  </div>
+} @else {
+  <div class="suivi-page">
+    <!-- Header -->
+    <div class="suivi-header">
+      <a routerLink="/acheteur/commandes" class="back-link">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Retour aux commandes
+      </a>
+      <div class="suivi-header__main">
+        <div>
+          <h1>
+            <span class="material-symbols-outlined">receipt_long</span>
+            Commande {{ order()!.orderNumber }}
+          </h1>
+          <p class="suivi-header__date">
+            <span class="material-symbols-outlined">calendar_today</span>
+            Passée le {{ formatDate(order()!.date) }}
+          </p>
+        </div>
+        <div class="order-status-badge" [style.--status-color]="getStatusColor(order()!.status)">
+          <span class="status-dot"></span>
+          {{ getStatusLabel(order()!.status) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="suivi-content">
+      <!-- Timeline -->
+      <div class="timeline-section">
+        <h2 class="section-title">
+          <span class="material-symbols-outlined">timeline</span>
+          Suivi de la commande
+        </h2>
+        <div class="timeline">
+          @for (step of timelineSteps(); track step.status; let i = $index) {
+            <div class="timeline-item" [class.timeline-item--completed]="step.completed">
+              <div class="timeline-marker">
+                <span class="material-symbols-outlined">{{ step.icon }}</span>
+              </div>
+              <div class="timeline-content">
+                <h3 class="timeline-label">{{ step.label }}</h3>
+                @if (step.date) {
+                  <p class="timeline-date">{{ formatDate(step.date) }}</p>
+                } @else if (step.completed && i === timelineSteps().length - 1) {
+                  <p class="timeline-date">En attente de livraison</p>
+                }
+              </div>
+              @if (i < timelineSteps().length - 1) {
+                <div class="timeline-connector"></div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Order Details -->
+      <div class="order-details-section">
+        <h2 class="section-title">
+          <span class="material-symbols-outlined">shopping_bag</span>
+          Détails de la commande
+        </h2>
+
+        <!-- Items List -->
+        <div class="items-list">
+          @for (item of order()!.items; track item.id) {
+            <div class="order-item">
+              <div class="item-image">
+                @if (item.productImage) {
+                  <img [src]="item.productImage" [alt]="item.productName" />
+                } @else {
+                  <span class="material-symbols-outlined">image</span>
+                }
+              </div>
+              <div class="item-info">
+                <h3 class="item-name">{{ item.productName }}</h3>
+                <div class="item-price-info">
+                  <span class="item-quantity">Quantité: {{ item.quantity }}</span>
+                  <div class="item-price">
+                    @if (item.promoPrice) {
+                      <span class="price-promo">{{ formatCurrency(item.promoPrice) }}</span>
+                      <span class="price-original">{{ formatCurrency(item.price) }}</span>
+                    } @else {
+                      <span class="price-current">{{ formatCurrency(item.price) }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="item-subtotal">
+                <span class="subtotal-label">Sous-total</span>
+                <span class="subtotal-value">{{ formatCurrency(getItemSubtotal(item)) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Order Summary -->
+        <div class="order-summary">
+          <div class="summary-row">
+            <span class="summary-label">Sous-total</span>
+            <span class="summary-value">{{ formatCurrency(order()!.total) }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Livraison</span>
+            <span class="summary-value">Gratuite</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row summary-row--total">
+            <span class="summary-label">Total</span>
+            <span class="summary-value">{{ formatCurrency(order()!.total) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery/Pickup Info -->
+      <div class="delivery-section">
+        <h2 class="section-title">
+          <span class="material-symbols-outlined">
+            {{ order()!.deliveryMethod === 'delivery' ? 'local_shipping' : 'store' }}
+          </span>
+          {{ order()!.deliveryMethod === 'delivery' ? 'Informations de livraison' : 'Point de retrait' }}
+        </h2>
+        <div class="delivery-info">
+          @if (order()!.deliveryMethod === 'delivery') {
+            <div class="info-row">
+              <span class="info-label">
+                <span class="material-symbols-outlined">location_on</span>
+                Adresse de livraison
+              </span>
+              <span class="info-value">{{ order()!.deliveryAddress }}</span>
+            </div>
+            @if (order()!.trackingNumber) {
+              <div class="info-row">
+                <span class="info-label">
+                  <span class="material-symbols-outlined">qr_code</span>
+                  Numéro de suivi
+                </span>
+                <span class="info-value info-value--tracking">{{ order()!.trackingNumber }}</span>
+              </div>
+            }
+          } @else {
+            <div class="info-row">
+              <span class="info-label">
+                <span class="material-symbols-outlined">store</span>
+                Point de retrait
+              </span>
+              <span class="info-value">{{ order()!.pickupLocation }}</span>
+            </div>
+          }
+          @if (order()!.estimatedDelivery) {
+            <div class="info-row">
+              <span class="info-label">
+                <span class="material-symbols-outlined">event</span>
+                {{ order()!.deliveryMethod === 'delivery' ? 'Livraison estimée' : 'Disponible le' }}
+              </span>
+              <span class="info-value info-value--highlight">{{ formatDateShort(order()!.estimatedDelivery!) }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Payment Info -->
+      <div class="payment-section">
+        <h2 class="section-title">
+          <span class="material-symbols-outlined">payments</span>
+          Informations de paiement
+        </h2>
+        <div class="payment-info">
+          <div class="info-row">
+            <span class="info-label">
+              <span class="material-symbols-outlined">payment</span>
+              Mode de paiement
+            </span>
+            <span class="info-value">{{ order()!.paymentMethod }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">
+              <span class="material-symbols-outlined">check_circle</span>
+              Statut du paiement
+            </span>
+            <span class="info-value payment-status" [class.payment-status--paid]="order()!.paymentStatus === 'paid'">
+              {{ order()!.paymentStatus === 'paid' ? 'Payé' : order()!.paymentStatus === 'pending' ? 'En attente' : 'Remboursé' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-section">
+        <button class="btn-download" (click)="downloadInvoice()">
+          <span class="material-symbols-outlined">description</span>
+          Télécharger la facture
+        </button>
+        @if (order()!.status === 'delivered') {
+          <button class="btn-download" (click)="downloadReceipt()">
+            <span class="material-symbols-outlined">receipt</span>
+            Télécharger le reçu
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

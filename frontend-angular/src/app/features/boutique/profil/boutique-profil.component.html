@@ -1,0 +1,227 @@
+<div class="profil-page">
+  <div class="page-header">
+    <div class="header__info">
+      <h2>Ma Boutique</h2>
+      <p>Gérez les informations de votre boutique</p>
+    </div>
+    <div class="header__status" [class]="'status--' + boutique().status">
+      <span class="material-symbols-outlined">{{ boutique().status === 'active' ? 'check_circle' : 'pending' }}</span>
+      {{ getStatusLabel(boutique().status) }}
+    </div>
+  </div>
+
+  <!-- Preview Card -->
+  <div class="preview-card">
+    <div class="preview-banner" [style.backgroundImage]="bannerPreview() ? 'url(' + bannerPreview() + ')' : ''">
+      @if (!bannerPreview()) {
+        <span class="material-symbols-outlined">panorama</span>
+      }
+    </div>
+    <div class="preview-content">
+      <div class="preview-logo">
+        @if (logoPreview()) {
+          <img [src]="logoPreview()" alt="Logo" />
+        } @else {
+          <span class="material-symbols-outlined">storefront</span>
+        }
+      </div>
+      <div class="preview-info">
+        <h3>{{ form.get('name')?.value || 'Nom de la boutique' }}</h3>
+        <span class="preview-category">{{ form.get('category')?.value }}</span>
+        <span class="preview-location">
+          <span class="material-symbols-outlined">location_on</span>
+          {{ boutique().location }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button type="button" 
+            class="tab" 
+            [class.tab--active]="activeTab() === 'general'"
+            (click)="setTab('general')">
+      <span class="material-symbols-outlined">info</span>
+      Informations générales
+    </button>
+    <button type="button" 
+            class="tab" 
+            [class.tab--active]="activeTab() === 'horaires'"
+            (click)="setTab('horaires')">
+      <span class="material-symbols-outlined">schedule</span>
+      Horaires d'ouverture
+    </button>
+    <button type="button" 
+            class="tab" 
+            [class.tab--active]="activeTab() === 'apparence'"
+            (click)="setTab('apparence')">
+      <span class="material-symbols-outlined">palette</span>
+      Apparence
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="profil-form">
+    <!-- General Tab -->
+    @if (activeTab() === 'general') {
+      <section class="card form-section">
+        <h4>Informations de la boutique</h4>
+        
+        <div class="form-grid">
+          <div class="form-group form-group--full">
+            <label for="name">Nom de la boutique *</label>
+            <input id="name" type="text" formControlName="name" placeholder="Nom de votre boutique" />
+          </div>
+
+          <div class="form-group">
+            <label for="category">Catégorie *</label>
+            <select id="category" formControlName="category">
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input id="email" type="email" formControlName="email" placeholder="contact@example.com" />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Téléphone *</label>
+            <input id="phone" type="tel" formControlName="phone" placeholder="+261 34 00 000 00" />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="description">Description *</label>
+            <textarea id="description" formControlName="description" rows="4" 
+                      placeholder="Décrivez votre boutique, vos produits, votre univers..."></textarea>
+            <span class="form-hint">Cette description sera visible par les clients</span>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <span class="material-symbols-outlined">location_on</span>
+          <div class="info-box__content">
+            <strong>Emplacement</strong>
+            <p>{{ boutique().location }}</p>
+            <span class="info-box__note">Pour modifier votre emplacement, contactez l'administration.</span>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- Hours Tab -->
+    @if (activeTab() === 'horaires') {
+      <section class="card form-section">
+        <h4>Horaires d'ouverture</h4>
+        <p class="section-desc">Définissez les horaires d'ouverture de votre boutique</p>
+
+        <div class="hours-list" formArrayName="openingHours">
+          @for (hour of openingHours.controls; track $index; let i = $index) {
+            <div class="hour-row" [formGroupName]="i">
+              <span class="hour-day">{{ days[i] }}</span>
+              
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="isOpen" />
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">{{ hour.get('isOpen')?.value ? 'Ouvert' : 'Fermé' }}</span>
+              </label>
+
+              @if (hour.get('isOpen')?.value) {
+                <div class="hour-times">
+                  <input type="time" formControlName="openTime" />
+                  <span class="hour-separator">à</span>
+                  <input type="time" formControlName="closeTime" />
+                </div>
+              } @else {
+                <div class="hour-closed">Fermé</div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="quick-actions">
+          <button type="button" class="btn btn--outline btn--sm">
+            <span class="material-symbols-outlined">content_copy</span>
+            Copier lundi sur tous les jours
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- Appearance Tab -->
+    @if (activeTab() === 'apparence') {
+      <section class="card form-section">
+        <h4>Logo de la boutique</h4>
+        <p class="section-desc">Votre logo sera affiché sur votre profil et dans les résultats de recherche</p>
+
+        <div class="upload-zone">
+          <div class="upload-preview upload-preview--logo">
+            @if (logoPreview()) {
+              <img [src]="logoPreview()" alt="Logo preview" />
+              <button type="button" class="upload-remove" (click)="removeLogo()">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            } @else {
+              <span class="material-symbols-outlined">add_photo_alternate</span>
+              <span>Ajouter un logo</span>
+            }
+          </div>
+          <div class="upload-info">
+            <input type="file" id="logo" accept="image/*" (change)="onLogoChange($event)" hidden />
+            <label for="logo" class="btn btn--outline">
+              <span class="material-symbols-outlined">upload</span>
+              Choisir une image
+            </label>
+            <ul class="upload-specs">
+              <li>Format: JPG, PNG ou WebP</li>
+              <li>Taille recommandée: 400x400px</li>
+              <li>Taille max: 2 Mo</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card form-section">
+        <h4>Bannière de la boutique</h4>
+        <p class="section-desc">Image de couverture affichée en haut de votre profil boutique</p>
+
+        <div class="upload-zone upload-zone--banner">
+          <div class="upload-preview upload-preview--banner">
+            @if (bannerPreview()) {
+              <img [src]="bannerPreview()" alt="Banner preview" />
+              <button type="button" class="upload-remove" (click)="removeBanner()">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            } @else {
+              <span class="material-symbols-outlined">panorama</span>
+              <span>Ajouter une bannière</span>
+            }
+          </div>
+          <div class="upload-info">
+            <input type="file" id="banner" accept="image/*" (change)="onBannerChange($event)" hidden />
+            <label for="banner" class="btn btn--outline">
+              <span class="material-symbols-outlined">upload</span>
+              Choisir une image
+            </label>
+            <ul class="upload-specs">
+              <li>Format: JPG, PNG ou WebP</li>
+              <li>Taille recommandée: 1200x400px</li>
+              <li>Taille max: 5 Mo</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- Submit -->
+    <div class="form-actions">
+      <button type="button" class="btn btn--outline">Annuler</button>
+      <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
+        <span class="material-symbols-outlined">save</span>
+        Enregistrer les modifications
+      </button>
+    </div>
+  </form>
+</div>

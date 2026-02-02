@@ -1,0 +1,270 @@
+<div class="dashboard">
+  <!-- Header -->
+  <div class="dashboard__header">
+    <div class="header__info">
+      <h2>Tableau de bord</h2>
+      <p class="header__date">{{ 'Aujourd\'hui' }}, {{ '29 Janvier 2026' }}</p>
+    </div>
+    <div class="header__actions">
+      <button class="btn btn--outline">
+        <span class="material-symbols-outlined">download</span>
+        Exporter
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-card--primary">
+      <div class="kpi-card__icon">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__label">Ventes du jour</span>
+        <span class="kpi-card__value">{{ formatCurrency(stats().todaySales) }}</span>
+        <span class="kpi-card__trend kpi-card__trend--up">
+          <span class="material-symbols-outlined">trending_up</span>
+          +12.5% vs hier
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--green">
+        <span class="material-symbols-outlined">account_balance_wallet</span>
+      </div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__label">Ventes du mois</span>
+        <span class="kpi-card__value">{{ formatCurrency(stats().monthSales) }}</span>
+        <span class="kpi-card__trend kpi-card__trend--up">
+          <span class="material-symbols-outlined">trending_up</span>
+          +8.3% vs mois dernier
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--orange">
+        <span class="material-symbols-outlined">shopping_bag</span>
+      </div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__label">Commandes en attente</span>
+        <span class="kpi-card__value">{{ stats().pendingOrders }}</span>
+        <a routerLink="/boutique/commandes" class="kpi-card__link">Voir les commandes</a>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--purple">
+        <span class="material-symbols-outlined">inventory_2</span>
+      </div>
+      <div class="kpi-card__content">
+        <span class="kpi-card__label">Produits en stock</span>
+        <span class="kpi-card__value">{{ stats().totalProducts }}</span>
+        @if (stats().lowStockProducts > 0) {
+          <span class="kpi-card__alert">
+            <span class="material-symbols-outlined">warning</span>
+            {{ stats().lowStockProducts }} en stock faible
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts & Tables Row -->
+  <div class="dashboard__grid">
+    <!-- Weekly Sales Chart -->
+    <section class="card chart-card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">bar_chart</span>
+          Ventes de la semaine
+        </h3>
+        <div class="chart-legend">
+          <span class="legend-item">
+            <span class="legend-dot"></span>
+            Ventes (MGA)
+          </span>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="bar-chart">
+          @for (day of weeklyData; track day.day) {
+            <div class="bar-chart__item">
+              <div class="bar-chart__bar-wrapper">
+                <div class="bar-chart__bar" 
+                     [style.height.%]="getBarHeight(day.sales)"
+                     [attr.data-value]="formatCurrency(day.sales)">
+                </div>
+              </div>
+              <span class="bar-chart__label">{{ day.day }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Stats -->
+    <section class="card stats-card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">insights</span>
+          Indicateurs clés
+        </h3>
+      </div>
+      <div class="quick-stats">
+        <div class="stat-item">
+          <div class="stat-item__header">
+            <span class="stat-item__label">Panier moyen</span>
+            <span class="material-symbols-outlined">shopping_cart</span>
+          </div>
+          <span class="stat-item__value">{{ formatCurrency(stats().averageOrderValue) }}</span>
+          <div class="stat-item__bar">
+            <div class="stat-item__progress" style="width: 68%"></div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item__header">
+            <span class="stat-item__label">Taux de conversion</span>
+            <span class="material-symbols-outlined">conversion_path</span>
+          </div>
+          <span class="stat-item__value">{{ stats().conversionRate }}%</span>
+          <div class="stat-item__bar">
+            <div class="stat-item__progress stat-item__progress--green" style="width: 32%"></div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item__header">
+            <span class="stat-item__label">Taux d'abandon panier</span>
+            <span class="material-symbols-outlined">remove_shopping_cart</span>
+          </div>
+          <span class="stat-item__value">24.5%</span>
+          <div class="stat-item__bar">
+            <div class="stat-item__progress stat-item__progress--red" style="width: 24.5%"></div>
+          </div>
+        </div>
+      </div>
+      <a routerLink="/boutique/statistiques" class="card__link">
+        Voir toutes les statistiques
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </a>
+    </section>
+  </div>
+
+  <!-- Recent Orders & Top Products -->
+  <div class="dashboard__grid">
+    <!-- Recent Orders -->
+    <section class="card orders-card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">receipt_long</span>
+          Commandes récentes
+        </h3>
+        <a routerLink="/boutique/commandes" class="btn btn--sm btn--ghost">
+          Voir tout
+          <span class="material-symbols-outlined">chevron_right</span>
+        </a>
+      </div>
+      <div class="orders-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Commande</th>
+              <th>Client</th>
+              <th>Montant</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of recentOrders(); track order.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/boutique/commandes', order.id]" class="order-id">{{ order.id }}</a>
+                  <span class="order-items">{{ order.items }} article(s)</span>
+                </td>
+                <td>{{ order.customer }}</td>
+                <td class="order-amount">{{ formatCurrency(order.amount) }}</td>
+                <td>
+                  <span class="status-badge" [class]="'status-badge--' + order.status">
+                    {{ getStatusLabel(order.status) }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Top Products -->
+    <section class="card products-card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">star</span>
+          Produits les plus vendus
+        </h3>
+        <a routerLink="/boutique/produits" class="btn btn--sm btn--ghost">
+          Gérer
+          <span class="material-symbols-outlined">chevron_right</span>
+        </a>
+      </div>
+      <div class="top-products">
+        @for (product of topProducts(); track product.id; let i = $index) {
+          <div class="product-item">
+            <span class="product-rank">{{ i + 1 }}</span>
+            <div class="product-image">
+              @if (product.image) {
+                <img [src]="product.image" [alt]="product.name" />
+              } @else {
+                <span class="material-symbols-outlined">image</span>
+              }
+            </div>
+            <div class="product-info">
+              <span class="product-name">{{ product.name }}</span>
+              <span class="product-sales">{{ product.sales }} vendus</span>
+            </div>
+            <div class="product-revenue">
+              <span class="revenue-value">{{ formatCurrency(product.revenue) }}</span>
+              <span class="revenue-trend" [class]="'revenue-trend--' + product.trend">
+                @switch (product.trend) {
+                  @case ('up') {
+                    <span class="material-symbols-outlined">trending_up</span>
+                  }
+                  @case ('down') {
+                    <span class="material-symbols-outlined">trending_down</span>
+                  }
+                  @default {
+                    <span class="material-symbols-outlined">trending_flat</span>
+                  }
+                }
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <!-- Quick Actions -->
+  <section class="quick-actions">
+    <h3>Actions rapides</h3>
+    <div class="actions-grid">
+      <a routerLink="/boutique/produits/nouveau" class="action-card">
+        <span class="material-symbols-outlined">add_box</span>
+        <span class="action-card__label">Ajouter un produit</span>
+      </a>
+      <a routerLink="/boutique/commandes" class="action-card">
+        <span class="material-symbols-outlined">local_shipping</span>
+        <span class="action-card__label">Traiter les commandes</span>
+      </a>
+      <a routerLink="/boutique/messagerie" class="action-card">
+        <span class="material-symbols-outlined">chat</span>
+        <span class="action-card__label">Messages clients</span>
+      </a>
+      <a routerLink="/boutique/statistiques" class="action-card">
+        <span class="material-symbols-outlined">analytics</span>
+        <span class="action-card__label">Voir les stats</span>
+      </a>
+    </div>
+  </section>
+</div>

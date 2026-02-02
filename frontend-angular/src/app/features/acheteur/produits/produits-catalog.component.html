@@ -1,0 +1,195 @@
+<div class="catalog-page">
+  <!-- Header -->
+  <div class="catalog-header">
+    <h1>
+      <span class="material-symbols-outlined">inventory_2</span>
+      Catalogue des produits
+    </h1>
+    <p class="catalog-header__subtitle">Découvrez tous nos produits disponibles</p>
+  </div>
+
+  <!-- Search and Filters Section -->
+  <div class="filters-section">
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher un produit, une boutique, une catégorie..."
+        class="search-input"
+      />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="searchQuery.set('')">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <!-- Filters Row -->
+    <div class="filters-row">
+      <!-- Category Filter -->
+      <div class="filter-group">
+        <label class="filter-label">
+          <span class="material-symbols-outlined">category</span>
+          Catégorie
+        </label>
+        <select [(ngModel)]="selectedCategory" class="filter-select">
+          <option value="">Toutes les catégories</option>
+          @for (cat of categories(); track cat) {
+            <option [value]="cat">{{ cat }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Price Range -->
+      <div class="filter-group">
+        <label class="filter-label">
+          <span class="material-symbols-outlined">attach_money</span>
+          Prix min
+        </label>
+        <input
+          type="number"
+          [(ngModel)]="minPrice"
+          placeholder="Min"
+          class="filter-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">
+          <span class="material-symbols-outlined">attach_money</span>
+          Prix max
+        </label>
+        <input
+          type="number"
+          [(ngModel)]="maxPrice"
+          placeholder="Max"
+          class="filter-input"
+        />
+      </div>
+
+      <!-- Checkboxes -->
+      <div class="filter-group filter-group--checkboxes">
+        <label class="filter-checkbox">
+          <input type="checkbox" [(ngModel)]="inStockOnly" />
+          <span class="material-symbols-outlined">inventory</span>
+          En stock uniquement
+        </label>
+        <label class="filter-checkbox">
+          <input type="checkbox" [(ngModel)]="onPromoOnly" />
+          <span class="material-symbols-outlined">local_offer</span>
+          En promotion
+        </label>
+      </div>
+
+      <!-- Clear Filters -->
+      @if (selectedCategory() || minPrice() || maxPrice() || inStockOnly() || onPromoOnly()) {
+        <button class="btn-clear-filters" (click)="clearFilters()">
+          <span class="material-symbols-outlined">filter_alt_off</span>
+          Réinitialiser
+        </button>
+      }
+    </div>
+
+    <!-- Sort Options -->
+    <div class="sort-section">
+      <label class="sort-label">
+        <span class="material-symbols-outlined">sort</span>
+        Trier par:
+      </label>
+      <div class="sort-options">
+        <button
+          class="sort-btn"
+          [class.sort-btn--active]="sortBy() === 'popularity'"
+          (click)="sortBy.set('popularity')"
+        >
+          Popularité
+        </button>
+        <button
+          class="sort-btn"
+          [class.sort-btn--active]="sortBy() === 'newest'"
+          (click)="sortBy.set('newest')"
+        >
+          Plus récent
+        </button>
+        <button
+          class="sort-btn"
+          [class.sort-btn--active]="sortBy() === 'price-asc'"
+          (click)="sortBy.set('price-asc')"
+        >
+          Prix croissant
+        </button>
+        <button
+          class="sort-btn"
+          [class.sort-btn--active]="sortBy() === 'price-desc'"
+          (click)="sortBy.set('price-desc')"
+        >
+          Prix décroissant
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Count -->
+  <div class="results-info">
+    <span class="results-count">{{ filteredProducts().length }} produit(s) trouvé(s)</span>
+  </div>
+
+  <!-- Products Grid -->
+  @if (filteredProducts().length > 0) {
+    <div class="products-grid">
+      @for (product of filteredProducts(); track product.id) {
+        <a [routerLink]="['/acheteur/produits', product.id]" class="product-card">
+          <div class="product-card__image">
+            @if (product.image) {
+              <img [src]="product.image" [alt]="product.name" />
+            } @else {
+              <span class="material-symbols-outlined">image</span>
+            }
+            @if (product.onPromo) {
+              <span class="product-card__promo">Promo</span>
+            }
+            @if (!product.inStock) {
+              <span class="product-card__out-of-stock">Rupture</span>
+            }
+          </div>
+          <div class="product-card__content">
+            <span class="product-card__boutique">{{ product.boutiqueName }}</span>
+            <h3 class="product-card__name">{{ product.name }}</h3>
+            <p class="product-card__description">{{ product.description }}</p>
+            <div class="product-card__price">
+              @if (product.promoPrice) {
+                <span class="price-promo">{{ formatCurrency(product.promoPrice) }}</span>
+                <span class="price-original">{{ formatCurrency(product.price) }}</span>
+              } @else {
+                <span class="price-current">{{ formatCurrency(product.price) }}</span>
+              }
+            </div>
+            <div class="product-card__meta">
+              <span class="product-card__category">{{ product.category }}</span>
+              <span class="product-card__popularity">
+                <span class="material-symbols-outlined">trending_up</span>
+                {{ product.popularity }}
+              </span>
+            </div>
+          </div>
+          <button
+            class="product-card__cart"
+            [disabled]="!product.inStock"
+            (click)="addToCart(product.id, $event)"
+          >
+            <span class="material-symbols-outlined">add_shopping_cart</span>
+          </button>
+        </a>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <span class="material-symbols-outlined">inventory_2</span>
+      <h3>Aucun produit trouvé</h3>
+      <p>Essayez de modifier vos critères de recherche</p>
+      <button class="btn-primary" (click)="clearFilters()">Réinitialiser les filtres</button>
+    </div>
+  }
+</div>

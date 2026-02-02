@@ -1,0 +1,135 @@
+<div class="retours-page">
+  <div class="page-header">
+    <div class="header__info">
+      <h2>Gestion des retours</h2>
+      <p>Traitez les demandes de retour de vos clients</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="material-symbols-outlined">assignment_return</span>
+      <div class="stat-card__content">
+        <span class="stat-card__value">{{ stats().total }}</span>
+        <span class="stat-card__label">Total retours</span>
+      </div>
+    </div>
+    <div class="stat-card stat-card--orange">
+      <span class="material-symbols-outlined">pending</span>
+      <div class="stat-card__content">
+        <span class="stat-card__value">{{ stats().pending }}</span>
+        <span class="stat-card__label">En attente</span>
+      </div>
+    </div>
+    <div class="stat-card stat-card--red">
+      <span class="material-symbols-outlined">money_off</span>
+      <div class="stat-card__content">
+        <span class="stat-card__value">{{ formatCurrency(stats().refundedTotal) }}</span>
+        <span class="stat-card__label">Montant remboursé</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <span class="filter-label">Filtrer par statut :</span>
+    <div class="status-filters">
+      <button class="status-filter" 
+              [class.active]="filterStatus === ''"
+              (click)="filterStatus = ''">
+        Tous
+      </button>
+      @for (status of statuses; track status.value) {
+        <button class="status-filter" 
+                [class.active]="filterStatus === status.value"
+                (click)="filterStatus = status.value">
+          <span class="material-symbols-outlined">{{ status.icon }}</span>
+          {{ status.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Returns List -->
+  <div class="returns-list">
+    @for (ret of filteredReturns(); track ret.id) {
+      <div class="return-card" [class]="'return-card--' + ret.status">
+        <div class="return-header">
+          <div class="return-info">
+            <span class="return-order">{{ ret.orderNumber }}</span>
+            <span class="return-date">Demandé le {{ formatDate(ret.requestDate) }}</span>
+          </div>
+          <span class="status-badge" [class]="'status-badge--' + ret.status">
+            <span class="material-symbols-outlined">{{ getStatusInfo(ret.status).icon }}</span>
+            {{ getStatusInfo(ret.status).label }}
+          </span>
+        </div>
+
+        <div class="return-body">
+          <div class="return-customer">
+            <div class="customer-avatar">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="customer-info">
+              <span class="customer-name">{{ ret.customer }}</span>
+              <span class="return-reason">
+                <span class="material-symbols-outlined">help</span>
+                {{ getReasonLabel(ret.reason) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="return-product">
+            <div class="product-image">
+              <span class="material-symbols-outlined">image</span>
+            </div>
+            <div class="product-info">
+              <span class="product-name">{{ ret.product }}</span>
+              <span class="product-qty">Quantité : {{ ret.quantity }}</span>
+            </div>
+            <div class="product-amount">
+              <span class="amount-value">{{ formatCurrency(ret.amount) }}</span>
+              <span class="amount-label">à rembourser</span>
+            </div>
+          </div>
+
+          @if (ret.reasonDetail) {
+            <div class="return-detail">
+              <span class="material-symbols-outlined">comment</span>
+              <p>{{ ret.reasonDetail }}</p>
+            </div>
+          }
+        </div>
+
+        @if (ret.status === 'pending') {
+          <div class="return-actions">
+            <button class="btn btn--outline btn--sm" (click)="updateStatus(ret, 'rejected')">
+              <span class="material-symbols-outlined">close</span>
+              Refuser
+            </button>
+            <button class="btn btn--primary btn--sm" (click)="updateStatus(ret, 'approved')">
+              <span class="material-symbols-outlined">check</span>
+              Approuver
+            </button>
+          </div>
+        }
+
+        @if (ret.status === 'approved') {
+          <div class="return-actions">
+            <button class="btn btn--primary btn--sm" (click)="updateStatus(ret, 'refunded')">
+              <span class="material-symbols-outlined">payments</span>
+              Marquer comme remboursé
+            </button>
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">assignment_return</span>
+        <h4>Aucun retour</h4>
+        <p>Aucune demande de retour ne correspond à vos critères</p>
+      </div>
+    }
+  </div>
+</div>
