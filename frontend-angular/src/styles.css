@@ -26,7 +26,7 @@
   /* États sémantiques */
   --korus-success: #10b981;       /* Emerald 500 */
   --korus-danger: #ef4444;        /* Red 500 */
-  --korus-warning: #f59e0b;       /* Amber 500 */
+  --korus-warning: var(--korus-accent);       /* Amber 500 - Alerte restent oranges */
   --korus-info: #3b82f6;          /* Blue 500 */
 
   /* Design System */

@@ -127,7 +127,7 @@
 
 .kpi-card__icon--orange {
   background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .kpi-card__icon--purple {
@@ -192,7 +192,7 @@
   gap: 0.25rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .kpi-card__alert .material-symbols-outlined {
@@ -479,7 +479,7 @@
 
 .status-badge--pending {
   background: rgba(245, 158, 11, 0.1);
-  color: #d97706;
+  color: var(--korus-accent-dark);
 }
 
 .status-badge--confirmed {
@@ -536,7 +536,7 @@
 }
 
 .product-item:first-child .product-rank {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, #fbbf24 0%, var(--korus-accent) 100%);
   color: white;
 }
 

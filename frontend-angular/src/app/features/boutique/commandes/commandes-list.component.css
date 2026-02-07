@@ -75,7 +75,7 @@
 
 .stat-card--orange .stat-card__icon {
   background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .stat-card--blue .stat-card__icon {
@@ -194,7 +194,7 @@
 }
 
 .order-card--pending {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--korus-accent);
 }
 
 .order-card--confirmed {
@@ -262,7 +262,7 @@
 
 .status-badge--pending {
   background: rgba(245, 158, 11, 0.1);
-  color: #d97706;
+  color: var(--korus-accent-dark);
 }
 
 .status-badge--confirmed {

@@ -90,7 +90,7 @@
   transition: transform 0.1s;
 }
 .btn-link:active { transform: scale(0.95); }
-.btn-link--warning { color: #d97706; }
+.btn-link--warning { color: var(--korus-accent-dark); }
 .btn-link--danger { color: var(--korus-danger); }
 .btn-link--success { color: var(--korus-success); }
 .btn-link:hover { text-decoration: underline; }

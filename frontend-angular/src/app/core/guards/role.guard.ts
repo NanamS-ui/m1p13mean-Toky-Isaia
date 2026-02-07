@@ -5,24 +5,23 @@ import { AuthService } from '../services/auth.service';
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.isAdmin()) return true;
+  if (auth.currentUser()?.role === 'ADMIN') return true;
+  if (auth.isAuthenticated()) return router.createUrlTree([auth.getRedirectRoute()]);
   return router.createUrlTree(['/login']);
 };
 
 export const boutiqueGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  // Un commerçant peut accéder à son espace boutique
-  // Pour la maquette, on autorise l'accès à tous les utilisateurs connectés
-  if (auth.currentUser()) return true;
+  if (auth.currentUser()?.role === 'BOUTIQUE') return true;
+  if (auth.isAuthenticated()) return router.createUrlTree([auth.getRedirectRoute()]);
   return router.createUrlTree(['/login']);
 };
 
 export const acheteurGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  // Un acheteur peut accéder à son espace client
-  // Pour la maquette, on autorise l'accès à tous les utilisateurs connectés
-  if (auth.currentUser()) return true;
+  if (auth.currentUser()?.role === 'ACHETEUR') return true;
+  if (auth.isAuthenticated()) return router.createUrlTree([auth.getRedirectRoute()]);
   return router.createUrlTree(['/login']);
 };

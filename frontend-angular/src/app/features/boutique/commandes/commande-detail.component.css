@@ -70,7 +70,7 @@
   font-size: 18px;
 }
 
-.status-badge--pending { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.status-badge--pending { background: rgba(245, 158, 11, 0.1); color: var(--korus-accent-dark); }
 .status-badge--confirmed { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
 .status-badge--preparing { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
 .status-badge--delivered { background: rgba(16, 185, 129, 0.1); color: #059669; }
@@ -379,7 +379,7 @@
 }
 
 .payment-status--paid { color: #10b981; }
-.payment-status--pending { color: #f59e0b; }
+.payment-status--pending { color: var(--korus-accent); }
 .payment-status--refunded { color: var(--korus-accent); }
 
 .payment-row--total {
@@ -432,7 +432,7 @@
   color: var(--korus-text-muted);
 }
 
-.history-icon--pending { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.history-icon--pending { color: var(--korus-accent); background: rgba(245, 158, 11, 0.1); }
 .history-icon--confirmed { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
 .history-icon--preparing { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
 .history-icon--delivered { color: #10b981; background: rgba(16, 185, 129, 0.1); }

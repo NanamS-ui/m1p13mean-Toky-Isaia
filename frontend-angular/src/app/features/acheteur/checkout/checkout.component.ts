@@ -44,7 +44,7 @@ type CheckoutStep = 1 | 2 | 3;
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './checkout.component.html',
   styleUrl: './checkout.component.css'
 })

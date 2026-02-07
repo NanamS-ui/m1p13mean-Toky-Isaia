@@ -129,7 +129,7 @@
 }
 
 .kpi-card--warning .kpi-card__header .material-symbols-outlined {
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .kpi-card__trend {
@@ -358,14 +358,14 @@
 }
 
 .product-rank--gold {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, #fbbf24 0%, var(--korus-accent) 100%);
   border: none;
   color: white;
 }
 
 .product-warning {
   font-size: 20px !important;
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .product-info {
@@ -424,7 +424,7 @@
 .conversion-value {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .conversion-label {
@@ -508,7 +508,7 @@
 
 .summary-icon--orange {
   background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .summary-content {

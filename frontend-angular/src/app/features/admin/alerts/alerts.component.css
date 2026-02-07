@@ -6,12 +6,12 @@
 .alert-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 .alert-card { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1.25rem; background: white; border: 1px solid var(--korus-border); border-radius: var(--korus-radius); border-left-width: 4px; transition: box-shadow 0.2s ease, transform 0.2s ease; }
 .alert-card:hover { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); transform: translateX(4px); }
-.alert-card--warning { border-left-color: #f59e0b; }
+.alert-card--warning { border-left-color: var(--korus-accent); }
 .alert-card--danger { border-left-color: #ef4444; }
 .alert-card--success { border-left-color: #10b981; }
 .alert-card--info { border-left-color: #3b82f6; }
 .alert-card__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 0.4rem; }
-.alert-card--warning .alert-card__dot { background: #f59e0b; }
+.alert-card--warning .alert-card__dot { background: var(--korus-accent); }
 .alert-card--danger .alert-card__dot { background: #ef4444; }
 .alert-card--success .alert-card__dot { background: #10b981; }
 .alert-card--info .alert-card__dot { background: #3b82f6; }

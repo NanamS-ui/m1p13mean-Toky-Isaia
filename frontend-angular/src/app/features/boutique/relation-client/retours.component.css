@@ -57,7 +57,7 @@
 }
 
 .stat-card--orange .material-symbols-outlined {
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .stat-card--red .material-symbols-outlined {
@@ -149,7 +149,7 @@
 }
 
 .return-card--pending {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--korus-accent);
 }
 
 .return-card--approved {
@@ -207,7 +207,7 @@
   font-size: 16px;
 }
 
-.status-badge--pending { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.status-badge--pending { background: rgba(245, 158, 11, 0.1); color: var(--korus-accent-dark); }
 .status-badge--approved { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
 .status-badge--rejected { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
 .status-badge--refunded { background: rgba(16, 185, 129, 0.1); color: #059669; }

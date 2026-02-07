@@ -96,7 +96,7 @@
 }
 
 .stat-card--green .material-symbols-outlined { color: #10b981; }
-.stat-card--orange .material-symbols-outlined { color: #f59e0b; }
+.stat-card--orange .material-symbols-outlined { color: var(--korus-accent); }
 .stat-card--red .material-symbols-outlined { color: #ef4444; }
 
 .stat-card__content {
@@ -397,7 +397,7 @@
 }
 
 .stock-badge--low {
-  color: #f59e0b;
+  color: var(--korus-accent);
 }
 
 .stock-badge--out {

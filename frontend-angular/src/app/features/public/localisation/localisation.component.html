@@ -1,0 +1,172 @@
+<div class="localisation-page">
+  <!-- Header -->
+  <section class="localisation-header">
+    <div class="container">
+      <h1 class="page-title">
+        <span class="material-symbols-outlined">location_on</span>
+        Nous trouver
+      </h1>
+      <p class="page-subtitle">Toutes les informations pour venir au KORUS Center</p>
+    </div>
+  </section>
+
+  <!-- Map Section -->
+  <section class="section section--map">
+    <div class="container">
+      <div class="map-container">
+        <div class="map-placeholder">
+          <span class="material-symbols-outlined map-icon">map</span>
+          <p>Carte interactive</p>
+          <span class="map-note">Cliquez pour ouvrir dans Google Maps</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section class="section section--content">
+    <div class="container">
+      <div class="content-grid">
+        <!-- Left Column: Contact Info -->
+        <div class="info-column">
+          <!-- Address Card -->
+          <div class="info-card">
+            <h3 class="info-card__title">
+              <span class="material-symbols-outlined">location_on</span>
+              Adresse
+            </h3>
+            <div class="info-card__content">
+              <p class="address-text">{{ address.full }}</p>
+              <a href="https://maps.google.com" target="_blank" class="btn btn--outline btn--sm">
+                <span class="material-symbols-outlined">directions</span>
+                Itinéraire
+              </a>
+            </div>
+          </div>
+
+          <!-- Contact Card -->
+          <div class="info-card">
+            <h3 class="info-card__title">
+              <span class="material-symbols-outlined">phone</span>
+              Contact
+            </h3>
+            <div class="info-card__content">
+              <div class="contact-item">
+                <span class="contact-label">Téléphone</span>
+                <a [href]="'tel:' + contact.phone" class="contact-value">{{ contact.phone }}</a>
+              </div>
+              <div class="contact-item">
+                <span class="contact-label">Email</span>
+                <a [href]="'mailto:' + contact.email" class="contact-value">{{ contact.email }}</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opening Hours Card -->
+          <div class="info-card">
+            <h3 class="info-card__title">
+              <span class="material-symbols-outlined">schedule</span>
+              Horaires d'ouverture
+            </h3>
+            <div class="info-card__content">
+              <div class="hours-list">
+                @for (schedule of openingHours; track schedule.day) {
+                  <div class="hours-item">
+                    <span class="hours-day">{{ schedule.day }}</span>
+                    <span class="hours-time">{{ schedule.hours }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Access Info Card -->
+          <div class="info-card">
+            <h3 class="info-card__title">
+              <span class="material-symbols-outlined">local_parking</span>
+              Accès
+            </h3>
+            <div class="info-card__content">
+              <div class="access-item">
+                <span class="material-symbols-outlined access-icon">local_parking</span>
+                <div>
+                  <strong>Parking</strong>
+                  <p>{{ accessInfo.parking }}</p>
+                </div>
+              </div>
+              <div class="access-item">
+                <span class="material-symbols-outlined access-icon">directions_bus</span>
+                <div>
+                  <strong>Transports en commun</strong>
+                  <ul class="transport-list">
+                    @for (transport of accessInfo.transport; track transport) {
+                      <li>{{ transport }}</li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Floor Plans -->
+        <div class="floor-plans-column">
+          <div class="floor-plans-card">
+            <h2 class="section-title">
+              <span class="material-symbols-outlined">layers</span>
+              Plans des étages
+            </h2>
+            <p class="section-description">Découvrez la disposition de chaque étage du centre</p>
+
+            <!-- Floor Selector -->
+            <div class="floor-selector">
+              @for (floor of floorPlans(); track floor.id) {
+                <button
+                  type="button"
+                  class="floor-btn"
+                  [class.floor-btn--active]="selectedFloor() === floor.id"
+                  (click)="selectFloor(floor.id)">
+                  <span class="material-symbols-outlined">layers</span>
+                  {{ floor.name }}
+                </button>
+              }
+            </div>
+
+            <!-- Floor Plan Display -->
+            <div class="floor-plan-display">
+              @switch (selectedFloor()) {
+                @case ('floor-1') {
+                  <div class="floor-plan-content">
+                    <div class="floor-plan-placeholder">
+                      <span class="material-symbols-outlined">map</span>
+                      <h3>{{ floorPlans()[0].name }}</h3>
+                      <p>{{ floorPlans()[0].description }}</p>
+                    </div>
+                  </div>
+                }
+                @case ('floor-2') {
+                  <div class="floor-plan-content">
+                    <div class="floor-plan-placeholder">
+                      <span class="material-symbols-outlined">map</span>
+                      <h3>{{ floorPlans()[1].name }}</h3>
+                      <p>{{ floorPlans()[1].description }}</p>
+                    </div>
+                  </div>
+                }
+                @case ('floor-3') {
+                  <div class="floor-plan-content">
+                    <div class="floor-plan-placeholder">
+                      <span class="material-symbols-outlined">map</span>
+                      <h3>{{ floorPlans()[2].name }}</h3>
+                      <p>{{ floorPlans()[2].description }}</p>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

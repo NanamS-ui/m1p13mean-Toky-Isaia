@@ -3,11 +3,23 @@ import { authGuard } from './core/guards/auth.guard';
 import { adminGuard, boutiqueGuard, acheteurGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  // Routes publiques (sans authentification)
+  { 
+    path: '', 
+    loadChildren: () => import('./features/public/public.routes').then(m => m.publicRoutes) 
+  },
+  
+  // Authentification
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
+  {
+    path: 'inscription',
+    loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent)
+  },
+  
+  // Espace Admin (protégé)
   {
     path: 'admin',
     loadComponent: () => import('./layout/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
@@ -28,15 +40,21 @@ export const routes: Routes = [
       { path: 'roles', loadComponent: () => import('./features/admin/roles/roles.component').then(m => m.RolesComponent) }
     ]
   },
+  
+  // Espace Boutique/Commerçant (protégé)
   {
     path: 'boutique',
     loadChildren: () => import('./features/boutique/boutique.routes').then(m => m.boutiqueRoutes),
     canActivate: [authGuard, boutiqueGuard]
   },
+  
+  // Espace Acheteur/Client (protégé)
   {
     path: 'acheteur',
     loadChildren: () => import('./features/acheteur/acheteur.routes').then(m => m.acheteurRoutes),
     canActivate: [authGuard, acheteurGuard]
   },
-  { path: '**', redirectTo: 'login' }
+  
+  // Redirection par défaut vers l'accueil public
+  { path: '**', redirectTo: 'accueil' }
 ];

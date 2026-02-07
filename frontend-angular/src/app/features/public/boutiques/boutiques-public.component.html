@@ -1,0 +1,165 @@
+<div class="boutiques-page">
+  <!-- Header -->
+  <section class="page-header">
+    <div class="container">
+      <h1>
+        <span class="material-symbols-outlined">storefront</span>
+        Nos Boutiques
+      </h1>
+      <p>Découvrez plus de 100 boutiques et restaurants au cœur du KORUS Center</p>
+    </div>
+  </section>
+
+  <!-- Filters Section -->
+  <section class="filters-section">
+    <div class="container">
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <span class="material-symbols-outlined">search</span>
+        <input 
+          type="text" 
+          placeholder="Rechercher une boutique..."
+          [value]="searchQuery()"
+          (input)="onSearchChange($any($event.target).value)"
+        />
+        @if (searchQuery()) {
+          <button class="search-clear" (click)="searchQuery.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+
+      <!-- Filters Row -->
+      <div class="filters-row">
+        <!-- Category Filter -->
+        <div class="filter-group">
+          <label>Catégorie</label>
+          <div class="filter-chips">
+            <button 
+              class="filter-chip"
+              [class.filter-chip--active]="selectedCategory() === 'ALL'"
+              (click)="onCategoryChange('ALL')">
+              Toutes
+            </button>
+            @for (cat of categories; track cat.value) {
+              <button 
+                class="filter-chip"
+                [class.filter-chip--active]="selectedCategory() === cat.value"
+                (click)="onCategoryChange(cat.value)">
+                <span class="material-symbols-outlined">{{ getCategoryIcon(cat.value) }}</span>
+                {{ cat.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Floor Filter -->
+        <div class="filter-group">
+          <label>Étage</label>
+          <div class="filter-chips">
+            <button 
+              class="filter-chip"
+              [class.filter-chip--active]="selectedFloor() === 'ALL'"
+              (click)="onFloorChange('ALL')">
+              Tous
+            </button>
+            @for (floor of floors; track floor.value) {
+              <button 
+                class="filter-chip"
+                [class.filter-chip--active]="selectedFloor() === floor.value"
+                (click)="onFloorChange(floor.value)">
+                {{ floor.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Clear Filters -->
+        @if (searchQuery() || selectedCategory() !== 'ALL' || selectedFloor() !== 'ALL') {
+          <button class="btn-clear" (click)="clearFilters()">
+            <span class="material-symbols-outlined">filter_alt_off</span>
+            Réinitialiser
+          </button>
+        }
+      </div>
+
+      <!-- Results Count -->
+      <div class="results-count">
+        <span>{{ filteredBoutiques().length }} boutique(s) trouvée(s)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Boutiques Grid -->
+  <section class="boutiques-section">
+    <div class="container">
+      @if (filteredBoutiques().length > 0) {
+        <div class="boutiques-grid">
+          @for (boutique of filteredBoutiques(); track boutique.id) {
+            <div class="boutique-card">
+              <div class="boutique-card__header">
+                <div class="boutique-card__logo">
+                  @if (boutique.logoUrl) {
+                    <img [src]="boutique.logoUrl" [alt]="boutique.name" />
+                  } @else {
+                    <span class="material-symbols-outlined">{{ getCategoryIcon(boutique.category) }}</span>
+                  }
+                </div>
+                <div class="boutique-card__status" [class.boutique-card__status--open]="boutique.isOpen" [class.boutique-card__status--closed]="!boutique.isOpen">
+                  {{ boutique.isOpen ? 'Ouvert' : 'Fermé' }}
+                </div>
+              </div>
+              <div class="boutique-card__content">
+                <span class="boutique-card__category">{{ getCategoryLabel(boutique.category) }}</span>
+                <h3>{{ boutique.name }}</h3>
+                @if (boutique.description) {
+                  <p>{{ boutique.description }}</p>
+                }
+                <div class="boutique-card__meta">
+                  <span class="boutique-card__floor">
+                    <span class="material-symbols-outlined">location_on</span>
+                    Niveau {{ boutique.floor }}
+                  </span>
+                </div>
+              </div>
+              <a routerLink="/login" class="boutique-card__link">
+                Voir plus
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </a>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <span class="material-symbols-outlined">search_off</span>
+          <h3>Aucune boutique trouvée</h3>
+          <p>Essayez de modifier vos critères de recherche</p>
+          <button class="btn btn--primary" (click)="clearFilters()">
+            Réinitialiser les filtres
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-card">
+        <div class="cta-card__content">
+          <h2>Accédez à plus de fonctionnalités</h2>
+          <p>Créez un compte pour consulter les produits, passer des commandes et profiter d'offres exclusives.</p>
+          <div class="cta-card__actions">
+            <a routerLink="/inscription" class="btn btn--primary">
+              <span class="material-symbols-outlined">person_add</span>
+              Créer un compte
+            </a>
+            <a routerLink="/login" class="btn btn--outline-light">
+              Se connecter
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
