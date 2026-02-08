@@ -1,0 +1,135 @@
+<div class="notifications-page">
+  <!-- Header -->
+  <div class="notifications-header">
+    <div class="header-left">
+      <h1>
+        <span class="material-symbols-outlined">notifications</span>
+        Notifications
+      </h1>
+      @if (unreadCount() > 0) {
+        <span class="unread-badge">{{ unreadCount() }}</span>
+      }
+    </div>
+    <div class="header-actions">
+      @if (unreadCount() > 0) {
+        <button class="btn-mark-all" (click)="markAllAsRead()">
+          <span class="material-symbols-outlined">done_all</span>
+          Tout marquer comme lu
+        </button>
+      }
+      @if (hasReadNotifications()) {
+        <button class="btn-delete-all" (click)="deleteAllRead()">
+          <span class="material-symbols-outlined">delete_sweep</span>
+          Supprimer les lues
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="notifications-filters">
+    @for (filter of filterOptions; track filter.value) {
+      <button
+        class="filter-btn"
+        [class.filter-btn--active]="selectedFilter() === filter.value"
+        (click)="setFilter(filter.value)"
+      >
+        <span class="material-symbols-outlined">{{ filter.icon }}</span>
+        {{ filter.label }}
+        @if (filter.value === 'all' && unreadCount() > 0) {
+          <span class="filter-badge">{{ unreadCount() }}</span>
+        } @else if (filter.value !== 'all') {
+          @if (getUnreadCountByType(filter.value) > 0) {
+            <span class="filter-badge">{{ getUnreadCountByType(filter.value) }}</span>
+          }
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Notifications List -->
+  <div class="notifications-list">
+    @if (filteredNotifications().length === 0) {
+      <div class="empty-notifications">
+        <span class="material-symbols-outlined">notifications_off</span>
+        <h3>Aucune notification</h3>
+        <p>
+          @if (selectedFilter() === 'all') {
+            Vous n'avez aucune notification pour le moment.
+          } @else {
+            Aucune notification de ce type pour le moment.
+          }
+        </p>
+      </div>
+    } @else {
+      @for (notification of filteredNotifications(); track notification.id) {
+        <div
+          class="notification-card"
+          [class.notification-card--unread]="!notification.isRead"
+          (click)="markAsRead(notification.id)"
+        >
+          <div
+            class="notification-icon"
+            [style.background-color]="getNotificationColor(notification.type) + '20'"
+            [style.color]="getNotificationColor(notification.type)"
+          >
+            <span class="material-symbols-outlined">{{ getNotificationIcon(notification) }}</span>
+          </div>
+
+          <div class="notification-content">
+            <div class="notification-header">
+              <h3>{{ notification.title }}</h3>
+              @if (!notification.isRead) {
+                <span class="unread-dot"></span>
+              }
+            </div>
+            <p class="notification-message">{{ notification.message }}</p>
+            <div class="notification-footer">
+              <span class="notification-time">
+                <span class="material-symbols-outlined">schedule</span>
+                {{ formatTimestamp(notification.timestamp) }}
+              </span>
+              @if (notification.actionUrl) {
+                <a
+                  [routerLink]="notification.actionUrl"
+                  class="notification-action"
+                  (click)="$event.stopPropagation()"
+                >
+                  {{ notification.actionLabel }}
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </a>
+              }
+            </div>
+          </div>
+
+          <div class="notification-actions">
+            @if (notification.isRead) {
+              <button
+                class="action-btn action-btn--unread"
+                (click)="markAsUnread(notification.id); $event.stopPropagation()"
+                title="Marquer comme non lu"
+              >
+                <span class="material-symbols-outlined">mark_email_unread</span>
+              </button>
+            } @else {
+              <button
+                class="action-btn action-btn--read"
+                (click)="markAsRead(notification.id); $event.stopPropagation()"
+                title="Marquer comme lu"
+              >
+                <span class="material-symbols-outlined">mark_email_read</span>
+              </button>
+            }
+            <button
+              class="action-btn action-btn--delete"
+              (click)="deleteNotification(notification.id); $event.stopPropagation()"
+              title="Supprimer"
+            >
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

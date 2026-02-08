@@ -1,0 +1,127 @@
+<div class="avis-page">
+  <div class="page-header">
+    <div class="header__info">
+      <h2>Avis clients</h2>
+      <p>Gérez les avis et répondez à vos clients</p>
+    </div>
+    @if (pendingCount > 0) {
+      <span class="pending-badge">
+        <span class="material-symbols-outlined">pending</span>
+        {{ pendingCount }} en attente
+      </span>
+    }
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="stats-overview">
+    <div class="rating-summary">
+      <div class="rating-average">
+        <span class="rating-value">{{ stats.average }}</span>
+        <div class="rating-stars">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <span class="material-symbols-outlined" [class.filled]="i <= stats.average">star</span>
+          }
+        </div>
+        <span class="rating-count">{{ stats.total }} avis</span>
+      </div>
+      <div class="rating-distribution">
+        @for (dist of stats.distribution; track dist.rating) {
+          <div class="distribution-row">
+            <span class="dist-label">{{ dist.rating }}</span>
+            <span class="material-symbols-outlined filled">star</span>
+            <div class="dist-bar">
+              <div class="dist-fill" [style.width.%]="dist.percentage"></div>
+            </div>
+            <span class="dist-count">{{ dist.count }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Note :</label>
+      <select [(ngModel)]="filterRating">
+        <option [value]="0">Toutes</option>
+        @for (i of [5, 4, 3, 2, 1]; track i) {
+          <option [value]="i">{{ i }} étoiles</option>
+        }
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Statut :</label>
+      <select [(ngModel)]="filterStatus">
+        <option value="">Tous</option>
+        <option value="pending">En attente</option>
+        <option value="replied">Répondu</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Reviews List -->
+  <div class="reviews-list">
+    @for (review of filteredReviews; track review.id) {
+      <div class="review-card" [class.review-card--pending]="!review.replied">
+        <div class="review-header">
+          <div class="review-author">
+            <div class="author-avatar">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="author-info">
+              <span class="author-name">{{ review.customer }}</span>
+              <span class="review-date">{{ formatDate(review.date) }}</span>
+            </div>
+          </div>
+          <div class="review-rating">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <span class="material-symbols-outlined" [class.filled]="i <= review.rating">star</span>
+            }
+          </div>
+        </div>
+
+        <div class="review-product">
+          <span class="material-symbols-outlined">inventory_2</span>
+          {{ review.product }}
+        </div>
+
+        <p class="review-comment">{{ review.comment }}</p>
+
+        @if (review.replied && review.reply) {
+          <div class="review-reply">
+            <div class="reply-header">
+              <span class="material-symbols-outlined">reply</span>
+              Votre réponse
+            </div>
+            <p>{{ review.reply }}</p>
+          </div>
+        }
+
+        @if (replyingTo() === review.id) {
+          <div class="reply-form">
+            <textarea [(ngModel)]="replyText" placeholder="Écrivez votre réponse..." rows="3"></textarea>
+            <div class="reply-actions">
+              <button class="btn btn--outline btn--sm" (click)="cancelReply()">Annuler</button>
+              <button class="btn btn--primary btn--sm" (click)="submitReply(review)" [disabled]="!replyText.trim()">
+                <span class="material-symbols-outlined">send</span>
+                Répondre
+              </button>
+            </div>
+          </div>
+        } @else if (!review.replied) {
+          <button class="btn btn--outline reply-btn" (click)="startReply(review.id)">
+            <span class="material-symbols-outlined">reply</span>
+            Répondre
+          </button>
+        }
+      </div>
+    } @empty {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">rate_review</span>
+        <h4>Aucun avis</h4>
+        <p>Aucun avis ne correspond à vos critères</p>
+      </div>
+    }
+  </div>
+</div>

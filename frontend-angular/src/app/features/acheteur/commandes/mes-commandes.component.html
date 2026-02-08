@@ -1,0 +1,146 @@
+<div class="commandes-page">
+  <!-- Header -->
+  <div class="commandes-header">
+    <h1>
+      <span class="material-symbols-outlined">receipt_long</span>
+      Mes commandes
+    </h1>
+    <p class="commandes-header__subtitle">Suivez l'état de vos commandes</p>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="commandes-filters">
+    <!-- Status Filter -->
+    <div class="filter-group">
+      <label class="filter-label">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtrer par statut
+      </label>
+      <div class="status-buttons">
+        @for (option of statusOptions; track option.value) {
+          <button
+            class="status-btn"
+            [class.status-btn--active]="selectedStatus() === option.value"
+            (click)="onStatusChange(option.value)"
+            [style.--status-color]="option.value !== 'all' ? getStatusColor(option.value) : undefined"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-group">
+      <label class="filter-label">
+        <span class="material-symbols-outlined">search</span>
+        Rechercher
+      </label>
+      <div class="search-input-wrapper">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Numéro de commande ou boutique..."
+          [value]="searchQuery()"
+          (input)="onSearchChange($any($event.target).value)"
+        />
+        @if (searchQuery()) {
+          <button
+            class="search-clear"
+            (click)="onSearchChange('')"
+            title="Effacer la recherche"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders List -->
+  @if (filteredOrders().length === 0) {
+    <div class="empty-orders">
+      <span class="material-symbols-outlined">inbox</span>
+      <h2>Aucune commande trouvée</h2>
+      <p>
+        @if (searchQuery() || selectedStatus() !== 'all') {
+          Aucune commande ne correspond à vos critères de recherche.
+        } @else {
+          Vous n'avez pas encore passé de commande.
+        }
+      </p>
+      @if (searchQuery() || selectedStatus() !== 'all') {
+        <button class="btn-reset" (click)="onSearchChange(''); onStatusChange('all')">
+          Réinitialiser les filtres
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="orders-grid">
+      @for (order of filteredOrders(); track order.id) {
+        <div class="order-card">
+          <!-- Order Header -->
+          <div class="order-card__header">
+            <div class="order-info">
+              <h3 class="order-number">{{ order.orderNumber }}</h3>
+              <p class="order-date">
+                <span class="material-symbols-outlined">calendar_today</span>
+                {{ formatDate(order.date) }}
+              </p>
+            </div>
+            <div class="order-status-badge" [style.--status-color]="getStatusColor(order.status)">
+              <span class="status-dot"></span>
+              {{ getStatusLabel(order.status) }}
+            </div>
+          </div>
+
+          <!-- Order Details -->
+          <div class="order-card__body">
+            <div class="order-detail-row">
+              <span class="detail-label">
+                <span class="material-symbols-outlined">store</span>
+                Boutique
+              </span>
+              <span class="detail-value">{{ order.boutiqueName }}</span>
+            </div>
+            <div class="order-detail-row">
+              <span class="detail-label">
+                <span class="material-symbols-outlined">shopping_bag</span>
+                Articles
+              </span>
+              <span class="detail-value">{{ order.itemsCount }} article(s)</span>
+            </div>
+            <div class="order-detail-row order-detail-row--total">
+              <span class="detail-label">
+                <span class="material-symbols-outlined">payments</span>
+                Total
+              </span>
+              <span class="detail-value detail-value--total">{{ formatCurrency(order.total) }}</span>
+            </div>
+          </div>
+
+          <!-- Order Actions -->
+          <div class="order-card__actions">
+            <a
+              [routerLink]="['/acheteur/commandes', order.id]"
+              class="btn-view"
+            >
+              <span class="material-symbols-outlined">visibility</span>
+              Voir le détail
+            </a>
+            @if (order.status === 'delivered' || order.status === 'cancelled') {
+              <button
+                class="btn-download"
+                (click)="downloadInvoice(order.id)"
+                title="Télécharger la facture"
+              >
+                <span class="material-symbols-outlined">download</span>
+                Facture
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

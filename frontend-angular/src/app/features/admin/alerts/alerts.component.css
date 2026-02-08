@@ -1,0 +1,24 @@
+.alerts-page { display: flex; flex-direction: column; gap: 1.5rem; }
+.page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.page-header h2 { margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--korus-text); display: flex; align-items: center; gap: 0.5rem; }
+.page-header__icon { font-size: 28px !important; color: var(--korus-accent); }
+.filter-type { padding: 0.5rem 0.75rem; border: 1px solid var(--korus-border); border-radius: 8px; font-size: 0.9rem; }
+.alert-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.alert-card { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1.25rem; background: white; border: 1px solid var(--korus-border); border-radius: var(--korus-radius); border-left-width: 4px; transition: box-shadow 0.2s ease, transform 0.2s ease; }
+.alert-card:hover { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); transform: translateX(4px); }
+.alert-card--warning { border-left-color: var(--korus-accent); }
+.alert-card--danger { border-left-color: #ef4444; }
+.alert-card--success { border-left-color: #10b981; }
+.alert-card--info { border-left-color: #3b82f6; }
+.alert-card__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 0.4rem; }
+.alert-card--warning .alert-card__dot { background: var(--korus-accent); }
+.alert-card--danger .alert-card__dot { background: #ef4444; }
+.alert-card--success .alert-card__dot { background: #10b981; }
+.alert-card--info .alert-card__dot { background: #3b82f6; }
+.alert-card__content { flex: 1; }
+.alert-card__content strong { font-size: 1rem; color: var(--korus-text); }
+.alert-card__content p { margin: 0.35rem 0 0 0; font-size: 0.9rem; color: var(--korus-text-muted); }
+.alert-card__date { font-size: 0.8rem; color: var(--korus-text-muted); margin-top: 0.5rem; display: block; }
+.btn-link { background: none; border: none; color: var(--korus-accent); font-size: 0.9rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: gap 0.2s ease; }
+.btn-link:hover { text-decoration: underline; gap: 0.5rem; }
+.btn-link__icon { font-size: 18px !important; }

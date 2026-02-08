@@ -1,0 +1,117 @@
+<div class="communication-page">
+  <div class="page-header animate-fade-in">
+    <h2><span class="material-symbols-outlined page-header__icon">campaign</span> Communication & Marketing</h2>
+    <a routerLink="/admin/communication/notifications" class="btn btn--secondary">
+      <span class="material-symbols-outlined btn__icon">notifications</span>
+      Notifications push / email
+    </a>
+  </div>
+
+  <div class="communication-grid stagger-children">
+    <section class="card card--form animate-scale-in">
+      <h3><span class="material-symbols-outlined card__icon">edit_note</span> Publier une annonce</h3>
+      <p class="card-desc">Créez des événements et annonces pour le centre commercial. Ils apparaîtront dans le calendrier.</p>
+      
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="announce-form">
+        <div class="form-group full-width">
+          <label for="title">Titre de l'événement *</label>
+          <input id="title" type="text" formControlName="title" placeholder="Ex: Soldes d'été KORUS" />
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startDate">Date de début *</label>
+            <input id="startDate" type="date" formControlName="startDate" />
+          </div>
+          <div class="form-group">
+            <label for="endDate">Date de fin</label>
+            <input id="endDate" type="date" formControlName="endDate" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="category">Catégorie</label>
+            <select id="category" formControlName="category" class="form-select">
+              @for (cat of categories; track cat.value) {
+                <option [value]="cat.value">{{ cat.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="allDay" />
+              <span class="checkbox-text">Journée entière</span>
+            </label>
+          </div>
+        </div>
+
+        @if (!form.get('allDay')?.value) {
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startTime">Heure de début</label>
+              <input id="startTime" type="time" formControlName="startTime" />
+            </div>
+            <div class="form-group">
+              <label for="endTime">Heure de fin</label>
+              <input id="endTime" type="time" formControlName="endTime" />
+            </div>
+          </div>
+        }
+
+        <div class="form-group full-width">
+          <label for="description">Description</label>
+          <textarea id="description" formControlName="description" rows="3" placeholder="Description de l'événement..."></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
+            <span class="material-symbols-outlined btn__icon">add_circle</span>
+            Créer l'événement
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card--calendar">
+      <h3><span class="material-symbols-outlined card__icon">calendar_month</span> Calendrier</h3>
+      <app-calendar [events]="events" [view]="'agenda'" />
+    </section>
+  </div>
+
+  <section class="card card--events animate-fade-in">
+    <h3><span class="material-symbols-outlined card__icon">event_note</span> Tous les événements</h3>
+    
+    @if (events.length === 0) {
+      <div class="events-empty">
+        <span class="material-symbols-outlined events-empty__icon">event_busy</span>
+        <p>Aucun événement enregistré</p>
+      </div>
+    } @else {
+      <div class="events-list">
+        @for (ev of events; track ev.id) {
+          <div class="event-item">
+            <div class="event-item__indicator" [style.background]="getCategoryColor(ev.category)"></div>
+            <div class="event-item__info">
+              <strong>{{ ev.title }}</strong>
+              <span class="event-item__dates">
+                <span class="material-symbols-outlined">calendar_today</span>
+                {{ formatDateRange(ev) }}
+                @if (ev.time) {
+                  <span class="event-item__time">
+                    <span class="material-symbols-outlined">schedule</span>
+                    {{ ev.time }}
+                    @if (ev.endTime) { - {{ ev.endTime }} }
+                  </span>
+                }
+              </span>
+            </div>
+            <span class="badge" [class.badge--active]="ev.published" [class.badge--pending]="!ev.published">
+              {{ ev.published ? 'Publié' : 'Brouillon' }}
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </section>
+</div>

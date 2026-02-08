@@ -1,0 +1,276 @@
+<div class="avis-page">
+  <!-- Header -->
+  <div class="avis-header">
+    <h1>
+      <span class="material-symbols-outlined">rate_review</span>
+      Mes avis
+    </h1>
+    <p class="avis-header__subtitle">Gérez vos avis sur les boutiques et produits</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="avis-tabs">
+    <button
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'all'"
+      (click)="setActiveTab('all')"
+    >
+      <span class="material-symbols-outlined">list</span>
+      Tous les avis
+      <span class="tab-count">({{ reviews().length }})</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'shops'"
+      (click)="setActiveTab('shops')"
+    >
+      <span class="material-symbols-outlined">store</span>
+      Boutiques
+      <span class="tab-count">({{ shopReviewsCount() }})</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'products'"
+      (click)="setActiveTab('products')"
+    >
+      <span class="material-symbols-outlined">inventory_2</span>
+      Produits
+      <span class="tab-count">({{ productReviewsCount() }})</span>
+    </button>
+  </div>
+
+  <!-- Pending Reviews Section -->
+  @if (pendingReviews().length > 0) {
+    <div class="pending-section">
+      <div class="pending-header">
+        <h2>
+          <span class="material-symbols-outlined">pending</span>
+          Avis en attente
+        </h2>
+        <p>Évaluez vos commandes récentes</p>
+      </div>
+      <div class="pending-list">
+        @for (pending of pendingReviews(); track pending.id) {
+          <div class="pending-card">
+            <div class="pending-info">
+              <div class="pending-icon">
+                @if (pending.type === 'shop') {
+                  <span class="material-symbols-outlined">store</span>
+                } @else {
+                  <span class="material-symbols-outlined">inventory_2</span>
+                }
+              </div>
+              <div class="pending-details">
+                <h3>
+                  @if (pending.type === 'shop') {
+                    {{ pending.shopName }}
+                  } @else {
+                    {{ pending.productName }}
+                  }
+                </h3>
+                <p class="pending-meta">
+                  Commande du {{ formatDate(pending.orderDate) }}
+                </p>
+              </div>
+            </div>
+            <button class="btn-review" (click)="openReviewModal(pending)">
+              <span class="material-symbols-outlined">rate_review</span>
+              Donner un avis
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Reviews List -->
+  <div class="reviews-section">
+    <div class="reviews-header">
+      <h2>
+        <span class="material-symbols-outlined">reviews</span>
+        Mes avis publiés
+      </h2>
+      <button class="btn-new-review" (click)="openReviewModal()">
+        <span class="material-symbols-outlined">add</span>
+        Nouvel avis
+      </button>
+    </div>
+
+    @if (publishedReviews().length === 0) {
+      <div class="empty-reviews">
+        <span class="material-symbols-outlined">rate_review</span>
+        <h3>Aucun avis pour le moment</h3>
+        <p>Commencez à partager vos expériences avec la communauté</p>
+        <button class="btn-primary" (click)="openReviewModal()">
+          <span class="material-symbols-outlined">add</span>
+          Écrire un avis
+        </button>
+      </div>
+    } @else {
+      <div class="reviews-list">
+        @for (review of publishedReviews(); track review.id) {
+          <div class="review-card">
+            <div class="review-header">
+              <div class="review-title">
+                <h3>
+                  @if (review.type === 'shop') {
+                    <span class="material-symbols-outlined">store</span>
+                    {{ review.shopName }}
+                  } @else {
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    {{ review.productName }}
+                    <span class="review-shop">chez {{ review.shopName }}</span>
+                  }
+                </h3>
+                <div class="review-rating">
+                  @for (star of getStarsArray(review.rating); track star) {
+                    <span
+                      class="star"
+                      [class.star--filled]="star <= review.rating"
+                    >
+                      <span class="material-symbols-outlined">star</span>
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="review-actions">
+                <button
+                  class="action-btn action-btn--edit"
+                  (click)="openEditModal(review)"
+                  title="Modifier"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button
+                  class="action-btn action-btn--delete"
+                  (click)="deleteReview(review.id)"
+                  title="Supprimer"
+                >
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </div>
+            <p class="review-comment">{{ review.comment }}</p>
+            <div class="review-footer">
+              <span class="review-date">
+                <span class="material-symbols-outlined">schedule</span>
+                {{ formatDate(review.date) }}
+              </span>
+              @if (review.type === 'product') {
+                <a
+                  [routerLink]="['/acheteur/produits', review.productId]"
+                  class="review-link"
+                >
+                  Voir le produit
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </a>
+              } @else {
+                <a
+                  [routerLink]="['/acheteur/boutiques', review.shopId]"
+                  class="review-link"
+                >
+                  Voir la boutique
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </a>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Review Modal -->
+  @if (showReviewModal()) {
+    <div class="modal-overlay" (click)="closeReviewModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>
+            @if (editingReview()) {
+              Modifier mon avis
+            } @else {
+              @if (pendingReview()) {
+                Donner un avis
+              } @else {
+                Nouvel avis
+              }
+            }
+          </h2>
+          <button class="modal-close" (click)="closeReviewModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (pendingReview()) {
+            <div class="review-target">
+              <div class="target-icon">
+                @if (pendingReview()!.type === 'shop') {
+                  <span class="material-symbols-outlined">store</span>
+                } @else {
+                  <span class="material-symbols-outlined">inventory_2</span>
+                }
+              </div>
+              <div class="target-info">
+                <h3>
+                  @if (pendingReview()!.type === 'shop') {
+                    {{ pendingReview()!.shopName }}
+                  } @else {
+                    {{ pendingReview()!.productName }}
+                  }
+                </h3>
+                <p>Commande du {{ formatDate(pendingReview()!.orderDate) }}</p>
+              </div>
+            </div>
+          }
+
+          <div class="form-group">
+            <label>Note</label>
+            <div class="rating-input">
+              @for (star of getStarsArray(5); track star) {
+                <button
+                  type="button"
+                  class="rating-star"
+                  [class.rating-star--active]="star <= formRating()"
+                  (click)="setRating(star)"
+                >
+                  <span class="material-symbols-outlined">star</span>
+                </button>
+              }
+              <span class="rating-value">{{ formRating() }}/5</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="comment">Commentaire</label>
+            <textarea
+              id="comment"
+              class="form-textarea"
+              rows="6"
+              [(ngModel)]="formComment"
+              placeholder="Partagez votre expérience..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeReviewModal()">
+            Annuler
+          </button>
+          <button
+            class="btn-primary"
+            (click)="submitReview()"
+            [disabled]="!formComment().trim()"
+          >
+            <span class="material-symbols-outlined">check</span>
+            @if (editingReview()) {
+              Modifier
+            } @else {
+              Publier
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

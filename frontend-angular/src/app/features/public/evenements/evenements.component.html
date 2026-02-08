@@ -1,0 +1,182 @@
+<div class="evenements-page">
+  <!-- Header Section -->
+  <section class="header-section">
+    <div class="container">
+      <h1 class="page-title">Événements</h1>
+      <p class="page-subtitle">Découvrez tous les événements, promotions et animations du KORUS Center</p>
+    </div>
+  </section>
+
+  <!-- Featured Event Banner -->
+  @if (featuredEvent(); as featured) {
+    <section class="featured-banner">
+      <div class="container">
+        <div class="featured-card">
+          <div class="featured-card__image">
+            @if (featured.image) {
+              <img [src]="featured.image" [alt]="featured.title" />
+            } @else {
+              <span class="material-symbols-outlined">celebration</span>
+            }
+            <div class="featured-card__badge">
+              <span class="material-symbols-outlined">star</span>
+              Événement à la une
+            </div>
+          </div>
+          <div class="featured-card__content">
+            <span class="featured-card__type">{{ featured.type }}</span>
+            <h2 class="featured-card__title">{{ featured.title }}</h2>
+            <p class="featured-card__description">{{ featured.description }}</p>
+            <div class="featured-card__meta">
+              <div class="meta-item">
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span>{{ formatDate(featured.date) }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="material-symbols-outlined">schedule</span>
+                <span>{{ featured.time }}</span>
+              </div>
+            </div>
+            <a href="#" class="btn btn--primary btn--lg">
+              <span class="material-symbols-outlined">info</span>
+              En savoir plus
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Filters Section -->
+  <section class="filters-section">
+    <div class="container">
+      <div class="filters">
+        @for (type of eventTypes; track type) {
+          <button
+            class="filter-btn"
+            [class.filter-btn--active]="selectedFilter() === type"
+            (click)="setFilter(type)"
+            type="button">
+            @if (type === 'Tous') {
+              <span class="material-symbols-outlined">apps</span>
+            } @else if (type === 'Promotions') {
+              <span class="material-symbols-outlined">local_offer</span>
+            } @else if (type === 'Animations') {
+              <span class="material-symbols-outlined">celebration</span>
+            } @else if (type === 'Ateliers') {
+              <span class="material-symbols-outlined">workshop</span>
+            }
+            {{ type }}
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Upcoming Events Grid -->
+  <section class="events-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Événements à venir</h2>
+        <p class="section-subtitle">{{ upcomingEvents().length }} événement{{ upcomingEvents().length > 1 ? 's' : '' }} trouvé{{ upcomingEvents().length > 1 ? 's' : '' }}</p>
+      </div>
+
+      @if (upcomingEvents().length > 0) {
+        <div class="events-grid">
+          @for (event of upcomingEvents(); track event.id) {
+            <article class="event-card">
+              <div class="event-card__image">
+                @if (event.image) {
+                  <img [src]="event.image" [alt]="event.title" />
+                } @else {
+                  <span class="material-symbols-outlined">
+                    @if (event.type === 'Promotions') {
+                      local_offer
+                    } @else if (event.type === 'Animations') {
+                      celebration
+                    } @else {
+                      workshop
+                    }
+                  </span>
+                }
+                <div class="event-card__date">
+                  <span class="day">{{ formatDateShort(event.date).split(' ')[0] }}</span>
+                  <span class="month">{{ formatDateShort(event.date).split(' ')[1] }}</span>
+                </div>
+                <div class="event-card__type-badge">{{ event.type }}</div>
+              </div>
+              <div class="event-card__content">
+                <h3 class="event-card__title">{{ event.title }}</h3>
+                <p class="event-card__description">{{ event.description }}</p>
+                <div class="event-card__meta">
+                  <span class="meta-time">
+                    <span class="material-symbols-outlined">schedule</span>
+                    {{ event.time }}
+                  </span>
+                  <a href="#" class="event-card__link">
+                    Détails
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                  </a>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <span class="material-symbols-outlined">event_busy</span>
+          <h3>Aucun événement trouvé</h3>
+          <p>Aucun événement ne correspond à votre filtre pour le moment.</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Past Events Section -->
+  @if (pastEvents().length > 0 && selectedFilter() === 'Tous') {
+    <section class="events-section events-section--past">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Événements passés</h2>
+          <p class="section-subtitle">{{ pastEvents().length }} événement{{ pastEvents().length > 1 ? 's' : '' }}</p>
+        </div>
+        <div class="events-grid events-grid--past">
+          @for (event of pastEvents(); track event.id) {
+            <article class="event-card event-card--past">
+              <div class="event-card__image">
+                @if (event.image) {
+                  <img [src]="event.image" [alt]="event.title" />
+                } @else {
+                  <span class="material-symbols-outlined">
+                    @if (event.type === 'Promotions') {
+                      local_offer
+                    } @else if (event.type === 'Animations') {
+                      celebration
+                    } @else {
+                      workshop
+                    }
+                  </span>
+                }
+                <div class="event-card__date">
+                  <span class="day">{{ formatDateShort(event.date).split(' ')[0] }}</span>
+                  <span class="month">{{ formatDateShort(event.date).split(' ')[1] }}</span>
+                </div>
+                <div class="event-card__type-badge">{{ event.type }}</div>
+              </div>
+              <div class="event-card__content">
+                <h3 class="event-card__title">{{ event.title }}</h3>
+                <p class="event-card__description">{{ event.description }}</p>
+                <div class="event-card__meta">
+                  <span class="meta-time">
+                    <span class="material-symbols-outlined">schedule</span>
+                    {{ event.time }}
+                  </span>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</div>

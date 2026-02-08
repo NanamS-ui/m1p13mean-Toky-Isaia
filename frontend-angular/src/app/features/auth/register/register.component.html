@@ -1,0 +1,176 @@
+<div class="register-page">
+  <div class="register-card">
+    <!-- Brand -->
+    <div class="register-brand">
+      <a routerLink="/accueil" class="register-back">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Retour à l'accueil
+      </a>
+      <div class="register-logo">K</div>
+      <h1>KORUS <span>Center</span></h1>
+      <p>Créez votre compte acheteur</p>
+    </div>
+
+    @if (success()) {
+      <!-- Message de succès -->
+      <div class="success-card">
+        <div class="success-icon">
+          <span class="material-symbols-outlined">check_circle</span>
+        </div>
+        <h2>Inscription réussie !</h2>
+        <p>Votre compte a été créé avec succès. Vous allez être redirigé vers la page de connexion...</p>
+        <div class="success-loader"></div>
+      </div>
+    } @else {
+      <!-- Formulaire d'inscription -->
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="register-form">
+        <!-- Nom & Prénom -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="lastName">
+              <span class="material-symbols-outlined">badge</span>
+              Nom
+            </label>
+            <input id="lastName" type="text" formControlName="lastName" placeholder="DUPONT" />
+            @if (form.get('lastName')?.invalid && form.get('lastName')?.touched) {
+              <span class="error-text">Minimum 2 caractères</span>
+            }
+          </div>
+          <div class="form-group">
+            <label for="firstName">
+              <span class="material-symbols-outlined">person</span>
+              Prénom
+            </label>
+            <input id="firstName" type="text" formControlName="firstName" placeholder="Marie" />
+            @if (form.get('firstName')?.invalid && form.get('firstName')?.touched) {
+              <span class="error-text">Minimum 2 caractères</span>
+            }
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">
+            <span class="material-symbols-outlined">mail</span>
+            Adresse email
+          </label>
+          <input id="email" type="email" formControlName="email" placeholder="marie.dupont@email.mg" autocomplete="email" />
+          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <span class="error-text">Adresse email invalide</span>
+          }
+        </div>
+
+        <!-- Téléphone -->
+        <div class="form-group">
+          <label for="phone">
+            <span class="material-symbols-outlined">phone</span>
+            Téléphone
+          </label>
+          <input id="phone" type="tel" formControlName="phone" placeholder="+261 34 00 000 00" />
+          @if (form.get('phone')?.invalid && form.get('phone')?.touched) {
+            <span class="error-text">Numéro invalide (ex: +261340000000 ou 0340000000)</span>
+          }
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="form-group">
+          <label for="password">
+            <span class="material-symbols-outlined">lock</span>
+            Mot de passe
+          </label>
+          <div class="input-password">
+            <input 
+              id="password" 
+              [type]="showPassword() ? 'text' : 'password'" 
+              formControlName="password" 
+              placeholder="••••••••" 
+              autocomplete="new-password" />
+            <button type="button" class="toggle-pwd" (click)="togglePassword()">
+              <span class="material-symbols-outlined">
+                {{ showPassword() ? 'visibility_off' : 'visibility' }}
+              </span>
+            </button>
+          </div>
+          <!-- Barre de force -->
+          @if (form.get('password')?.value) {
+            <div class="password-strength">
+              <div class="strength-bar">
+                <div 
+                  class="strength-fill" 
+                  [class]="'strength-fill strength-fill--' + passwordStrength.level"
+                  [style.width.%]="passwordStrength.percent">
+                </div>
+              </div>
+              <span class="strength-label" [class]="'strength-label strength-label--' + passwordStrength.level">
+                {{ passwordStrength.label }}
+              </span>
+            </div>
+          }
+          @if (form.get('password')?.invalid && form.get('password')?.touched) {
+            <span class="error-text">Minimum 6 caractères</span>
+          }
+        </div>
+
+        <!-- Confirmation mot de passe -->
+        <div class="form-group">
+          <label for="confirmPassword">
+            <span class="material-symbols-outlined">lock_reset</span>
+            Confirmer le mot de passe
+          </label>
+          <div class="input-password">
+            <input 
+              id="confirmPassword" 
+              [type]="showConfirmPassword() ? 'text' : 'password'" 
+              formControlName="confirmPassword" 
+              placeholder="••••••••" 
+              autocomplete="new-password" />
+            <button type="button" class="toggle-pwd" (click)="toggleConfirmPassword()">
+              <span class="material-symbols-outlined">
+                {{ showConfirmPassword() ? 'visibility_off' : 'visibility' }}
+              </span>
+            </button>
+          </div>
+          @if (form.get('confirmPassword')?.hasError('passwordMismatch') && form.get('confirmPassword')?.touched) {
+            <span class="error-text">Les mots de passe ne correspondent pas</span>
+          }
+        </div>
+
+        <!-- CGU -->
+        <label class="checkbox-group">
+          <input type="checkbox" formControlName="acceptTerms" />
+          <span class="checkmark"></span>
+          <span class="checkbox-label">
+            J'accepte les <a href="#" (click)="$event.preventDefault()">conditions générales</a> 
+            et la <a href="#" (click)="$event.preventDefault()">politique de confidentialité</a>
+          </span>
+        </label>
+        @if (form.get('acceptTerms')?.invalid && form.get('acceptTerms')?.touched) {
+          <span class="error-text">Vous devez accepter les conditions</span>
+        }
+
+        <!-- Erreur serveur -->
+        @if (error) {
+          <div class="alert alert--error">
+            <span class="material-symbols-outlined">error</span>
+            {{ error }}
+          </div>
+        }
+
+        <!-- Bouton submit -->
+        <button type="submit" class="btn btn--submit" [disabled]="form.invalid || submitting()">
+          @if (submitting()) {
+            <span class="spinner"></span>
+            Création en cours...
+          } @else {
+            <span class="material-symbols-outlined">person_add</span>
+            Créer mon compte
+          }
+        </button>
+      </form>
+
+      <div class="register-footer">
+        <p>Déjà un compte ? <a routerLink="/login">Se connecter</a></p>
+      </div>
+    }
+  </div>
+</div>

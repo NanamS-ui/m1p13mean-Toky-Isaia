@@ -1,0 +1,452 @@
+/* ============================================
+   Register Page - KORUS Center
+   Même thème que le login
+   ============================================ */
+
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background:
+    linear-gradient(135deg, rgba(15, 30, 51, 0.92) 0%, rgba(26, 54, 93, 0.88) 100%),
+    url("https://images.unsplash.com/photo-1567449303078-57ad995bd329?q=80&w=2070&auto=format&fit=crop")
+    center / cover no-repeat;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 520px;
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Back link */
+.register-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--korus-text-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  align-self: flex-start;
+}
+
+.register-back:hover { color: var(--korus-accent); }
+
+.register-back .material-symbols-outlined { font-size: 18px; }
+
+/* Brand */
+.register-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+}
+
+.register-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, var(--korus-accent) 0%, var(--korus-accent-dark) 100%);
+  border-radius: 18px;
+  font-size: 2rem;
+  font-weight: 900;
+  color: white;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  margin-top: 0.5rem;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.register-logo::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 22px;
+  border: 2px solid rgba(245, 158, 11, 0.25);
+  pointer-events: none;
+}
+
+.register-brand h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--korus-primary);
+  text-align: center;
+}
+
+.register-brand h1 span {
+  color: var(--korus-accent);
+}
+
+.register-brand p {
+  margin: 0;
+  color: var(--korus-text-muted);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* ============================================
+   Form
+   ============================================ */
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--korus-text);
+}
+
+.form-group label .material-symbols-outlined {
+  font-size: 17px;
+  color: var(--korus-text-muted);
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="tel"],
+.form-group input[type="password"] {
+  padding: 0.8rem 1rem;
+  border: 2px solid var(--korus-border);
+  border-radius: 12px;
+  font-size: 0.92rem;
+  transition: all 0.2s ease;
+  background: var(--korus-bg);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--korus-accent);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  background: white;
+}
+
+.error-text {
+  font-size: 0.78rem;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* ============================================
+   Password input with toggle
+   ============================================ */
+
+.input-password {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-password input {
+  padding-right: 3rem !important;
+  width: 100%;
+}
+
+.toggle-pwd {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: var(--korus-text-muted);
+  transition: color 0.2s ease;
+  display: flex;
+}
+
+.toggle-pwd:hover { color: var(--korus-accent); }
+
+.toggle-pwd .material-symbols-outlined { font-size: 20px; }
+
+/* ============================================
+   Password strength bar
+   ============================================ */
+
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 5px;
+  background: var(--korus-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.strength-fill--weak    { background: #ef4444; }
+.strength-fill--fair    { background: var(--korus-accent); }
+.strength-fill--good    { background: #3b82f6; }
+.strength-fill--strong  { background: #22c55e; }
+.strength-fill--excellent { background: #10b981; }
+
+.strength-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.strength-label--weak    { color: #ef4444; }
+.strength-label--fair    { color: var(--korus-accent); }
+.strength-label--good    { color: #3b82f6; }
+.strength-label--strong  { color: #22c55e; }
+.strength-label--excellent { color: #10b981; }
+
+/* ============================================
+   Checkbox
+   ============================================ */
+
+.checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--korus-text);
+  line-height: 1.5;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--korus-accent);
+  cursor: pointer;
+}
+
+.checkbox-label a {
+  color: var(--korus-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.checkbox-label a:hover { text-decoration: underline; }
+
+/* ============================================
+   Alert
+   ============================================ */
+
+.alert--error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: #dc2626;
+}
+
+.alert--error .material-symbols-outlined { font-size: 20px; }
+
+/* ============================================
+   Submit button
+   ============================================ */
+
+.btn--submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.95rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--korus-accent) 0%, var(--korus-accent-dark) 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+  margin-top: 0.25rem;
+}
+
+.btn--submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+}
+
+.btn--submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--submit .material-symbols-outlined { font-size: 20px; }
+
+/* Spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Success card
+   ============================================ */
+
+.success-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  animation: fadeUp 0.4s ease-out;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.success-icon .material-symbols-outlined {
+  font-size: 42px;
+  color: #22c55e;
+}
+
+.success-card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--korus-text-dark);
+}
+
+.success-card p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--korus-text-muted);
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.success-loader {
+  width: 120px;
+  height: 4px;
+  background: var(--korus-border);
+  border-radius: 3px;
+  margin-top: 1.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.success-loader::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--korus-accent), #22c55e);
+  border-radius: 3px;
+  animation: loadProgress 2.5s ease-out forwards;
+}
+
+@keyframes loadProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.register-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--korus-border);
+}
+
+.register-footer p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--korus-text-muted);
+}
+
+.register-footer a {
+  color: var(--korus-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register-footer a:hover { text-decoration: underline; }
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 520px) {
+  .register-card {
+    padding: 1.75rem 1.5rem;
+    border-radius: 20px;
+  }
+
+  .register-brand h1 { font-size: 1.5rem; }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

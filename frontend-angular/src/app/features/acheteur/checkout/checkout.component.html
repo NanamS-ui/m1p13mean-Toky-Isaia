@@ -1,0 +1,507 @@
+<div class="checkout-page">
+  <!-- Header -->
+  <div class="checkout-header">
+    <h1>
+      <span class="material-symbols-outlined">shopping_cart_checkout</span>
+      Finaliser la commande
+    </h1>
+    <p class="checkout-header__subtitle">Complétez les informations pour finaliser votre achat</p>
+  </div>
+
+  <!-- Stepper -->
+  <div class="checkout-stepper">
+    <div class="stepper-container">
+      <!-- Step 1: Livraison -->
+      <button
+        class="stepper-step"
+        [class.stepper-step--active]="currentStep() === 1"
+        [class.stepper-step--completed]="currentStep() > 1"
+        (click)="goToStep(1)"
+      >
+        <div class="step-number">
+          @if (currentStep() > 1) {
+            <span class="material-symbols-outlined">check</span>
+          } @else {
+            <span>1</span>
+          }
+        </div>
+        <span class="step-label">Livraison</span>
+      </button>
+
+      <!-- Step Connector -->
+      <div class="stepper-connector" [class.stepper-connector--active]="currentStep() > 1"></div>
+
+      <!-- Step 2: Paiement -->
+      <button
+        class="stepper-step"
+        [class.stepper-step--active]="currentStep() === 2"
+        [class.stepper-step--completed]="currentStep() > 2"
+        (click)="goToStep(2)"
+      >
+        <div class="step-number">
+          @if (currentStep() > 2) {
+            <span class="material-symbols-outlined">check</span>
+          } @else {
+            <span>2</span>
+          }
+        </div>
+        <span class="step-label">Paiement</span>
+      </button>
+
+      <!-- Step Connector -->
+      <div class="stepper-connector" [class.stepper-connector--active]="currentStep() > 2"></div>
+
+      <!-- Step 3: Confirmation -->
+      <button
+        class="stepper-step"
+        [class.stepper-step--active]="currentStep() === 3"
+        [class.stepper-step--completed]="currentStep() === 3"
+        (click)="goToStep(3)"
+      >
+        <div class="step-number">
+          @if (currentStep() === 3) {
+            <span class="material-symbols-outlined">check</span>
+          } @else {
+            <span>3</span>
+          }
+        </div>
+        <span class="step-label">Confirmation</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step Content -->
+  <div class="checkout-content">
+    <!-- Step 1: Delivery -->
+    @if (currentStep() === 1) {
+      <div class="step-content">
+        <div class="step-main">
+          <div class="step-section">
+            <h2>
+              <span class="material-symbols-outlined">local_shipping</span>
+              Méthode de livraison
+            </h2>
+
+            <form [formGroup]="deliveryForm">
+              <!-- Delivery Method Selection -->
+              <div class="delivery-methods">
+                <label class="delivery-option">
+                  <input
+                    type="radio"
+                    formControlName="method"
+                    value="home"
+                    class="radio-input"
+                  />
+                  <div class="delivery-option-content">
+                    <div class="delivery-option-header">
+                      <span class="material-symbols-outlined">home</span>
+                      <div>
+                        <h3>Livraison à domicile</h3>
+                        <p>Livraison à votre adresse (3-5 jours ouvrés)</p>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="delivery-option">
+                  <input
+                    type="radio"
+                    formControlName="method"
+                    value="store"
+                    class="radio-input"
+                  />
+                  <div class="delivery-option-content">
+                    <div class="delivery-option-header">
+                      <span class="material-symbols-outlined">store</span>
+                      <div>
+                        <h3>Retrait en magasin</h3>
+                        <p>Récupérez votre commande dans la boutique (1-2 jours)</p>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Address Selection (Home Delivery) -->
+              @if (deliveryMethod() === 'home') {
+                <div class="form-section">
+                  <div class="section-header">
+                    <h3>
+                      <span class="material-symbols-outlined">location_on</span>
+                      Adresse de livraison
+                    </h3>
+                    <button type="button" class="btn-add" (click)="addNewAddress()">
+                      <span class="material-symbols-outlined">add</span>
+                      Ajouter une adresse
+                    </button>
+                  </div>
+
+                  <div class="address-list">
+                    @for (address of deliveryAddresses(); track address.id) {
+                      <label class="address-card">
+                        <input
+                          type="radio"
+                          formControlName="addressId"
+                          [value]="address.id"
+                          class="radio-input"
+                        />
+                        <div class="address-card-content">
+                          <div class="address-header">
+                            <span class="address-label">{{ address.label }}</span>
+                            @if (address.isDefault) {
+                              <span class="address-badge">Par défaut</span>
+                            }
+                          </div>
+                          <p class="address-text">
+                            {{ address.street }}<br>
+                            {{ address.postalCode }} {{ address.city }}
+                          </p>
+                        </div>
+                      </label>
+                    }
+                  </div>
+
+                  @if (deliveryForm.get('addressId')?.invalid && deliveryForm.get('addressId')?.touched) {
+                    <p class="error-message">Veuillez sélectionner une adresse de livraison</p>
+                  }
+                </div>
+              }
+
+              <!-- Shop Selection (Store Pickup) -->
+              @if (deliveryMethod() === 'store') {
+                <div class="form-section">
+                  <h3>
+                    <span class="material-symbols-outlined">store</span>
+                    Boutique de retrait
+                  </h3>
+
+                  <div class="shop-list">
+                    @for (shop of pickupShops(); track shop.id) {
+                      <label class="shop-card">
+                        <input
+                          type="radio"
+                          formControlName="shopId"
+                          [value]="shop.id"
+                          class="radio-input"
+                        />
+                        <div class="shop-card-content">
+                          <div class="shop-header">
+                            <span class="material-symbols-outlined">store</span>
+                            <div>
+                              <h4>{{ shop.name }}</h4>
+                              <p>{{ shop.zone }} - {{ shop.address }}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+                    }
+                  </div>
+
+                  @if (deliveryForm.get('shopId')?.invalid && deliveryForm.get('shopId')?.touched) {
+                    <p class="error-message">Veuillez sélectionner une boutique de retrait</p>
+                  }
+                </div>
+              }
+            </form>
+          </div>
+        </div>
+
+        <!-- Order Summary Sidebar -->
+        <div class="step-sidebar">
+          <div class="order-summary">
+            <h3>
+              <span class="material-symbols-outlined">receipt</span>
+              Récapitulatif
+            </h3>
+
+            <div class="summary-items">
+              @for (group of cartGroups(); track group.boutiqueId) {
+                <div class="summary-group">
+                  <div class="summary-group-header">
+                    <span class="material-symbols-outlined">store</span>
+                    <span>{{ group.boutiqueName }}</span>
+                  </div>
+                  <div class="summary-items-list">
+                    @for (item of group.items; track item.id) {
+                      <div class="summary-item">
+                        <span class="item-name">{{ item.productName }}</span>
+                        <span class="item-quantity">x{{ item.quantity }}</span>
+                        <span class="item-price">{{ formatCurrency(getItemSubtotal(item)) }}</span>
+                      </div>
+                    }
+                  </div>
+                  <div class="summary-group-total">
+                    <span>Sous-total:</span>
+                    <span>{{ formatCurrency(group.subtotal) }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="summary-total">
+              <span>Total:</span>
+              <span>{{ formatCurrency(total()) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Step 2: Payment -->
+    @if (currentStep() === 2) {
+      <div class="step-content">
+        <div class="step-main">
+          <div class="step-section">
+            <h2>
+              <span class="material-symbols-outlined">credit_card</span>
+              Informations de paiement
+            </h2>
+
+            <form [formGroup]="paymentForm">
+              <!-- Card Number -->
+              <div class="form-group">
+                <label for="cardNumber">Numéro de carte</label>
+                <input
+                  id="cardNumber"
+                  type="text"
+                  formControlName="cardNumber"
+                  placeholder="1234 5678 9012 3456"
+                  maxlength="19"
+                  (input)="onCardNumberInput($event)"
+                  [class.error]="paymentForm.get('cardNumber')?.invalid && paymentForm.get('cardNumber')?.touched"
+                />
+                @if (paymentForm.get('cardNumber')?.invalid && paymentForm.get('cardNumber')?.touched) {
+                  <p class="error-message">Numéro de carte invalide</p>
+                }
+              </div>
+
+              <!-- Card Details Row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="expiryMonth">Mois</label>
+                  <input
+                    id="expiryMonth"
+                    type="text"
+                    formControlName="expiryMonth"
+                    placeholder="MM"
+                    maxlength="2"
+                    [class.error]="paymentForm.get('expiryMonth')?.invalid && paymentForm.get('expiryMonth')?.touched"
+                  />
+                  @if (paymentForm.get('expiryMonth')?.invalid && paymentForm.get('expiryMonth')?.touched) {
+                    <p class="error-message">Mois invalide</p>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="expiryYear">Année</label>
+                  <input
+                    id="expiryYear"
+                    type="text"
+                    formControlName="expiryYear"
+                    placeholder="YY"
+                    maxlength="2"
+                    [class.error]="paymentForm.get('expiryYear')?.invalid && paymentForm.get('expiryYear')?.touched"
+                  />
+                  @if (paymentForm.get('expiryYear')?.invalid && paymentForm.get('expiryYear')?.touched) {
+                    <p class="error-message">Année invalide</p>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="cvv">CVV</label>
+                  <input
+                    id="cvv"
+                    type="text"
+                    formControlName="cvv"
+                    placeholder="123"
+                    maxlength="4"
+                    [class.error]="paymentForm.get('cvv')?.invalid && paymentForm.get('cvv')?.touched"
+                  />
+                  @if (paymentForm.get('cvv')?.invalid && paymentForm.get('cvv')?.touched) {
+                    <p class="error-message">CVV invalide</p>
+                  }
+                </div>
+              </div>
+
+              <!-- Cardholder Name -->
+              <div class="form-group">
+                <label for="cardholderName">Nom sur la carte</label>
+                <input
+                  id="cardholderName"
+                  type="text"
+                  formControlName="cardholderName"
+                  placeholder="Jean Dupont"
+                  [class.error]="paymentForm.get('cardholderName')?.invalid && paymentForm.get('cardholderName')?.touched"
+                />
+                @if (paymentForm.get('cardholderName')?.invalid && paymentForm.get('cardholderName')?.touched) {
+                  <p class="error-message">Nom invalide</p>
+                }
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Order Summary Sidebar -->
+        <div class="step-sidebar">
+          <div class="order-summary">
+            <h3>
+              <span class="material-symbols-outlined">receipt</span>
+              Récapitulatif
+            </h3>
+
+            <div class="summary-items">
+              @for (group of cartGroups(); track group.boutiqueId) {
+                <div class="summary-group">
+                  <div class="summary-group-header">
+                    <span class="material-symbols-outlined">store</span>
+                    <span>{{ group.boutiqueName }}</span>
+                  </div>
+                  <div class="summary-items-list">
+                    @for (item of group.items; track item.id) {
+                      <div class="summary-item">
+                        <span class="item-name">{{ item.productName }}</span>
+                        <span class="item-quantity">x{{ item.quantity }}</span>
+                        <span class="item-price">{{ formatCurrency(getItemSubtotal(item)) }}</span>
+                      </div>
+                    }
+                  </div>
+                  <div class="summary-group-total">
+                    <span>Sous-total:</span>
+                    <span>{{ formatCurrency(group.subtotal) }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="summary-delivery">
+              <div class="summary-delivery-info">
+                <span class="material-symbols-outlined">
+                  {{ deliveryMethod() === 'home' ? 'home' : 'store' }}
+                </span>
+                <div>
+                  <strong>
+                    {{ deliveryMethod() === 'home' ? 'Livraison à domicile' : 'Retrait en magasin' }}
+                  </strong>
+                  <p>
+                    @if (deliveryMethod() === 'home' && getSelectedAddress()) {
+                      {{ getSelectedAddress()!.street }}, {{ getSelectedAddress()!.city }}
+                    }
+                    @if (deliveryMethod() === 'store' && getSelectedShop()) {
+                      {{ getSelectedShop()!.name }} - {{ getSelectedShop()!.address }}
+                    }
+                  </p>
+                </div>
+              </div>
+              <p class="delivery-estimate">
+                <span class="material-symbols-outlined">schedule</span>
+                Estimation: {{ getEstimatedDate() }}
+              </p>
+            </div>
+
+            <div class="summary-total">
+              <span>Total:</span>
+              <span>{{ formatCurrency(total()) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Step 3: Confirmation -->
+    @if (currentStep() === 3) {
+      <div class="step-content step-content--centered">
+        <div class="confirmation-card">
+          <div class="confirmation-icon">
+            <span class="material-symbols-outlined">check_circle</span>
+          </div>
+
+          <h2>Commande confirmée !</h2>
+          <p class="confirmation-message">
+            Votre commande a été enregistrée avec succès.
+          </p>
+
+          <div class="confirmation-details">
+            <div class="confirmation-detail">
+              <span class="material-symbols-outlined">receipt</span>
+              <div>
+                <strong>Numéro de commande</strong>
+                <p>{{ orderNumber() }}</p>
+              </div>
+            </div>
+
+            <div class="confirmation-detail">
+              <span class="material-symbols-outlined">
+                {{ deliveryMethod() === 'home' ? 'home' : 'store' }}
+              </span>
+              <div>
+                <strong>
+                  {{ deliveryMethod() === 'home' ? 'Livraison à domicile' : 'Retrait en magasin' }}
+                </strong>
+                <p>
+                  @if (deliveryMethod() === 'home' && getSelectedAddress()) {
+                    {{ getSelectedAddress()!.street }}, {{ getSelectedAddress()!.city }}
+                  }
+                  @if (deliveryMethod() === 'store' && getSelectedShop()) {
+                    {{ getSelectedShop()!.name }} - {{ getSelectedShop()!.address }}
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div class="confirmation-detail">
+              <span class="material-symbols-outlined">schedule</span>
+              <div>
+                <strong>Date estimée</strong>
+                <p>{{ getEstimatedDate() }}</p>
+              </div>
+            </div>
+
+            <div class="confirmation-detail">
+              <span class="material-symbols-outlined">payments</span>
+              <div>
+                <strong>Montant total</strong>
+                <p>{{ formatCurrency(total()) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="confirmation-actions">
+            <button class="btn-primary" (click)="goToOrderTracking()">
+              <span class="material-symbols-outlined">track_changes</span>
+              Suivre ma commande
+            </button>
+            <button class="btn-secondary" (click)="goToHome()">
+              <span class="material-symbols-outlined">home</span>
+              Retour à l'accueil
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Navigation Buttons -->
+  @if (currentStep() < 3) {
+    <div class="checkout-navigation">
+      @if (currentStep() > 1) {
+        <button class="btn-back" (click)="previousStep()">
+          <span class="material-symbols-outlined">arrow_back</span>
+          Précédent
+        </button>
+      }
+      <div class="navigation-spacer"></div>
+      @if (currentStep() === 1) {
+        <button class="btn-next" (click)="nextStep()">
+          Continuer vers le paiement
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+      }
+      @if (currentStep() === 2) {
+        <button class="btn-submit" (click)="submitOrder()">
+          <span class="material-symbols-outlined">lock</span>
+          Confirmer et payer
+        </button>
+      }
+    </div>
+  }
+</div>

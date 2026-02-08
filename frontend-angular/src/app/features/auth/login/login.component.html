@@ -1,0 +1,75 @@
+<div class="login-page">
+  <div class="login-card">
+    <!-- Brand -->
+    <div class="login-brand">
+      <a routerLink="/accueil" class="login-back">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Retour à l'accueil
+      </a>
+      <div class="login-logo">K</div>
+      <h1>KORUS <span>Center</span></h1>
+      <p>Connectez-vous à votre espace</p>
+    </div>
+
+    <!-- Sélecteur de compte démo -->
+    <div class="demo-accounts">
+      <span class="demo-accounts__label">Comptes de démonstration :</span>
+      <div class="demo-accounts__grid">
+        @for (account of demoAccounts; track account.email) {
+          <button 
+            type="button"
+            class="demo-btn"
+            [style.--btn-color]="account.color"
+            (click)="fillDemo(account.email, account.password)">
+            <span class="material-symbols-outlined">{{ account.icon }}</span>
+            <div class="demo-btn__info">
+              <strong>{{ account.label }}</strong>
+              <small>{{ account.email }}</small>
+            </div>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Formulaire -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="email">
+          <span class="material-symbols-outlined">mail</span>
+          Email
+        </label>
+        <input id="email" type="email" formControlName="email" placeholder="votre@email.mg" autocomplete="email" />
+        @if (form.get('email')?.invalid && form.get('email')?.touched) {
+          <span class="error-text">Email invalide</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">
+          <span class="material-symbols-outlined">lock</span>
+          Mot de passe
+        </label>
+        <input id="password" type="password" formControlName="password" placeholder="••••••••" autocomplete="current-password" />
+        @if (form.get('password')?.invalid && form.get('password')?.touched) {
+          <span class="error-text">Minimum 6 caractères</span>
+        }
+      </div>
+
+      @if (error) {
+        <div class="alert alert--error">
+          <span class="material-symbols-outlined">error</span>
+          {{ error }}
+        </div>
+      }
+
+      <button type="submit" class="btn btn--submit" [disabled]="form.invalid">
+        <span class="material-symbols-outlined">login</span>
+        Se connecter
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <p>Pas encore de compte ? <a routerLink="/inscription">Créer un compte</a></p>
+    </div>
+  </div>
+</div>

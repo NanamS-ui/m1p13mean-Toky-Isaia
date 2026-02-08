@@ -1,0 +1,493 @@
+/* ============================================
+   Communication & Marketing Page
+   Premium Modern Design
+   ============================================ */
+
+.communication-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* ============================================
+   Page Header
+   ============================================ */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--korus-text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  letter-spacing: -0.02em;
+}
+
+.page-header__icon {
+  font-size: 32px !important;
+  color: var(--korus-accent);
+  background: linear-gradient(135deg, var(--korus-accent) 0%, var(--korus-accent-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn--secondary {
+  padding: 0.6rem 1.15rem;
+  border: 1px solid var(--korus-border);
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--korus-text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: white;
+  box-shadow: var(--korus-shadow-sm);
+  transition: all 0.2s var(--ease-spring);
+}
+
+.btn--secondary:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--korus-accent);
+  background: rgba(245, 158, 11, 0.04);
+  transform: translateY(-2px);
+  box-shadow: var(--korus-shadow);
+}
+
+.btn--secondary .btn__icon {
+  font-size: 18px !important;
+}
+
+/* ============================================
+   Communication Grid
+   ============================================ */
+
+.communication-grid {
+  display: grid;
+  grid-template-columns: minmax(400px, 520px) 1fr;
+  gap: 1.75rem;
+}
+
+@media (max-width: 1100px) {
+  .communication-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Cards
+   ============================================ */
+
+.card__icon {
+  font-size: 22px !important;
+  color: var(--korus-accent);
+  vertical-align: middle;
+}
+
+.card h3 {
+  margin: 0 0 0.6rem 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--korus-text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.card-desc {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.9rem;
+  color: var(--korus-text-muted);
+  line-height: 1.5;
+}
+
+/* Form Card */
+.card--form {
+  min-width: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.card--form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ============================================
+   Announce Form
+   ============================================ */
+
+.announce-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  position: relative;
+  z-index: 1;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--korus-text);
+  margin-bottom: 0.45rem;
+  letter-spacing: -0.01em;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--korus-border);
+  border-radius: 12px;
+  font-size: 0.925rem;
+  font-family: inherit;
+  background: white;
+  color: var(--korus-text-dark);
+  transition: all 0.2s var(--ease-spring);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--korus-text-muted);
+}
+
+.form-group input:hover,
+.form-group textarea:hover {
+  border-color: #cbd5e1;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--korus-accent);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Select */
+.form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--korus-border);
+  border-radius: 12px;
+  font-size: 0.925rem;
+  font-family: inherit;
+  background: white;
+  color: var(--korus-text-dark);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.form-select:hover {
+  border-color: #cbd5e1;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--korus-accent);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+/* Checkbox */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  padding-top: 1.75rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--korus-border);
+  border-radius: 6px;
+  appearance: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, var(--korus-accent) 0%, var(--korus-accent-dark) 100%);
+  border-color: var(--korus-accent);
+}
+
+.checkbox-label input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-label input[type="checkbox"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+
+.checkbox-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--korus-text);
+}
+
+.form-actions {
+  padding-top: 0.5rem;
+}
+
+/* Primary Button */
+.btn--primary {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--korus-accent) 0%, var(--korus-accent-dark) 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.925rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  transition: all 0.2s var(--ease-spring);
+}
+
+.btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn--primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn--primary .btn__icon {
+  font-size: 18px !important;
+}
+
+/* ============================================
+   Calendar Card
+   ============================================ */
+
+.card--calendar {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.card--calendar:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.card--calendar h3 {
+  display: none;
+}
+
+/* ============================================
+   Events Card
+   ============================================ */
+
+.card--events {
+  margin-top: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
+}
+
+.card--events h3 {
+  margin-bottom: 1.25rem;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.events-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  color: var(--korus-text-muted);
+}
+
+.events-empty__icon {
+  font-size: 48px !important;
+  opacity: 0.4;
+}
+
+.events-empty p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: var(--korus-bg);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  transition: all 0.2s var(--ease-spring);
+}
+
+.event-item:hover {
+  background: white;
+  border-color: rgba(245, 158, 11, 0.2);
+  box-shadow: var(--korus-shadow-sm);
+  transform: translateX(4px);
+}
+
+.event-item__indicator {
+  width: 4px;
+  height: 40px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.event-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.event-item__info strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--korus-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-item__dates {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--korus-text-muted);
+}
+
+.event-item__dates .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+.event-item__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--korus-border);
+}
+
+.event-item__time .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+/* Badges */
+.badge {
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.badge--active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.badge--pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--korus-accent-dark);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .page-header h2 {
+    font-size: 1.35rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group.full-width {
+    grid-column: auto;
+  }
+
+  .btn--secondary span:not(.btn__icon) {
+    display: none;
+  }
+
+  .btn--secondary {
+    padding: 0.6rem 0.85rem;
+  }
+}

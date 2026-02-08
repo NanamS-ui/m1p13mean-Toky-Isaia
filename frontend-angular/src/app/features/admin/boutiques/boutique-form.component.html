@@ -1,0 +1,48 @@
+<div class="form-page">
+  <div class="page-header">
+    <a routerLink="/admin/boutiques" class="back-link">← Retour aux boutiques</a>
+    <h2>Créer une boutique</h2>
+  </div>
+  <div class="card form-card">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="name">Nom de la boutique *</label>
+          <input id="name" type="text" formControlName="name" placeholder="Ex: Fashion House" />
+        </div>
+        <div class="form-group">
+          <label for="category">Catégorie *</label>
+          <select id="category" formControlName="category">
+            @for (cat of categories; track cat.value) {
+              <option [value]="cat.value">{{ cat.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label for="description">Description</label>
+          <textarea id="description" formControlName="description" rows="3" placeholder="Description courte de la boutique"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="ownerEmail">Email propriétaire *</label>
+          <input id="ownerEmail" type="email" formControlName="ownerEmail" placeholder="contact@boutique.mg" />
+        </div>
+        <div class="form-group">
+          <label for="zone">Zone / Emplacement</label>
+          <input id="zone" type="text" formControlName="zone" placeholder="Ex: Aile Nord, RDC" />
+        </div>
+        <div class="form-group">
+          <label for="surfaceM2">Surface (m²) *</label>
+          <input id="surfaceM2" type="number" formControlName="surfaceM2" min="1" />
+        </div>
+        <div class="form-group">
+          <label for="monthlyRent">Loyer mensuel (Ar) *</label>
+          <input id="monthlyRent" type="number" formControlName="monthlyRent" min="0" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <a routerLink="/admin/boutiques" class="btn btn--ghost">Annuler</a>
+        <button type="submit" class="btn btn--primary" [disabled]="form.invalid">Créer la boutique</button>
+      </div>
+    </form>
+  </div>
+</div>
