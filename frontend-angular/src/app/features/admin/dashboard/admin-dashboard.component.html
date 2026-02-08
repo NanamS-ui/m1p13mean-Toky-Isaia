@@ -1,0 +1,80 @@
+<div class="dashboard">
+  <div class="page-header animate-fade-in">
+    <h2><span class="material-symbols-outlined page-header__icon">dashboard</span> Dashboard</h2>
+    <div class="page-actions">
+      <button type="button" class="btn btn--secondary">
+        <span class="material-symbols-outlined btn__icon">picture_as_pdf</span>
+        Exporter PDF
+      </button>
+      <button type="button" class="btn btn--secondary">
+        <span class="material-symbols-outlined btn__icon">table_chart</span>
+        Exporter Excel
+      </button>
+    </div>
+  </div>
+
+  <section class="stats-grid stagger-children">
+    @for (stat of stats; track stat.label) {
+      <a [routerLink]="stat.link || '#'" class="stat-card">
+        <div class="stat-card__icon">
+          <span class="material-symbols-outlined">{{ stat.icon }}</span>
+        </div>
+        <div class="stat-card__content">
+          <span class="stat-card__value">{{ stat.value }}</span>
+          <span class="stat-card__label">{{ stat.label }}</span>
+          @if (stat.trend) {
+            <span class="stat-card__trend">{{ stat.trend }}</span>
+          }
+        </div>
+      </a>
+    }
+  </section>
+
+  <div class="dashboard-grid stagger-children">
+    <section class="card card--chart">
+      <h3><span class="material-symbols-outlined card__icon">show_chart</span> Chiffre d'affaires du centre (6 derniers mois)</h3>
+      <div class="chart-bar">
+        <div class="chart-bar__bars">
+          @for (bar of chartData; track bar.month) {
+            <div class="chart-bar__group">
+              <div class="chart-bar__bar-wrap">
+                <div class="chart-bar__bar" [style.height.%]="(bar.value / maxChartValue) * 100" [attr.data-value]="bar.value + ' M'"></div>
+              </div>
+              <span class="chart-bar__label">{{ bar.month }}</span>
+            </div>
+          }
+        </div>
+        <div class="chart-bar__y-axis">
+          <span>0</span>
+          <span>10</span>
+          <span>20</span>
+          <span>30</span>
+          <span>40 M Ar</span>
+        </div>
+      </div>
+    </section>
+    <section class="card card--alerts">
+      <h3><span class="material-symbols-outlined card__icon">notifications_active</span> Alertes récentes</h3>
+      <ul class="alert-list">
+        @for (alert of recentAlerts; track alert.message) {
+          <li class="alert-item" [class]="'alert-item--' + alert.type">
+            <span class="alert-dot"></span>
+            {{ alert.message }}
+          </li>
+        }
+      </ul>
+      <a routerLink="/admin/alertes" class="link-more">Voir toutes les alertes <span class="material-symbols-outlined link-more__icon">arrow_forward</span></a>
+    </section>
+  </div>
+
+  <section class="card card--shortcuts animate-fade-in">
+    <h3><span class="material-symbols-outlined card__icon">link</span> Raccourcis</h3>
+    <div class="shortcuts">
+      <a routerLink="/admin/boutiques" class="shortcut"><span class="material-symbols-outlined shortcut__icon">store</span> Gestion des boutiques</a>
+      <a routerLink="/admin/utilisateurs" class="shortcut"><span class="material-symbols-outlined shortcut__icon">people</span> Utilisateurs & support</a>
+      <a routerLink="/admin/statistiques" class="shortcut"><span class="material-symbols-outlined shortcut__icon">bar_chart</span> Statistiques & rapports</a>
+      <a routerLink="/admin/communication" class="shortcut"><span class="material-symbols-outlined shortcut__icon">campaign</span> Annonces & événements</a>
+      <a routerLink="/admin/roles" class="shortcut"><span class="material-symbols-outlined shortcut__icon">admin_panel_settings</span> Rôles & permissions</a>
+    </div>
+  </section>
+</div>

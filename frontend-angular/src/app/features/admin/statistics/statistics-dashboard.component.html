@@ -1,0 +1,64 @@
+<div class="stats-page">
+  <div class="page-header animate-fade-in">
+    <h2><span class="material-symbols-outlined page-header__icon">bar_chart</span> Dashboard & statistiques (Centre)</h2>
+    <div class="page-actions">
+      <button type="button" class="btn btn--secondary">
+        <span class="material-symbols-outlined btn__icon">picture_as_pdf</span>
+        Exporter PDF
+      </button>
+      <button type="button" class="btn btn--primary">
+        <span class="material-symbols-outlined btn__icon">table_chart</span>
+        Exporter Excel
+      </button>
+    </div>
+  </div>
+
+  <section class="card stagger-children">
+    <h3><span class="material-symbols-outlined card__icon">analytics</span> Indicateurs clés</h3>
+    <div class="kpi-grid">
+      @for (kpi of kpiList; track kpi.label) {
+        <div class="kpi-card">
+          <span class="kpi-card__icon"><span class="material-symbols-outlined">{{ kpi.icon }}</span></span>
+          <span class="kpi-label">{{ kpi.label }}</span>
+          <span class="kpi-value">{{ kpi.value }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <div class="stats-charts stagger-children">
+    <section class="card card--donut">
+      <h3><span class="material-symbols-outlined card__icon">donut_large</span> CA par catégorie</h3>
+      <div class="donut-wrap">
+        <div class="donut-chart" [style.background]="getDonutGradient()"></div>
+        <div class="donut-legend">
+          @for (slice of categoryData; track slice.label) {
+            <div class="donut-legend__item">
+              <span class="donut-legend__dot" [style.background]="slice.color"></span>
+              <span>{{ slice.label }} {{ slice.value }} %</span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+    <section class="card card--bars">
+      <h3><span class="material-symbols-outlined card__icon">horizontal_rule</span> CA par boutique (M Ar)</h3>
+      <div class="bars-chart">
+        @for (bar of boutiqueBars; track bar.name) {
+          <div class="bars-chart__row">
+            <span class="bars-chart__label">{{ bar.name }}</span>
+            <div class="bars-chart__track">
+              <div class="bars-chart__fill" [style.width.%]="(bar.value / maxBoutiqueValue) * 100"></div>
+              <span class="bars-chart__value">{{ bar.value }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <a routerLink="/admin/statistiques/utilisateurs" class="link-next animate-fade-in">
+    <span class="material-symbols-outlined">arrow_forward</span>
+    Statistiques utilisateurs (taux conversion, pages visitées, etc.)
+  </a>
+</div>

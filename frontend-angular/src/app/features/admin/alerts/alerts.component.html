@@ -1,0 +1,31 @@
+<div class="alerts-page">
+  <div class="page-header animate-fade-in">
+    <h2><span class="material-symbols-outlined page-header__icon">notifications_active</span> Alertes et indicateurs intelligents</h2>
+    <div class="page-actions">
+      <select class="filter-type">
+        <option value="">Tous les types</option>
+        <option value="warning">Avertissement</option>
+        <option value="danger">Critique</option>
+        <option value="success">Succès</option>
+        <option value="info">Info</option>
+      </select>
+    </div>
+  </div>
+
+  <ul class="alert-list stagger-children">
+    @for (alert of alerts; track alert.title + alert.date) {
+      <li class="alert-card" [class]="'alert-card--' + alert.type">
+        <span class="alert-card__dot"></span>
+        <div class="alert-card__content">
+          <strong>{{ alert.title }}</strong>
+          <p>{{ alert.description }}</p>
+          <span class="alert-card__date">{{ alert.date }}</span>
+        </div>
+        <button type="button" class="btn-link">
+          <span class="material-symbols-outlined btn-link__icon">check_circle</span>
+          Traiter
+        </button>
+      </li>
+    }
+  </ul>
+</div>

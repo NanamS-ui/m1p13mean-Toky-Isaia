@@ -1,0 +1,258 @@
+<div class="product-form-page">
+  <!-- Header -->
+  <div class="page-header">
+    <a routerLink="/boutique/produits" class="back-link">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Retour aux produits
+    </a>
+    <h2>{{ isEditMode ? 'Modifier le produit' : 'Nouveau produit' }}</h2>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button type="button" class="tab" [class.tab--active]="activeTab() === 'general'" (click)="setTab('general')">
+      <span class="material-symbols-outlined">info</span>
+      Informations
+    </button>
+    <button type="button" class="tab" [class.tab--active]="activeTab() === 'images'" (click)="setTab('images')">
+      <span class="material-symbols-outlined">image</span>
+      Images
+    </button>
+    <button type="button" class="tab" [class.tab--active]="activeTab() === 'pricing'" (click)="setTab('pricing')">
+      <span class="material-symbols-outlined">sell</span>
+      Prix & Promotions
+    </button>
+    <button type="button" class="tab" [class.tab--active]="activeTab() === 'stock'" (click)="setTab('stock')">
+      <span class="material-symbols-outlined">inventory</span>
+      Stock
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="product-form">
+    <!-- General Tab -->
+    @if (activeTab() === 'general') {
+      <div class="form-grid">
+        <section class="card">
+          <h4>Informations générales</h4>
+          
+          <div class="form-group">
+            <label for="name">Nom du produit *</label>
+            <input id="name" type="text" formControlName="name" placeholder="Ex: Robe été fleurie" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sku">Référence (SKU)</label>
+              <div class="input-with-action">
+                <input id="sku" type="text" formControlName="sku" placeholder="Ex: ROB-001" />
+                <button type="button" class="input-action" (click)="generateSku()">
+                  <span class="material-symbols-outlined">autorenew</span>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="category">Catégorie *</label>
+              <select id="category" formControlName="category">
+                <option value="">Sélectionner une catégorie</option>
+                @for (cat of categories; track cat) {
+                  <option [value]="cat">{{ cat }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" formControlName="description" rows="4" 
+                      placeholder="Décrivez votre produit..."></textarea>
+          </div>
+        </section>
+
+        <section class="card">
+          <h4>Tags & Mots-clés</h4>
+          <p class="section-desc">Ajoutez des tags pour améliorer la recherche</p>
+
+          <div class="tags-selector">
+            @for (tag of tags(); track tag) {
+              <button type="button" 
+                      class="tag-chip" 
+                      [class.tag-chip--selected]="selectedTags().includes(tag)"
+                      (click)="toggleTag(tag)">
+                {{ tag }}
+                @if (selectedTags().includes(tag)) {
+                  <span class="material-symbols-outlined">check</span>
+                }
+              </button>
+            }
+          </div>
+
+          <div class="add-tag">
+            <input type="text" [(ngModel)]="newTag" [ngModelOptions]="{standalone: true}" placeholder="Nouveau tag..." />
+            <button type="button" class="btn btn--sm btn--outline" (click)="addTag()">
+              <span class="material-symbols-outlined">add</span>
+              Ajouter
+            </button>
+          </div>
+
+          <h4 class="mt-1">Détails physiques</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="weight">Poids (kg)</label>
+              <input id="weight" type="number" formControlName="weight" placeholder="0.5" step="0.1" />
+            </div>
+            <div class="form-group">
+              <label for="dimensions">Dimensions</label>
+              <input id="dimensions" type="text" formControlName="dimensions" placeholder="L x l x H" />
+            </div>
+          </div>
+        </section>
+      </div>
+    }
+
+    <!-- Images Tab -->
+    @if (activeTab() === 'images') {
+      <section class="card">
+        <h4>Images du produit</h4>
+        <p class="section-desc">Ajoutez jusqu'à 6 images. La première sera l'image principale.</p>
+
+        <div class="images-grid">
+          @for (img of imagePreviews(); track $index; let i = $index) {
+            <div class="image-item" [class.image-item--main]="i === 0">
+              <img [src]="img" alt="Image produit" />
+              @if (i === 0) {
+                <span class="image-badge">Principale</span>
+              }
+              <button type="button" class="image-remove" (click)="removeImage(i)">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          }
+
+          @if (imagePreviews().length < 6) {
+            <label class="image-upload">
+              <input type="file" accept="image/*" multiple (change)="onImagesChange($event)" hidden />
+              <span class="material-symbols-outlined">add_photo_alternate</span>
+              <span>Ajouter</span>
+            </label>
+          }
+        </div>
+
+        <div class="image-tips">
+          <span class="material-symbols-outlined">info</span>
+          <ul>
+            <li>Format: JPG, PNG ou WebP</li>
+            <li>Taille recommandée: 800x800px minimum</li>
+            <li>Fond blanc pour un meilleur rendu</li>
+          </ul>
+        </div>
+      </section>
+    }
+
+    <!-- Pricing Tab -->
+    @if (activeTab() === 'pricing') {
+      <div class="form-grid">
+        <section class="card">
+          <h4>Prix de vente</h4>
+
+          <div class="form-group">
+            <label for="price">Prix *</label>
+            <div class="input-currency">
+              <input id="price" type="number" formControlName="price" placeholder="0" />
+              <span class="currency-label">MGA</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="isActive" />
+              <span class="checkbox-text">Produit actif et visible</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <h4>Promotion</h4>
+          <p class="section-desc">Configurez une promotion temporaire</p>
+
+          <div class="form-group">
+            <label for="promoPrice">Prix promotionnel</label>
+            <div class="input-currency">
+              <input id="promoPrice" type="number" formControlName="promoPrice" placeholder="0" />
+              <span class="currency-label">MGA</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="promoStart">Date de début</label>
+              <input id="promoStart" type="date" formControlName="promoStart" />
+            </div>
+            <div class="form-group">
+              <label for="promoEnd">Date de fin</label>
+              <input id="promoEnd" type="date" formControlName="promoEnd" />
+            </div>
+          </div>
+
+          @if (form.get('promoPrice')?.value && form.get('price')?.value) {
+            <div class="promo-preview">
+              <div class="promo-preview__discount">
+                -{{ (((form.get('price')?.value - form.get('promoPrice')?.value) / form.get('price')?.value) * 100).toFixed(0) }}%
+              </div>
+              <div class="promo-preview__prices">
+                <span class="promo-preview__old">{{ form.get('price')?.value | number }} MGA</span>
+                <span class="promo-preview__new">{{ form.get('promoPrice')?.value | number }} MGA</span>
+              </div>
+            </div>
+          }
+        </section>
+      </div>
+    }
+
+    <!-- Stock Tab -->
+    @if (activeTab() === 'stock') {
+      <section class="card">
+        <h4>Gestion du stock</h4>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="stock">Quantité en stock *</label>
+            <input id="stock" type="number" formControlName="stock" min="0" />
+          </div>
+          <div class="form-group">
+            <label for="lowStockAlert">Alerte stock faible</label>
+            <input id="lowStockAlert" type="number" formControlName="lowStockAlert" min="1" />
+            <span class="form-hint">Notification quand le stock atteint ce niveau</span>
+          </div>
+        </div>
+
+        <div class="stock-status">
+          @if (form.get('stock')?.value === 0) {
+            <div class="stock-alert stock-alert--danger">
+              <span class="material-symbols-outlined">error</span>
+              <span>Produit en rupture de stock</span>
+            </div>
+          } @else if (form.get('stock')?.value <= form.get('lowStockAlert')?.value) {
+            <div class="stock-alert stock-alert--warning">
+              <span class="material-symbols-outlined">warning</span>
+              <span>Stock faible - pensez à réapprovisionner</span>
+            </div>
+          } @else {
+            <div class="stock-alert stock-alert--success">
+              <span class="material-symbols-outlined">check_circle</span>
+              <span>Stock suffisant</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <a routerLink="/boutique/produits" class="btn btn--outline">Annuler</a>
+      <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
+        <span class="material-symbols-outlined">save</span>
+        {{ isEditMode ? 'Enregistrer les modifications' : 'Créer le produit' }}
+      </button>
+    </div>
+  </form>
+</div>

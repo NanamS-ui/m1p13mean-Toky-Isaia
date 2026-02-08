@@ -1,0 +1,299 @@
+<div class="carte-page">
+  <!-- Header -->
+  <div class="carte-header">
+    <h1>
+      <span class="material-symbols-outlined">map</span>
+      Carte interactive
+    </h1>
+    <p class="carte-header__subtitle">Explorez le centre commercial et trouvez vos boutiques</p>
+  </div>
+
+  <div class="carte-content">
+    <!-- Sidebar -->
+    <div class="carte-sidebar">
+      <!-- Floor Selector -->
+      <div class="sidebar-section">
+        <h3>
+          <span class="material-symbols-outlined">layers</span>
+          Niveaux
+        </h3>
+        <div class="floor-selector">
+          @for (floor of floors; track floor.number) {
+            <button
+              class="floor-btn"
+              [class.floor-btn--active]="selectedFloor() === floor.number"
+              (click)="setFloor(floor.number)"
+            >
+              <span class="material-symbols-outlined">{{ floor.icon }}</span>
+              {{ floor.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="sidebar-section">
+        <h3>
+          <span class="material-symbols-outlined">search</span>
+          Rechercher
+        </h3>
+        <div class="search-box">
+          <span class="material-symbols-outlined">search</span>
+          <input
+            type="text"
+            placeholder="Nom de la boutique..."
+            [(ngModel)]="searchQuery"
+            class="search-input"
+          />
+          @if (searchQuery()) {
+            <button class="search-clear" (click)="searchQuery.set('')">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="sidebar-section">
+        <h3>
+          <span class="material-symbols-outlined">tune</span>
+          Filtres
+        </h3>
+        <div class="filters">
+          <!-- Category Filter -->
+          <div class="filter-group">
+            <label>Catégorie</label>
+            <div class="category-chips">
+              @for (cat of categories; track cat.value) {
+                <button
+                  class="category-chip"
+                  [class.category-chip--active]="selectedCategory() === cat.value"
+                  (click)="selectedCategory.set(cat.value)"
+                >
+                  <span class="material-symbols-outlined">{{ cat.icon }}</span>
+                  {{ cat.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Open Now Filter -->
+          <div class="filter-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="showOpenOnly"
+                class="checkbox-input"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-text">
+                <span class="material-symbols-outlined">schedule</span>
+                Ouvertes maintenant
+              </span>
+            </label>
+          </div>
+
+          @if (searchQuery() || selectedCategory() !== 'all' || showOpenOnly()) {
+            <button class="btn-clear-filters" (click)="clearFilters()">
+              <span class="material-symbols-outlined">clear_all</span>
+              Réinitialiser
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="sidebar-section">
+        <h3>
+          <span class="material-symbols-outlined">info</span>
+          Légende
+        </h3>
+        <div class="legend">
+          @for (cat of categories.slice(1); track cat.value) {
+            <div class="legend-item">
+              <span
+                class="legend-marker"
+                [style.background-color]="getCategoryColor(cat.value)"
+              ></span>
+              <span class="legend-label">{{ cat.label }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Shop List -->
+      <div class="sidebar-section">
+        <h3>
+          <span class="material-symbols-outlined">store</span>
+          Boutiques ({{ filteredShops().length }})
+        </h3>
+        <div class="shop-list">
+          @if (filteredShops().length === 0) {
+            <div class="empty-shops">
+              <span class="material-symbols-outlined">search_off</span>
+              <p>Aucune boutique trouvée</p>
+            </div>
+          } @else {
+            @for (shop of filteredShops(); track shop.id) {
+              <button
+                class="shop-list-item"
+                [class.shop-list-item--active]="selectedShop()?.id === shop.id"
+                [class.shop-list-item--closed]="!shop.isOpen"
+                (click)="selectShop(shop)"
+              >
+                <div class="shop-list-marker" [style.background-color]="getCategoryColor(shop.category)"></div>
+                <div class="shop-list-info">
+                  <h4>{{ shop.name }}</h4>
+                  <p>
+                    <span class="material-symbols-outlined">schedule</span>
+                    {{ shop.openingHours }}
+                    @if (!shop.isOpen) {
+                      <span class="status-closed">Fermé</span>
+                    } @else {
+                      <span class="status-open">Ouvert</span>
+                    }
+                  </p>
+                </div>
+                <span class="material-symbols-outlined">chevron_right</span>
+              </button>
+            }
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Area -->
+    <div class="carte-map-area">
+      <div class="map-container">
+        <!-- Map Background (Visual Mockup) -->
+        <div class="map-background">
+          <!-- Entrance Marker -->
+          <div class="entrance-marker" [class.entrance-marker--route]="showRoute() && routeFromEntrance()">
+            <span class="material-symbols-outlined">door_front</span>
+            <span class="entrance-label">Entrée</span>
+          </div>
+
+          <!-- Route Line (if showing route) -->
+          @if (showRoute() && selectedShop() && routeFromEntrance()) {
+            <svg class="route-line" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line
+                x1="10"
+                y1="90"
+                [attr.x2]="selectedShop()!.x"
+                [attr.y2]="selectedShop()!.y"
+                stroke="var(--korus-accent)"
+                stroke-width="2"
+                stroke-dasharray="4 4"
+                marker-end="url(#arrowhead)"
+              />
+              <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                  <polygon points="0 0, 10 3, 0 6" fill="var(--korus-accent)" />
+                </marker>
+              </defs>
+            </svg>
+          }
+
+          <!-- Shop Markers -->
+          @for (shop of filteredShops(); track shop.id) {
+            <button
+              class="shop-marker"
+              [class.shop-marker--selected]="selectedShop()?.id === shop.id"
+              [class.shop-marker--closed]="!shop.isOpen"
+              [style.left.%]="shop.x"
+              [style.top.%]="shop.y"
+              [style.--marker-color]="getCategoryColor(shop.category)"
+              (click)="selectShop(shop)"
+              [title]="shop.name"
+            >
+              <span class="material-symbols-outlined">{{ getCategoryIcon(shop.category) }}</span>
+              @if (shop.isOpen) {
+                <span class="marker-pulse"></span>
+              }
+            </button>
+          }
+        </div>
+
+        <!-- Floor Label -->
+        <div class="floor-label">
+          <span class="material-symbols-outlined">layers</span>
+          {{ floors[selectedFloor()].label }}
+        </div>
+      </div>
+
+      <!-- Shop Popup -->
+      @if (selectedShop()) {
+        <div class="shop-popup">
+          <button class="popup-close" (click)="closeShopPopup()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <div class="popup-header">
+            <div
+              class="popup-icon"
+              [style.background-color]="getCategoryColor(selectedShop()!.category)"
+            >
+              <span class="material-symbols-outlined">{{ getCategoryIcon(selectedShop()!.category) }}</span>
+            </div>
+            <div class="popup-title">
+              <h3>{{ selectedShop()!.name }}</h3>
+              <div class="popup-status">
+                @if (selectedShop()!.isOpen) {
+                  <span class="status-badge status-badge--open">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    Ouvert
+                  </span>
+                } @else {
+                  <span class="status-badge status-badge--closed">
+                    <span class="material-symbols-outlined">cancel</span>
+                    Fermé
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="popup-body">
+            <div class="popup-info">
+              <div class="info-item">
+                <span class="material-symbols-outlined">schedule</span>
+                <div>
+                  <strong>Horaires:</strong>
+                  <p>{{ selectedShop()!.openingHours }}</p>
+                </div>
+              </div>
+              <div class="info-item">
+                <span class="material-symbols-outlined">layers</span>
+                <div>
+                  <strong>Niveau:</strong>
+                  <p>{{ floors[selectedShop()!.floor].label }}</p>
+                </div>
+              </div>
+              <div class="info-item">
+                <span class="material-symbols-outlined">category</span>
+                <div>
+                  <strong>Catégorie:</strong>
+                  <p>{{ getSelectedShopCategoryLabel() }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="popup-actions">
+              <a
+                [routerLink]="['/acheteur/boutiques', selectedShop()!.id]"
+                class="btn-primary"
+              >
+                <span class="material-symbols-outlined">store</span>
+                Voir la boutique
+              </a>
+              <button
+                class="btn-secondary"
+                (click)="toggleRoute()"
+              >
+                <span class="material-symbols-outlined">directions</span>
+                {{ showRoute() ? 'Masquer' : 'Afficher' }} l'itinéraire
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

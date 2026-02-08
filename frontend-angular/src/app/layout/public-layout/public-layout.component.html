@@ -1,0 +1,189 @@
+<div class="public-layout">
+  <!-- Header / Navbar -->
+  <header class="navbar">
+    <div class="navbar__container">
+      <!-- Logo -->
+      <a routerLink="/accueil" class="navbar__brand">
+        <div class="navbar__logo">K</div>
+        <div class="navbar__brand-text">
+          <span class="navbar__title">KORUS</span>
+          <span class="navbar__subtitle">Centre Commercial</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="navbar__nav">
+        @for (item of navItems; track item.route) {
+          <a [routerLink]="item.route" 
+             routerLinkActive="navbar__link--active" 
+             class="navbar__link">
+            {{ item.label }}
+          </a>
+        }
+      </nav>
+
+      <!-- Actions : si connecté OU non connecté -->
+      <div class="navbar__actions">
+        @if (isLoggedIn()) {
+          <!-- Utilisateur connecté -->
+          <a [routerLink]="dashboardRoute()" class="btn btn--accent">
+            <span class="material-symbols-outlined">{{ dashboardIcon() }}</span>
+            {{ dashboardLabel() }}
+          </a>
+          <button class="btn btn--outline" (click)="logout()">
+            <span class="material-symbols-outlined">logout</span>
+            Déconnexion
+          </button>
+        } @else {
+          <!-- Utilisateur non connecté -->
+          <a routerLink="/login" class="btn btn--outline">
+            <span class="material-symbols-outlined">login</span>
+            Connexion
+          </a>
+          <a routerLink="/inscription" class="btn btn--primary">
+            <span class="material-symbols-outlined">person_add</span>
+            S'inscrire
+          </a>
+        }
+      </div>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="navbar__toggle" (click)="toggleMobileMenu()">
+        <span class="material-symbols-outlined">
+          {{ mobileMenuOpen() ? 'close' : 'menu' }}
+        </span>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    @if (mobileMenuOpen()) {
+      <div class="mobile-menu">
+        <nav class="mobile-menu__nav">
+          @for (item of navItems; track item.route) {
+            <a [routerLink]="item.route" 
+               routerLinkActive="mobile-menu__link--active" 
+               class="mobile-menu__link"
+               (click)="mobileMenuOpen.set(false)">
+              <span class="material-symbols-outlined">{{ item.icon }}</span>
+              {{ item.label }}
+            </a>
+          }
+        </nav>
+        <div class="mobile-menu__actions">
+          @if (isLoggedIn()) {
+            <a [routerLink]="dashboardRoute()" class="btn btn--accent btn--full" (click)="mobileMenuOpen.set(false)">
+              <span class="material-symbols-outlined">{{ dashboardIcon() }}</span>
+              {{ dashboardLabel() }}
+            </a>
+            <button class="btn btn--outline btn--full" (click)="logout(); mobileMenuOpen.set(false)">
+              Déconnexion
+            </button>
+          } @else {
+            <a routerLink="/login" class="btn btn--outline btn--full" (click)="mobileMenuOpen.set(false)">
+              Connexion
+            </a>
+            <a routerLink="/inscription" class="btn btn--primary btn--full" (click)="mobileMenuOpen.set(false)">
+              S'inscrire
+            </a>
+          }
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer__container">
+      <div class="footer__grid">
+        <!-- About -->
+        <div class="footer__section">
+          <div class="footer__brand">
+            <div class="footer__logo">K</div>
+            <div>
+              <h4>KORUS Center</h4>
+              <p>Le centre commercial de référence</p>
+            </div>
+          </div>
+          <p class="footer__description">
+            Découvrez une expérience shopping unique avec plus de 100 boutiques, 
+            restaurants et espaces de divertissement au cœur de la ville.
+          </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="footer__section">
+          <h5>Liens rapides</h5>
+          <ul class="footer__links">
+            <li><a routerLink="/boutiques">Nos boutiques</a></li>
+            <li><a routerLink="/evenements">Événements</a></li>
+            <li><a routerLink="/localisation">Plan du centre</a></li>
+            <li><a routerLink="/contact">Contact</a></li>
+          </ul>
+        </div>
+
+        <!-- Hours -->
+        <div class="footer__section">
+          <h5>Horaires d'ouverture</h5>
+          <ul class="footer__hours">
+            <li>
+              <span>Lundi - Vendredi</span>
+              <span>09:00 - 21:00</span>
+            </li>
+            <li>
+              <span>Samedi</span>
+              <span>09:00 - 22:00</span>
+            </li>
+            <li>
+              <span>Dimanche</span>
+              <span>10:00 - 20:00</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Contact -->
+        <div class="footer__section">
+          <h5>Contact</h5>
+          <ul class="footer__contact">
+            <li>
+              <span class="material-symbols-outlined">location_on</span>
+              Ankorondrano, Antananarivo 101
+            </li>
+            <li>
+              <span class="material-symbols-outlined">phone</span>
+              +261 20 22 123 45
+            </li>
+            <li>
+              <span class="material-symbols-outlined">mail</span>
+              contact&#64;korus-center.mg
+            </li>
+          </ul>
+          <div class="footer__social">
+            <a href="#" class="social-link">
+              <span class="material-symbols-outlined">tag</span>
+            </a>
+            <a href="#" class="social-link">
+              <span class="material-symbols-outlined">play_circle</span>
+            </a>
+            <a href="#" class="social-link">
+              <span class="material-symbols-outlined">photo_camera</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p>&copy; 2026 KORUS Center. Tous droits réservés.</p>
+        <div class="footer__bottom-links">
+          <a href="#">Mentions légales</a>
+          <a href="#">Politique de confidentialité</a>
+          <a href="#">CGU</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>

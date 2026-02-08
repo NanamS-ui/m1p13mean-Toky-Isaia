@@ -1,0 +1,213 @@
+@if (product(); as p) {
+  <div class="product-detail-page">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a routerLink="/acheteur/produits" class="breadcrumb__link">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Retour au catalogue
+      </a>
+    </nav>
+
+    <!-- Main Product Section -->
+    <div class="product-main">
+      <!-- Image Gallery -->
+      <div class="product-gallery">
+        <div class="gallery-main">
+          @if (p.images && p.images.length > 0) {
+            <img [src]="p.images[selectedImageIndex()]" [alt]="p.name" />
+          } @else {
+            <div class="gallery-placeholder">
+              <span class="material-symbols-outlined">image</span>
+              <p>Image du produit</p>
+            </div>
+          }
+          @if (p.onPromo) {
+            <span class="gallery-promo-badge">Promotion</span>
+          }
+        </div>
+        @if (p.images && p.images.length > 1) {
+          <div class="gallery-thumbnails">
+            @for (img of p.images; track $index) {
+              <button
+                class="thumbnail"
+                [class.thumbnail--active]="selectedImageIndex() === $index"
+                (click)="selectImage($index)"
+              >
+                <img [src]="img" [alt]="p.name + ' ' + ($index + 1)" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Product Info -->
+      <div class="product-info">
+        <div class="product-header">
+          <span class="product-category">{{ p.category }}</span>
+          <h1 class="product-name">{{ p.name }}</h1>
+          <div class="product-rating">
+            <span class="material-symbols-outlined">star</span>
+            <span class="material-symbols-outlined">star</span>
+            <span class="material-symbols-outlined">star</span>
+            <span class="material-symbols-outlined">star</span>
+            <span class="material-symbols-outlined">star</span>
+            <span class="rating-text">({{ p.popularity }} avis)</span>
+          </div>
+        </div>
+
+        <div class="product-price-section">
+          @if (p.promoPrice) {
+            <div class="price-promo">{{ formatCurrency(p.promoPrice) }}</div>
+            <div class="price-original">{{ formatCurrency(p.price) }}</div>
+            <div class="price-discount">
+              Économisez {{ formatCurrency(p.price - p.promoPrice) }}
+            </div>
+          } @else {
+            <div class="price-current">{{ formatCurrency(p.price) }}</div>
+          }
+        </div>
+
+        <div class="product-description">
+          <h3>Description</h3>
+          <p>{{ p.fullDescription || p.description }}</p>
+        </div>
+
+        <!-- Specifications -->
+        @if (p.specs && getSpecKeys(p.specs).length > 0) {
+          <div class="product-specs">
+            <h3>Caractéristiques</h3>
+            <div class="specs-list">
+              @for (spec of getSpecEntries(p.specs); track spec[0]) {
+                <div class="spec-item">
+                  <span class="spec-label">{{ spec[0] }}:</span>
+                  <span class="spec-value">{{ spec[1] }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Stock Status -->
+        <div class="product-stock">
+          @if (p.inStock) {
+            <span class="stock-badge stock-badge--in">
+              <span class="material-symbols-outlined">check_circle</span>
+              En stock ({{ p.stockQuantity }} disponibles)
+            </span>
+          } @else {
+            <span class="stock-badge stock-badge--out">
+              <span class="material-symbols-outlined">cancel</span>
+              Rupture de stock
+            </span>
+          }
+        </div>
+
+        <!-- Quantity Selector -->
+        <div class="product-quantity">
+          <label class="quantity-label">Quantité:</label>
+          <div class="quantity-controls">
+            <button
+              class="quantity-btn"
+              (click)="decrementQuantity()"
+              [disabled]="quantity() <= 1"
+            >
+              <span class="material-symbols-outlined">remove</span>
+            </button>
+            <input
+              type="number"
+              [ngModel]="quantity()"
+              (ngModelChange)="quantity.set(+$event)"
+              [min]="1"
+              [max]="p.stockQuantity"
+              class="quantity-input"
+              readonly
+            />
+            <button
+              class="quantity-btn"
+              (click)="incrementQuantity()"
+              [disabled]="quantity() >= p.stockQuantity"
+            >
+              <span class="material-symbols-outlined">add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="product-actions">
+          <button
+            class="btn-add-cart"
+            [disabled]="!p.inStock"
+            (click)="addToCart()"
+          >
+            <span class="material-symbols-outlined">add_shopping_cart</span>
+            Ajouter au panier
+          </button>
+          <button class="btn-wishlist">
+            <span class="material-symbols-outlined">favorite</span>
+          </button>
+        </div>
+
+        <!-- Shop Info -->
+        <div class="product-shop">
+          <h3>Boutique</h3>
+          <a [routerLink]="['/acheteur/boutiques', p.boutiqueId]" class="shop-card">
+            @if (p.boutiqueLogo) {
+              <img [src]="p.boutiqueLogo" [alt]="p.boutiqueName" class="shop-logo" />
+            } @else {
+              <div class="shop-logo-placeholder">
+                <span class="material-symbols-outlined">store</span>
+              </div>
+            }
+            <div class="shop-info">
+              <h4>{{ p.boutiqueName }}</h4>
+              <span class="shop-category">{{ p.category }}</span>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    @if (relatedProducts().length > 0) {
+      <div class="related-products">
+        <h2>
+          <span class="material-symbols-outlined">shopping_bag</span>
+          Produits similaires
+        </h2>
+        <div class="related-grid">
+          @for (related of relatedProducts(); track related.id) {
+            <a [routerLink]="['/acheteur/produits', related.id]" class="related-card">
+              <div class="related-card__image">
+                @if (related.images && related.images[0]) {
+                  <img [src]="related.images[0]" [alt]="related.name" />
+                } @else {
+                  <span class="material-symbols-outlined">image</span>
+                }
+                @if (related.onPromo) {
+                  <span class="related-card__promo">Promo</span>
+                }
+              </div>
+              <div class="related-card__content">
+                <h4>{{ related.name }}</h4>
+                <div class="related-card__price">
+                  @if (related.promoPrice) {
+                    <span class="price-promo">{{ formatCurrency(related.promoPrice) }}</span>
+                    <span class="price-original">{{ formatCurrency(related.price) }}</span>
+                  } @else {
+                    <span class="price-current">{{ formatCurrency(related.price) }}</span>
+                  }
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="loading-state">
+    <span class="material-symbols-outlined">inventory_2</span>
+    <p>Chargement du produit...</p>
+  </div>
+}

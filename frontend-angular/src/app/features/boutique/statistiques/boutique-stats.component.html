@@ -1,0 +1,236 @@
+<div class="stats-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header__info">
+      <h2>Statistiques</h2>
+      <p>Analysez les performances de votre boutique</p>
+    </div>
+    <div class="header__actions">
+      <button class="btn btn--outline" (click)="exportExcel()">
+        <span class="material-symbols-outlined">table_chart</span>
+        Export Excel
+      </button>
+      <button class="btn btn--primary" (click)="exportPDF()">
+        <span class="material-symbols-outlined">picture_as_pdf</span>
+        Export PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Period Selector -->
+  <div class="period-selector">
+    <button [class.active]="activePeriod() === 'day'" (click)="setPeriod('day')">Aujourd'hui</button>
+    <button [class.active]="activePeriod() === 'week'" (click)="setPeriod('week')">Cette semaine</button>
+    <button [class.active]="activePeriod() === 'month'" (click)="setPeriod('month')">Ce mois</button>
+    <button [class.active]="activePeriod() === 'year'" (click)="setPeriod('year')">Cette année</button>
+  </div>
+
+  <!-- Main KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-card--primary">
+      <div class="kpi-card__header">
+        <span class="material-symbols-outlined">payments</span>
+        <span class="kpi-card__trend kpi-card__trend--up">+12.5%</span>
+      </div>
+      <div class="kpi-card__value">{{ formatCurrency(kpis().totalRevenue) }}</div>
+      <div class="kpi-card__label">Chiffre d'affaires</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="material-symbols-outlined">shopping_bag</span>
+        <span class="kpi-card__trend kpi-card__trend--up">+8.3%</span>
+      </div>
+      <div class="kpi-card__value">{{ kpis().totalOrders }}</div>
+      <div class="kpi-card__label">Commandes</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="material-symbols-outlined">shopping_cart</span>
+      </div>
+      <div class="kpi-card__value">{{ formatCurrency(kpis().avgOrderValue) }}</div>
+      <div class="kpi-card__label">Panier moyen</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="material-symbols-outlined">conversion_path</span>
+      </div>
+      <div class="kpi-card__value">{{ kpis().conversionRate }}%</div>
+      <div class="kpi-card__label">Taux de conversion</div>
+    </div>
+
+    <div class="kpi-card kpi-card--warning">
+      <div class="kpi-card__header">
+        <span class="material-symbols-outlined">remove_shopping_cart</span>
+        <span class="kpi-card__trend kpi-card__trend--down">-2.1%</span>
+      </div>
+      <div class="kpi-card__value">{{ kpis().cartAbandonRate }}%</div>
+      <div class="kpi-card__label">Abandon panier</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__header">
+        <span class="material-symbols-outlined">undo</span>
+      </div>
+      <div class="kpi-card__value">{{ kpis().returnsRate }}%</div>
+      <div class="kpi-card__label">Taux de retour</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row">
+    <!-- Sales Chart -->
+    <section class="card chart-card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">bar_chart</span>
+          Ventes journalières
+        </h3>
+      </div>
+      <div class="chart-container">
+        <div class="bar-chart">
+          @for (day of dailySales(); track day.period) {
+            <div class="bar-chart__item">
+              <div class="bar-chart__bar-wrapper">
+                <div class="bar-chart__bar" 
+                     [style.height.%]="getBarHeight(day.revenue)"
+                     [attr.data-value]="formatCurrency(day.revenue)">
+                </div>
+              </div>
+              <span class="bar-chart__label">{{ day.period }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Promo Stats -->
+    <section class="card promo-card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">local_offer</span>
+          Promotions
+        </h3>
+      </div>
+      <div class="promo-stats">
+        <div class="promo-stat">
+          <span class="promo-stat__value">{{ promoStats().activePromos }}</span>
+          <span class="promo-stat__label">Promotions actives</span>
+        </div>
+        <div class="promo-stat">
+          <span class="promo-stat__value">{{ promoStats().promoOrders }}</span>
+          <span class="promo-stat__label">Commandes avec promo</span>
+        </div>
+        <div class="promo-stat">
+          <span class="promo-stat__value">{{ promoStats().avgPromoDiscount }}%</span>
+          <span class="promo-stat__label">Réduction moyenne</span>
+        </div>
+        <div class="promo-stat promo-stat--highlight">
+          <span class="promo-stat__value">{{ formatCurrency(promoStats().totalDiscounted) }}</span>
+          <span class="promo-stat__label">Économies clients</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Products Analysis -->
+  <div class="products-row">
+    <!-- Top Products -->
+    <section class="card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">trending_up</span>
+          Produits les plus vendus
+        </h3>
+      </div>
+      <div class="products-list">
+        @for (product of topProducts(); track product.name; let i = $index) {
+          <div class="product-row">
+            <span class="product-rank" [class.product-rank--gold]="i === 0">{{ i + 1 }}</span>
+            <div class="product-info">
+              <span class="product-name">{{ product.name }}</span>
+              <span class="product-meta">{{ product.sales }} vendus • Stock: {{ product.stock }}</span>
+            </div>
+            <div class="product-revenue">
+              <span class="revenue-value">{{ formatCurrency(product.revenue) }}</span>
+              <div class="revenue-bar">
+                <div class="revenue-fill" [style.width.%]="(product.revenue / topProducts()[0].revenue) * 100"></div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Low Performers -->
+    <section class="card">
+      <div class="card__header">
+        <h3>
+          <span class="material-symbols-outlined">trending_down</span>
+          Produits à améliorer
+        </h3>
+      </div>
+      <div class="products-list">
+        @for (product of lowPerformers(); track product.name) {
+          <div class="product-row product-row--low">
+            <span class="material-symbols-outlined product-warning">warning</span>
+            <div class="product-info">
+              <span class="product-name">{{ product.name }}</span>
+              <span class="product-meta">{{ product.views }} vues • {{ product.sales }} vendus</span>
+            </div>
+            <div class="product-conversion">
+              <span class="conversion-value">{{ product.conversionRate }}%</span>
+              <span class="conversion-label">conversion</span>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="card__tip">
+        <span class="material-symbols-outlined">lightbulb</span>
+        <p>Envisagez de mettre ces produits en promotion ou d'améliorer leurs descriptions.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-icon summary-icon--blue">
+        <span class="material-symbols-outlined">visibility</span>
+      </div>
+      <div class="summary-content">
+        <span class="summary-value">2,456</span>
+        <span class="summary-label">Visites boutique</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon summary-icon--green">
+        <span class="material-symbols-outlined">person_add</span>
+      </div>
+      <div class="summary-content">
+        <span class="summary-value">156</span>
+        <span class="summary-label">Nouveaux clients</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon summary-icon--purple">
+        <span class="material-symbols-outlined">repeat</span>
+      </div>
+      <div class="summary-content">
+        <span class="summary-value">34%</span>
+        <span class="summary-label">Clients récurrents</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon summary-icon--orange">
+        <span class="material-symbols-outlined">star</span>
+      </div>
+      <div class="summary-content">
+        <span class="summary-value">4.6/5</span>
+        <span class="summary-label">Note moyenne</span>
+      </div>
+    </div>
+  </div>
+</div>

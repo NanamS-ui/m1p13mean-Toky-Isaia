@@ -1,0 +1,69 @@
+<div class="users-page">
+  <div class="page-header">
+    <h2>Gestion des utilisateurs (acheteurs)</h2>
+    <div class="page-actions">
+      <a routerLink="/admin/support" class="btn btn--secondary">Support client (feedback, réclamations)</a>
+      <button type="button" class="btn btn--secondary">Historique sanctions</button>
+    </div>
+  </div>
+
+  <div class="card filters-card">
+    <h3>Filtres</h3>
+    <div class="filters">
+      <div class="form-group">
+        <label>Rôle</label>
+        <select [(ngModel)]="filterRole" (ngModelChange)="filterRole = $event">
+          <option value="">Tous</option>
+          <option value="ACHETEUR">Acheteur</option>
+          <option value="BOUTIQUE">Boutique</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Statut</label>
+        <select [(ngModel)]="filterStatus" (ngModelChange)="filterStatus = $event">
+          <option value="">Tous</option>
+          <option value="ACTIVE">Actif</option>
+          <option value="SUSPENDED">Suspendu</option>
+          <option value="BLOCKED">Bloqué</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card table-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th>Statut</th>
+            <th>Inscrit le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of filteredUsers; track u.id) {
+            <tr>
+              <td><strong>{{ u.firstName }} {{ u.lastName }}</strong></td>
+              <td>{{ u.email }}</td>
+              <td>{{ getRoleLabel(u.role) }}</td>
+              <td><span class="badge" [class]="'badge--' + u.status.toLowerCase()">{{ getStatusLabel(u.status) }}</span></td>
+              <td>{{ u.createdAt }}</td>
+              <td>
+                @if (u.status === 'ACTIVE') {
+                  <button type="button" class="btn-link btn-link--warning">Suspendre</button>
+                  <button type="button" class="btn-link btn-link--danger">Bloquer</button>
+                }
+                @if (u.status === 'SUSPENDED' || u.status === 'BLOCKED') {
+                  <button type="button" class="btn-link btn-link--success">Réactiver</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

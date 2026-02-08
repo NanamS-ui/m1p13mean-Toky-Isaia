@@ -1,0 +1,15 @@
+.support-page { display: flex; flex-direction: column; gap: 1.5rem; }
+.page-header h2 { margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--korus-text); }
+.card h3 { margin: 0 0 1rem 0; font-size: 1.1rem; font-weight: 600; color: var(--korus-text); }
+.table-wrapper { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.data-table th, .data-table td { padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--korus-border); }
+.data-table th { background: var(--korus-bg); font-weight: 600; }
+.badge { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; }
+.badge--feedback { background: #dbeafe; color: #1e40af; }
+.badge--reclamation { background: #fee2e2; color: #991b1b; }
+.badge--open { background: #fef3c7; color: #92400e; }
+.badge--in_progress { background: #dbeafe; color: #1e40af; }
+.badge--closed { background: #d1fae5; color: #065f46; }
+.btn-link { background: none; border: none; color: var(--korus-accent); font-size: 0.85rem; cursor: pointer; }
+.btn-link:hover { text-decoration: underline; }

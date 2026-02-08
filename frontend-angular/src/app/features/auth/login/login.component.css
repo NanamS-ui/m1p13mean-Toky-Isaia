@@ -1,0 +1,296 @@
+/* ============================================
+   Login Page - KORUS Center
+   ============================================ */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background:
+    linear-gradient(135deg, rgba(15, 30, 51, 0.92) 0%, rgba(26, 54, 93, 0.88) 100%),
+    url("https://images.unsplash.com/photo-1567449303078-57ad995bd329?q=80&w=2070&auto=format&fit=crop")
+    center / cover no-repeat;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Back link */
+.login-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--korus-text-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  align-self: flex-start;
+}
+
+.login-back:hover { color: var(--korus-accent); }
+
+.login-back .material-symbols-outlined { font-size: 18px; }
+
+/* Brand */
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, var(--korus-accent) 0%, var(--korus-accent-dark) 100%);
+  border-radius: 18px;
+  font-size: 2rem;
+  font-weight: 900;
+  color: white;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  margin-top: 0.5rem;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.login-logo::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 22px;
+  border: 2px solid rgba(245, 158, 11, 0.25);
+  pointer-events: none;
+}
+
+.login-brand h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--korus-primary);
+  text-align: center;
+}
+
+.login-brand h1 span {
+  color: var(--korus-accent);
+}
+
+.login-brand p {
+  margin: 0;
+  color: var(--korus-text-muted);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* Demo Accounts Selector */
+.demo-accounts {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: var(--korus-bg);
+  border-radius: 16px;
+  border: 1px solid var(--korus-border);
+}
+
+.demo-accounts__label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--korus-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.85rem;
+}
+
+.demo-accounts__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: white;
+  border: 2px solid var(--korus-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.demo-btn:hover {
+  border-color: var(--btn-color, var(--korus-accent));
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transform: translateX(4px);
+}
+
+.demo-btn .material-symbols-outlined {
+  font-size: 24px;
+  color: var(--btn-color, var(--korus-accent));
+  background: color-mix(in srgb, var(--btn-color, var(--korus-accent)) 12%, white);
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.demo-btn__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-btn__info strong {
+  font-size: 0.9rem;
+  color: var(--korus-text-dark);
+}
+
+.demo-btn__info small {
+  font-size: 0.78rem;
+  color: var(--korus-text-muted);
+}
+
+/* Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--korus-text);
+}
+
+.form-group label .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--korus-text-muted);
+}
+
+.form-group input {
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--korus-border);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: var(--korus-bg);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--korus-accent);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  background: white;
+}
+
+.error-text {
+  font-size: 0.8rem;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* Alert */
+.alert--error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  font-size: 0.88rem;
+  color: #dc2626;
+}
+
+.alert--error .material-symbols-outlined { font-size: 20px; }
+
+/* Submit */
+.btn--submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--korus-accent) 0%, var(--korus-accent-dark) 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+  margin-top: 0.5rem;
+}
+
+.btn--submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+}
+
+.btn--submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--submit .material-symbols-outlined { font-size: 20px; }
+
+/* Footer */
+.login-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--korus-border);
+}
+
+.login-footer p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--korus-text-muted);
+}
+
+.login-footer a {
+  color: var(--korus-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-footer a:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 520px) {
+  .login-card {
+    padding: 1.75rem 1.5rem;
+    border-radius: 20px;
+  }
+  
+  .login-brand h1 { font-size: 1.5rem; }
+}

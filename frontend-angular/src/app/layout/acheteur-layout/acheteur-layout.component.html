@@ -1,0 +1,90 @@
+<div class="acheteur-layout">
+  <aside class="sidebar" [class.sidebar--collapsed]="!sidebarOpen">
+    <!-- Brand -->
+    <div class="sidebar__brand">
+      <div class="sidebar__logo">K</div>
+      @if (sidebarOpen) {
+        <span class="sidebar__title">KORUS Mall</span>
+      }
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar__nav">
+      @for (item of navItems; track item.route) {
+        <a [routerLink]="item.route" 
+           routerLinkActive="active" 
+           [routerLinkActiveOptions]="{ exact: item.route === '/acheteur/accueil' }" 
+           class="nav-item"
+           [attr.data-tooltip]="item.label">
+          <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+          @if (sidebarOpen) {
+            <span class="nav-item__label">{{ item.label }}</span>
+            @if (item.route === '/acheteur/panier' && cartItemsCount() > 0) {
+              <span class="nav-item__badge">{{ cartItemsCount() }}</span>
+            }
+          }
+        </a>
+      }
+    </nav>
+
+    <!-- Bottom Nav -->
+    <div class="sidebar__bottom">
+      @for (item of bottomNavItems; track item.route) {
+        <a [routerLink]="item.route" 
+           routerLinkActive="active" 
+           class="nav-item"
+           [attr.data-tooltip]="item.label">
+          <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+          @if (sidebarOpen) {
+            <span class="nav-item__label">{{ item.label }}</span>
+            @if (item.route === '/acheteur/notifications' && unreadNotifications() > 0) {
+              <span class="nav-item__badge">{{ unreadNotifications() }}</span>
+            }
+          }
+        </a>
+      }
+    </div>
+
+    <!-- Toggle -->
+    <button type="button" class="sidebar__toggle" (click)="sidebarOpen = !sidebarOpen">
+      <span class="material-symbols-outlined">{{ sidebarOpen ? 'chevron_left' : 'chevron_right' }}</span>
+    </button>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <div class="header__search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Rechercher boutiques, produits..." />
+      </div>
+      <div class="header__actions">
+        <a routerLink="/acheteur/panier" class="header__btn header__btn--cart">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          @if (cartItemsCount() > 0) {
+            <span class="header__btn-badge">{{ cartItemsCount() }}</span>
+          }
+        </a>
+        <button type="button" class="header__btn header__btn--notif">
+          <span class="material-symbols-outlined">notifications</span>
+          @if (unreadNotifications() > 0) {
+            <span class="header__btn-badge">{{ unreadNotifications() }}</span>
+          }
+        </button>
+        <div class="user-badge">
+          <span class="material-symbols-outlined user-badge__icon">person</span>
+          @if (user()) {
+            <span>{{ user()?.firstName }}</span>
+          } @else {
+            <span>Mon compte</span>
+          }
+        </div>
+        <button type="button" class="btn--ghost" (click)="auth.logout()">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </div>
+    </header>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
