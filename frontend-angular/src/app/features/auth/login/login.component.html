@@ -11,26 +11,6 @@
       <p>Connectez-vous à votre espace</p>
     </div>
 
-    <!-- Sélecteur de compte démo -->
-    <div class="demo-accounts">
-      <span class="demo-accounts__label">Comptes de démonstration :</span>
-      <div class="demo-accounts__grid">
-        @for (account of demoAccounts; track account.email) {
-          <button 
-            type="button"
-            class="demo-btn"
-            [style.--btn-color]="account.color"
-            (click)="fillDemo(account.email, account.password)">
-            <span class="material-symbols-outlined">{{ account.icon }}</span>
-            <div class="demo-btn__info">
-              <strong>{{ account.label }}</strong>
-              <small>{{ account.email }}</small>
-            </div>
-          </button>
-        }
-      </div>
-    </div>
-
     <!-- Formulaire -->
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">

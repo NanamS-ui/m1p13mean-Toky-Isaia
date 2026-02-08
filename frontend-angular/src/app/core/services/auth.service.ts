@@ -1,10 +1,17 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { AuthUser, UserRole } from '../models/user.model';
+import { Observable, map, tap } from 'rxjs';
+import { AuthUser } from '../models/user.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly currentUserSignal = signal<AuthUser | null>(null);
+  private readonly accessTokenKey = 'korus_access_token';
+  private readonly refreshTokenKey = 'korus_refresh_token';
+  private readonly userKey = 'korus_user';
+  private readonly apiBaseUrl = environment.apiBaseUrl;
 
   readonly currentUser = this.currentUserSignal.asReadonly();
   readonly isAuthenticated = computed(() => this.currentUserSignal() !== null);
@@ -13,12 +20,12 @@ export class AuthService {
   readonly isAcheteur = computed(() => this.currentUserSignal()?.role === 'ACHETEUR');
   readonly userRole = computed(() => this.currentUserSignal()?.role ?? null);
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private http: HttpClient) {
     this.loadFromStorage();
   }
 
   private loadFromStorage(): void {
-    const stored = localStorage.getItem('korus_user');
+    const stored = localStorage.getItem(this.userKey);
     if (stored) {
       try {
         const user = JSON.parse(stored) as AuthUser;
@@ -26,70 +33,55 @@ export class AuthService {
         if (user.lastLoginAt) user.lastLoginAt = new Date(user.lastLoginAt);
         this.currentUserSignal.set(user);
       } catch {
-        localStorage.removeItem('korus_user');
+        localStorage.removeItem(this.userKey);
       }
     }
   }
 
-  // Comptes de démonstration
-  private readonly mockAccounts: Record<string, { password: string; user: AuthUser }> = {
-    'admin@korus.mg': {
-      password: 'admin123',
-      user: {
-        id: '1',
-        email: 'admin@korus.mg',
-        firstName: 'Admin',
-        lastName: 'KORUS',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        createdAt: new Date(),
-        lastLoginAt: new Date(),
-        token: 'mock-jwt-admin',
-        permissions: ['boutiques:manage', 'users:manage', 'stats:view', 'alerts:view', 'communication:manage', 'roles:manage']
-      }
-    },
-    'boutique@korus.mg': {
-      password: 'boutique123',
-      user: {
-        id: '2',
-        email: 'boutique@korus.mg',
-        firstName: 'Jean',
-        lastName: 'Marchand',
-        role: 'BOUTIQUE',
-        status: 'ACTIVE',
-        createdAt: new Date(),
-        lastLoginAt: new Date(),
-        token: 'mock-jwt-boutique',
-        boutiqueId: 'b1',
-        permissions: ['products:manage', 'orders:manage', 'stats:view', 'messages:manage']
-      }
-    },
-    'acheteur@korus.mg': {
-      password: 'acheteur123',
-      user: {
-        id: '3',
-        email: 'acheteur@korus.mg',
-        firstName: 'Marie',
-        lastName: 'Dupont',
-        role: 'ACHETEUR',
-        status: 'ACTIVE',
-        createdAt: new Date(),
-        lastLoginAt: new Date(),
-        token: 'mock-jwt-acheteur',
-        permissions: ['orders:create', 'reviews:create', 'profile:manage']
-      }
-    }
-  };
+  login(email: string, password: string): Observable<AuthUser> {
+    return this.http.post<any>(`${this.apiBaseUrl}/auth/login`, { email, password }).pipe(
+      map((response) => {
+        const nameParts = (response.user?.name || '').trim().split(' ');
+        const firstName = nameParts.shift() || '';
+        const lastName = nameParts.join(' ');
 
-  login(email: string, password: string): boolean {
-    const account = this.mockAccounts[email];
-    if (account && account.password === password) {
-      const user = { ...account.user, lastLoginAt: new Date() };
-      this.currentUserSignal.set(user);
-      localStorage.setItem('korus_user', JSON.stringify(user));
-      return true;
-    }
-    return false;
+        return {
+          id: response.user.id,
+          email: response.user.email,
+          firstName,
+          lastName,
+          role: response.user.role,
+          status: 'ACTIVE',
+          createdAt: response.user.createdAt ? new Date(response.user.createdAt) : new Date(),
+          lastLoginAt: new Date(),
+          token: response.accessToken,
+          refreshToken: response.refreshToken,
+          permissions: []
+        } as AuthUser;
+      }),
+      tap((user) => {
+        this.currentUserSignal.set(user);
+        localStorage.setItem(this.userKey, JSON.stringify(user));
+        localStorage.setItem(this.accessTokenKey, user.token);
+        if (user.refreshToken) {
+          localStorage.setItem(this.refreshTokenKey, user.refreshToken);
+        }
+      })
+    );
+  }
+
+  refreshToken(): Observable<string> {
+    const refreshToken = localStorage.getItem(this.refreshTokenKey);
+    return this.http.post<any>(`${this.apiBaseUrl}/auth/refresh`, { refreshToken }).pipe(
+      map((response) => response.accessToken as string),
+      tap((token) => {
+        localStorage.setItem(this.accessTokenKey, token);
+      })
+    );
+  }
+
+  getAccessToken(): string | null {
+    return localStorage.getItem(this.accessTokenKey);
   }
 
   /** Retourne la route de redirection selon le rôle */
@@ -104,7 +96,16 @@ export class AuthService {
 
   logout(): void {
     this.currentUserSignal.set(null);
-    localStorage.removeItem('korus_user');
+    const refreshToken = localStorage.getItem(this.refreshTokenKey);
+    if (refreshToken) {
+      this.http.post(`${this.apiBaseUrl}/auth/logout`, { refreshToken }).subscribe({
+        next: () => {},
+        error: () => {}
+      });
+    }
+    localStorage.removeItem(this.userKey);
+    localStorage.removeItem(this.accessTokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
     this.router.navigate(['/accueil']);
   }
 

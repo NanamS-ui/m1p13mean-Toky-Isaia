@@ -16,13 +16,6 @@ export class LoginComponent implements OnInit {
   form: FormGroup;
   error = '';
 
-  // Comptes de démo pour affichage
-  demoAccounts = [
-    { label: 'Admin', email: 'admin@korus.mg', password: 'admin123', icon: 'admin_panel_settings', color: '#ef4444' },
-    { label: 'Boutique', email: 'boutique@korus.mg', password: 'boutique123', icon: 'storefront', color: '#f59e0b' },
-    { label: 'Acheteur', email: 'acheteur@korus.mg', password: 'acheteur123', icon: 'shopping_bag', color: '#3b82f6' }
-  ];
-
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
@@ -41,12 +34,6 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  /** Rempli le formulaire avec un compte de démo */
-  fillDemo(email: string, password: string): void {
-    this.form.patchValue({ email, password });
-    this.error = '';
-  }
-
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -54,11 +41,13 @@ export class LoginComponent implements OnInit {
     }
     this.error = '';
     const { email, password } = this.form.getRawValue();
-    if (this.auth.login(email, password)) {
-      // Redirection automatique selon le rôle
-      this.router.navigate([this.auth.getRedirectRoute()]);
-    } else {
-      this.error = 'Email ou mot de passe incorrect.';
-    }
+    this.auth.login(email, password).subscribe({
+      next: () => {
+        this.router.navigate([this.auth.getRedirectRoute()]);
+      },
+      error: (err) => {
+        this.error = err?.error?.message || 'Email ou mot de passe incorrect.';
+      }
+    });
   }
 }

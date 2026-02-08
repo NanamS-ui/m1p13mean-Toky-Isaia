@@ -7,7 +7,7 @@ export const adminGuard: CanActivateFn = () => {
   const router = inject(Router);
   if (auth.currentUser()?.role === 'ADMIN') return true;
   if (auth.isAuthenticated()) return router.createUrlTree([auth.getRedirectRoute()]);
-  return router.createUrlTree(['/login']);
+  return router.createUrlTree(['/accueil']);
 };
 
 export const boutiqueGuard: CanActivateFn = () => {
@@ -15,7 +15,7 @@ export const boutiqueGuard: CanActivateFn = () => {
   const router = inject(Router);
   if (auth.currentUser()?.role === 'BOUTIQUE') return true;
   if (auth.isAuthenticated()) return router.createUrlTree([auth.getRedirectRoute()]);
-  return router.createUrlTree(['/login']);
+  return router.createUrlTree(['/accueil']);
 };
 
 export const acheteurGuard: CanActivateFn = () => {
@@ -23,5 +23,5 @@ export const acheteurGuard: CanActivateFn = () => {
   const router = inject(Router);
   if (auth.currentUser()?.role === 'ACHETEUR') return true;
   if (auth.isAuthenticated()) return router.createUrlTree([auth.getRedirectRoute()]);
-  return router.createUrlTree(['/login']);
+  return router.createUrlTree(['/accueil']);
 };

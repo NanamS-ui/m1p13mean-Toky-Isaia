@@ -11,5 +11,7 @@ app.use(express.json());
 
 // Définition des routes
 app.use("/api/users", require("./routes/UserRoute"));
+app.use("/api/roles", require("./routes/RoleRoute"));
+app.use("/api/auth", require("./routes/AuthRoute"));
 
 module.exports = app;

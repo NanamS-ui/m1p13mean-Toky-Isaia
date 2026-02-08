@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { RegistrationService } from '../../../core/services/registration.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -15,13 +16,20 @@ export class RegisterComponent implements OnInit {
   form: FormGroup;
   error = '';
   success = signal(false);
+  awaitingVerification = signal(false);
+  verificationUserId = signal('');
+  verificationEmail = signal('');
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   submitting = signal(false);
+  verifying = signal(false);
+  resending = signal(false);
+  resendSuccess = signal(false);
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
+    private registration: RegistrationService,
     private router: Router
   ) {
     this.form = this.fb.nonNullable.group({
@@ -30,12 +38,17 @@ export class RegisterComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required, Validators.pattern(/^(\+261|0)[0-9]{9}$/)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]],
-      acceptTerms: [false, [Validators.requiredTrue]]
+      confirmPassword: ['', [Validators.required]]
     }, {
       validators: [this.passwordMatchValidator]
     });
+
+    this.verificationForm = this.fb.nonNullable.group({
+      code: ['', [Validators.required, Validators.pattern(/^[0-9]{6}$/)]]
+    });
   }
+
+  verificationForm: FormGroup;
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
@@ -90,15 +103,77 @@ export class RegisterComponent implements OnInit {
     this.error = '';
     this.submitting.set(true);
 
-    // Simulation d'un appel API (délai de 1.5s)
-    setTimeout(() => {
-      this.submitting.set(false);
-      this.success.set(true);
+    this.registration.registerAcheteur({
+      firstName: this.form.value.firstName,
+      lastName: this.form.value.lastName,
+      email: this.form.value.email,
+      phone: this.form.value.phone,
+      password: this.form.value.password
+    }).subscribe({
+      next: (response) => {
+        this.submitting.set(false);
+        this.awaitingVerification.set(true);
+        this.verificationUserId.set(response.userId);
+        this.verificationEmail.set(response.email);
+        this.resendSuccess.set(false);
+        this.verificationForm.reset();
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        this.error = err?.error?.message || err?.message || 'Erreur lors de l\'inscription.';
+      }
+    });
+  }
 
-      // Redirection vers login après 2s
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 2500);
-    }, 1500);
+  onVerifyEmail(): void {
+    if (this.verificationForm.invalid) {
+      this.verificationForm.markAllAsTouched();
+      return;
+    }
+
+    this.error = '';
+    this.verifying.set(true);
+
+    this.registration.verifyEmail(
+      this.verificationUserId(),
+      this.verificationForm.value.code
+    ).subscribe({
+      next: () => {
+        this.verifying.set(false);
+        this.success.set(true);
+
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 2500);
+      },
+      error: (err) => {
+        this.verifying.set(false);
+        this.error = err?.error?.message || err?.message || 'Code invalide.';
+      }
+    });
+  }
+
+  onResendCode(): void {
+    if (!this.verificationUserId()) {
+      return;
+    }
+
+    this.error = '';
+    this.resending.set(true);
+
+    this.registration.resendVerification(
+      this.verificationUserId(),
+      this.verificationEmail()
+    ).subscribe({
+      next: () => {
+        this.resending.set(false);
+        this.resendSuccess.set(true);
+        this.verificationForm.reset();
+      },
+      error: (err) => {
+        this.resending.set(false);
+        this.error = err?.error?.message || err?.message || 'Impossible de renvoyer le code.';
+      }
+    });
   }
 }

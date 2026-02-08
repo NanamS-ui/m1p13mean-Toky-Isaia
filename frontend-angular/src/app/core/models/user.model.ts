@@ -18,4 +18,5 @@ export interface User {
 export interface AuthUser extends User {
   token: string;
   permissions: string[];
+  refreshToken?: string;
 }

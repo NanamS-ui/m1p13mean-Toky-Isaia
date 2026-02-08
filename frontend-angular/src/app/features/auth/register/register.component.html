@@ -21,6 +21,57 @@
         <p>Votre compte a été créé avec succès. Vous allez être redirigé vers la page de connexion...</p>
         <div class="success-loader"></div>
       </div>
+    } @else if (awaitingVerification()) {
+      <!-- Verification email -->
+      <form [formGroup]="verificationForm" (ngSubmit)="onVerifyEmail()" class="register-form">
+        <div class="form-group">
+          <label for="verificationCode">
+            <span class="material-symbols-outlined">verified</span>
+            Code de verification
+          </label>
+          <input
+            id="verificationCode"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            formControlName="code"
+            class="code-input"
+            placeholder="000000" />
+          <p class="helper-text">Un code a ete envoye a {{ verificationEmail() }}</p>
+          @if (verificationForm.get('code')?.invalid && verificationForm.get('code')?.touched) {
+            <span class="error-text">Entrez un code a 6 chiffres</span>
+          }
+          @if (resendSuccess()) {
+            <span class="success-text">Nouveau code envoye.</span>
+          }
+        </div>
+
+        @if (error) {
+          <div class="alert alert--error">
+            <span class="material-symbols-outlined">error</span>
+            {{ error }}
+          </div>
+        }
+
+        <button type="submit" class="btn btn--submit" [disabled]="verificationForm.invalid || verifying()">
+          @if (verifying()) {
+            <span class="spinner"></span>
+            Verification en cours...
+          } @else {
+            <span class="material-symbols-outlined">verified</span>
+            Verifier mon email
+          }
+        </button>
+
+        <button type="button" class="btn btn--ghost" [disabled]="resending()" (click)="onResendCode()">
+          @if (resending()) {
+            <span class="spinner"></span>
+            Envoi du code...
+          } @else {
+            Renvoyer le code
+          }
+        </button>
+      </form>
     } @else {
       <!-- Formulaire d'inscription -->
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="register-form">
@@ -136,7 +187,7 @@
         </div>
 
         <!-- CGU -->
-        <label class="checkbox-group">
+        <!-- <label class="checkbox-group">
           <input type="checkbox" formControlName="acceptTerms" />
           <span class="checkmark"></span>
           <span class="checkbox-label">
@@ -146,7 +197,7 @@
         </label>
         @if (form.get('acceptTerms')?.invalid && form.get('acceptTerms')?.touched) {
           <span class="error-text">Vous devez accepter les conditions</span>
-        }
+        } -->
 
         <!-- Erreur serveur -->
         @if (error) {
