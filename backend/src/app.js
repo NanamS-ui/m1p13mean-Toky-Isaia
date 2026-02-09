@@ -16,5 +16,7 @@ app.use("/api/auth", require("./routes/AuthRoute"));
 app.use("/api/shopCategories", require("./routes/ShopCategoryRoute"));
 app.use("/api/floors", require("./routes/FloorRoute"));
 app.use("/api/doors", require("./routes/DoorRoute"));
+app.use("/api/shops", require("./routes/ShopRoute"));
+
 
 module.exports = app;
