@@ -14,5 +14,6 @@ app.use("/api/users", require("./routes/UserRoute"));
 app.use("/api/roles", require("./routes/RoleRoute"));
 app.use("/api/auth", require("./routes/AuthRoute"));
 app.use("/api/shopCategories", require("./routes/ShopCategoryRoute"));
+app.use("/api/floors", require("./routes/FloorRoute"));
 
 module.exports = app;
