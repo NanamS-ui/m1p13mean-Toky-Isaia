@@ -1,4 +1,5 @@
 const Shop = require("../models/Shop");
+const ShopStatus = require("../models/ShopStatus")
 
 const buildError = (message, status) => {
   const error = new Error(message);
@@ -6,16 +7,29 @@ const buildError = (message, status) => {
   return error;
 };
 
-const createShop = async (payload) => Shop.create(payload);
+const createShop = async (payload, userId) =>{
+  defaultStatus = await ShopStatus.findOne({ value: "En attente"});
+  if( !defaultStatus) throw buildError("Status 'En attente' introuvable", 500);
+  return Shop.create({
+    ...payload,
+    shop_status: defaultStatus._id,
+    owner: userId
+  });
+  // Shop.create(payload);
+};
 
 const getShops = async () =>
   Shop.find({ deleted_at: null })
     .populate("door")
+    .populate("shop_status")
+    .populate("owner")
     .populate("shop_category");
 
 const getShopById = async (id) => {
   const shop = await Shop.findOne({ _id: id, deleted_at: null })
     .populate("door")
+    .populate("shop_status")
+    .populate("owner")
     .populate("shop_category");
   if (!shop) throw buildError("Boutique introuvable", 404);
   return shop;
@@ -28,6 +42,8 @@ const updateShop = async (id, payload) => {
     { new: true, runValidators: true }
   )
     .populate("door")
+    .populate("shop_status")
+    .populate("owner")
     .populate("shop_category");
   if (!shop) throw buildError("Boutique introuvable", 404);
   return shop;

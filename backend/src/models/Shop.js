@@ -45,6 +45,16 @@ const ShopSchema = new mongoose.Schema(
       ref: "ShopCategory",
       required: true
     },
+    shop_status:{
+      type : mongoose.Schema.Types.ObjectId,
+      ref: "ShopStatus",
+      required: true
+    },
+    owner:{
+      type : mongoose.Schema.Types.ObjectId,
+      ref : "Users",
+      required : true
+    },
     deleted_at: {
       type: Date,
       default: null
@@ -60,6 +70,8 @@ const ShopSchema = new mongoose.Schema(
 
 ShopSchema.index({ name: 1 }, { unique: true });
 ShopSchema.index({ shop_category: 1 });
+ShopSchema.index({shop_status : 1});
+ShopSchema.index({ owner : 1});
 
 
 module.exports = mongoose.model("Shop", ShopSchema, "shops");

@@ -2,7 +2,7 @@ const ShopService = require("../services/ShopService");
 
 exports.createShop = async (req, res) => {
   try {
-    const shop = await ShopService.createShop(req.body);
+    const shop = await ShopService.createShop(req.body, req.user.id);
     res.status(201).json(shop);
   } catch (error) {
     res.status(error.status || 400).json({ message: error.message });
