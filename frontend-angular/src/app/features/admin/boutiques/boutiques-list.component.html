@@ -11,18 +11,20 @@
         <label>Statut</label>
         <select [(ngModel)]="filterStatus" >
           <option value="">Tous</option>
-          @for (status of shopStatus; track status._id) {
+          <option *ngFor="let status of shopStatus"[value]="status.value">{{ status.value }}</option>
+          <!-- @for (status of shopStatus; track status._id) {
             <option [value]="status.value">{{ status.value }}</option>
-          }
+          } -->
         </select>
       </div>
       <div class="form-group">
         <label>Catégorie</label>
         <select [(ngModel)]="filterCategory">
           <option value="">Toutes</option>
-          @for (cat of shopCategories; track cat._id) {
+          <option *ngFor="let cat of shopCategories"[value]="cat.value">{{ cat.value }}</option>
+          <!-- @for (cat of shopCategories; track cat._id) {
             <option [value]="cat.value">{{ cat.value }}</option>
-          }
+          } -->
         </select>
       </div>
     </div>
@@ -43,8 +45,9 @@
           </tr>
         </thead>
         <tbody>
-          @for (b of filteredBoutiques; track b._id) {
-            <tr>
+          <tr *ngFor="let b of filteredBoutiques">
+          <!-- @for (b of filteredBoutiques; track b._id) {
+            <tr> -->
               <td><strong>{{ b.name }}</strong></td>
               <td>{{ b.shop_category.value }}</td>
               <td>
@@ -63,7 +66,7 @@
                 }
               </td>
             </tr>
-          }
+          <!-- } -->
         </tbody>
       </table>
     </div>

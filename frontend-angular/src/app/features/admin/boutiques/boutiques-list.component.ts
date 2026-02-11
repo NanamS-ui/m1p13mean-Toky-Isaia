@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -30,7 +30,7 @@ interface BoutiqueRow {
   styleUrl: './boutiques-list.component.css'
 })
 export class BoutiquesListComponent {
-  categories = BOUTIQUE_CATEGORIES;
+  
   filterStatus: BoutiqueStatus | '' = '';
   filterCategory: BoutiqueCategory | '' = '';
   shopCategories : ShopCategory[] = [];
@@ -38,7 +38,8 @@ export class BoutiquesListComponent {
   shops : Shop[] =[];
   constructor(private shopCategoryService : ShopCategoryService,
     private shopStatusService : ShopStatusService,
-    private shopService : ShopService
+    private shopService : ShopService,
+    private cdr : ChangeDetectorRef
   ){}
   
   ngOnInit(): void {
@@ -50,18 +51,10 @@ export class BoutiquesListComponent {
       this.shopCategories = categories;
       this.shopStatus = status;
       this.shops = shops;
-      console.log(categories);
-      console.log(this.shops);
+      this.cdr.detectChanges();
     });
   }
-  // Données mock
-  boutiques: BoutiqueRow[] = [
-    { id: '1', name: 'TechZone', category: 'TECH', status: 'ACTIVE', ownerEmail: 'contact@techzone.mg', monthlyRent: 850000, rentPaidUntil: '2025-02-28' },
-    { id: '2', name: 'Fashion House', category: 'MODE', status: 'ACTIVE', ownerEmail: 'info@fashionhouse.mg', monthlyRent: 620000, rentPaidUntil: '2025-03-15' },
-    { id: '3', name: 'Food Court Sushi', category: 'FOOD', status: 'PENDING', ownerEmail: 'sushi@foodcourt.mg', monthlyRent: 450000 },
-    { id: '4', name: 'Beauté & Soins', category: 'BEAUTE', status: 'ACTIVE', ownerEmail: 'contact@beaute.mg', monthlyRent: 380000, rentPaidUntil: '2025-01-31' },
-    { id: '5', name: 'Sport Pro', category: 'SPORT', status: 'DISABLED', ownerEmail: 'pro@sport.mg', monthlyRent: 520000 }
-  ];
+  
 
   get filteredBoutiques(): Shop[] {
     return this.shops.filter(b => {
@@ -72,16 +65,10 @@ export class BoutiquesListComponent {
     });
   }
 
-  getStatusLabel(s: BoutiqueStatus): string {
-    const map: Record<BoutiqueStatus, string> = { PENDING: 'En attente', ACTIVE: 'Active', DISABLED: 'Désactivée', REJECTED: 'Refusée' };
-    return map[s] ?? s;
-  }
+  
   getStatusLabelString(s:string):string{
     const map: Record<string, string> = {  'En attente':"pending",'Active':"active",  'Désactivée': "disable", 'Refusée':"rejected" };
     return map[s] ?? s;
   }
 
-  getCategoryLabel(c: BoutiqueCategory): string {
-    return this.categories.find(x => x.value === c)?.label ?? c;
-  }
 }
