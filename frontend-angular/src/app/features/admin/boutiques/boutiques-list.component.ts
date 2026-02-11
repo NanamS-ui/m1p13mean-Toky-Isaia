@@ -1,9 +1,16 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { BOUTIQUE_CATEGORIES } from '../../../core/models/boutique.model';
 import type { BoutiqueCategory, BoutiqueStatus } from '../../../core/models/boutique.model';
+import { ShopCategory } from '../../../core/models/shop/shopCategory.model';
+import { ShopCategoryService } from '../../../core/services/shop/shop-category.service';
+import { ShopStatus } from '../../../core/models/shop/shopStatus.model';
+import { ShopStatusService } from '../../../core/services/shop/shop-status.service';
+import { firstValueFrom, forkJoin } from 'rxjs';
+import { Shop } from '../../../core/models/shop/shop.model';
+import { ShopService } from '../../../core/services/shop/shop.service';
 
 interface BoutiqueRow {
   id: string;
@@ -26,7 +33,27 @@ export class BoutiquesListComponent {
   categories = BOUTIQUE_CATEGORIES;
   filterStatus: BoutiqueStatus | '' = '';
   filterCategory: BoutiqueCategory | '' = '';
-
+  shopCategories : ShopCategory[] = [];
+  shopStatus : ShopStatus[] = [];
+  shops : Shop[] =[];
+  constructor(private shopCategoryService : ShopCategoryService,
+    private shopStatusService : ShopStatusService,
+    private shopService : ShopService
+  ){}
+  
+  ngOnInit(): void {
+    forkJoin({
+      categories: this.shopCategoryService.getShopCategories(),
+      status: this.shopStatusService.getShopStatus(),
+      shops : this.shopService.getShops()
+    }).subscribe(({ categories, status, shops }) => {
+      this.shopCategories = categories;
+      this.shopStatus = status;
+      this.shops = shops;
+      console.log(categories);
+      console.log(this.shops);
+    });
+  }
   // Données mock
   boutiques: BoutiqueRow[] = [
     { id: '1', name: 'TechZone', category: 'TECH', status: 'ACTIVE', ownerEmail: 'contact@techzone.mg', monthlyRent: 850000, rentPaidUntil: '2025-02-28' },
@@ -36,16 +63,21 @@ export class BoutiquesListComponent {
     { id: '5', name: 'Sport Pro', category: 'SPORT', status: 'DISABLED', ownerEmail: 'pro@sport.mg', monthlyRent: 520000 }
   ];
 
-  get filteredBoutiques(): BoutiqueRow[] {
-    return this.boutiques.filter(b => {
-      const matchStatus = !this.filterStatus || b.status === this.filterStatus;
-      const matchCategory = !this.filterCategory || b.category === this.filterCategory;
+  get filteredBoutiques(): Shop[] {
+    return this.shops.filter(b => {
+      
+      const matchStatus = !this.filterStatus || b.shop_status?.value === this.filterStatus;
+      const matchCategory = !this.filterCategory || b.shop_category?.value === this.filterCategory;
       return matchStatus && matchCategory;
     });
   }
 
   getStatusLabel(s: BoutiqueStatus): string {
     const map: Record<BoutiqueStatus, string> = { PENDING: 'En attente', ACTIVE: 'Active', DISABLED: 'Désactivée', REJECTED: 'Refusée' };
+    return map[s] ?? s;
+  }
+  getStatusLabelString(s:string):string{
+    const map: Record<string, string> = {  'En attente':"pending",'Active':"active",  'Désactivée': "disable", 'Refusée':"rejected" };
     return map[s] ?? s;
   }
 

@@ -9,20 +9,19 @@
     <div class="filters">
       <div class="form-group">
         <label>Statut</label>
-        <select [(ngModel)]="filterStatus" (ngModelChange)="filterStatus = $event">
+        <select [(ngModel)]="filterStatus" >
           <option value="">Tous</option>
-          <option value="PENDING">En attente</option>
-          <option value="ACTIVE">Active</option>
-          <option value="DISABLED">Désactivée</option>
-          <option value="REJECTED">Refusée</option>
+          @for (status of shopStatus; track status._id) {
+            <option [value]="status.value">{{ status.value }}</option>
+          }
         </select>
       </div>
       <div class="form-group">
         <label>Catégorie</label>
-        <select [(ngModel)]="filterCategory" (ngModelChange)="filterCategory = $event">
+        <select [(ngModel)]="filterCategory">
           <option value="">Toutes</option>
-          @for (cat of categories; track cat.value) {
-            <option [value]="cat.value">{{ cat.label }}</option>
+          @for (cat of shopCategories; track cat._id) {
+            <option [value]="cat.value">{{ cat.value }}</option>
           }
         </select>
       </div>
@@ -38,28 +37,28 @@
             <th>Catégorie</th>
             <th>Statut</th>
             <th>Propriétaire</th>
-            <th>Loyer mensuel</th>
-            <th>Loyer payé jusqu'au</th>
+            <!-- <th>Loyer mensuel</th> -->
+            <!-- <th>Loyer payé jusqu'au</th> -->
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          @for (b of filteredBoutiques; track b.id) {
+          @for (b of filteredBoutiques; track b._id) {
             <tr>
               <td><strong>{{ b.name }}</strong></td>
-              <td>{{ getCategoryLabel(b.category) }}</td>
+              <td>{{ b.shop_category.value }}</td>
               <td>
-                <span class="badge" [class]="'badge--' + b.status.toLowerCase()">{{ getStatusLabel(b.status) }}</span>
+                <span class="badge" [class]="'badge--' + getStatusLabelString(b.shop_status.value)">{{b.shop_status.value }}</span>
               </td>
-              <td>{{ b.ownerEmail }}</td>
-              <td>{{ b.monthlyRent | number }} Ar</td>
-              <td>{{ b.rentPaidUntil || '—' }}</td>
+              <td>{{ b.owner.email }}</td>
+              <!-- <td>{{ b.monthlyRent | number }} Ar</td> -->
+              <!-- <td>{{ b.rentPaidUntil || '—' }}</td> -->
               <td>
-                <a [routerLink]="['/admin/boutiques', b.id]" class="btn-link">Modifier</a>
-                @if (b.status === 'PENDING') {
+                <a [routerLink]="['/admin/boutiques', b._id]" class="btn-link">Modifier</a>
+                @if (b.shop_status.value === 'En attente') {
                   <button type="button" class="btn-link btn-link--success">Valider</button>
                 }
-                @if (b.status === 'ACTIVE') {
+                @if (b.shop_status.value === 'Active') {
                   <button type="button" class="btn-link btn-link--danger">Désactiver</button>
                 }
               </td>
