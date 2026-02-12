@@ -53,3 +53,21 @@ exports.addSuspension = async (req, res) => {
     res.status(error.status || 400).json({ message: error.message });
   }
 };
+
+exports.updateShopStatus = async (req, res) => {
+  try {
+    const { status_value, id_shop } = req.body;
+
+    const updatedShop = await ShopService.updateShopStatus(
+      status_value,
+      id_shop
+    );
+
+    res.status(200).json(updatedShop);
+
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Internal Server Error"
+    });
+  }
+};

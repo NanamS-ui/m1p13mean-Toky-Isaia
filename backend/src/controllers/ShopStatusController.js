@@ -52,3 +52,17 @@ exports.deleteShopStatus = async (req, res) => {
     res.status(error.status || 404).json({ message: error.message });
   }
 };
+
+exports.getStatusByValue = async (req, res) => {
+  try {
+    const { value } = req.params;
+
+    const status = await ShopStatusService.getStatusByValue(value);
+
+    res.status(200).json(status);
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Internal Server Error"
+    });
+  }
+};

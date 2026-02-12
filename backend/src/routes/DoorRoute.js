@@ -10,5 +10,7 @@ router.get("/", DoorCtrl.getDoors);
 router.get("/:id", DoorCtrl.getDoorById);
 router.put("/:id", requireRole("ADMIN"), DoorCtrl.updateDoor);
 router.delete("/:id", requireRole("ADMIN"), DoorCtrl.deleteDoor);
+router.get("/floor/:idFloor", DoorCtrl.getDoorsByFloor);
+router.get("/availablefloor/:idFloor", DoorCtrl.getAvailableDoorsByFloor);
 
 module.exports = router;

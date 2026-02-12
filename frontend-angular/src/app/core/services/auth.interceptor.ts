@@ -2,7 +2,8 @@ import { inject } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
-
+import { catchError, throwError } from 'rxjs';
+import { Router } from '@angular/router';
 const publicPaths = [
   '/auth/login',
   '/auth/register-acheteur',
@@ -13,6 +14,7 @@ const publicPaths = [
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
+  const router = inject(Router);
   const isApiRequest = req.url.startsWith(environment.apiBaseUrl);
   const isPublic = publicPaths.some(path => req.url.includes(path));
 
@@ -31,5 +33,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     }
   });
 
-  return next(authReq);
+  return next(authReq).pipe(
+    catchError((error) => {
+      if (error.status === 401) {
+        auth.logout();
+        router.navigate(['/login']);
+      }
+      return throwError(() => error);
+    })
+  );
+
 };

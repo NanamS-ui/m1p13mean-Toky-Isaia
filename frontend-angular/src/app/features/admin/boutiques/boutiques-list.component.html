@@ -59,10 +59,10 @@
               <td>
                 <a [routerLink]="['/admin/boutiques', b._id]" class="btn-link">Modifier</a>
                 @if (b.shop_status.value === 'En attente') {
-                  <button type="button" class="btn-link btn-link--success">Valider</button>
+                  <button type="button" class="btn-link btn-link--success" (click)="changeStatus(b._id,'Active')" >Valider</button>
                 }
                 @if (b.shop_status.value === 'Active') {
-                  <button type="button" class="btn-link btn-link--danger">Désactiver</button>
+                  <button type="button" class="btn-link btn-link--danger" (click)="changeStatus(b._id,'Désactivée')" >Désactiver</button>
                 }
               </td>
             </tr>

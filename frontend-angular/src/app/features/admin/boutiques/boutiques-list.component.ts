@@ -64,6 +64,27 @@ export class BoutiquesListComponent {
       return matchStatus && matchCategory;
     });
   }
+  changeStatus(id: string, status: string): void {
+    this.shopService.updateShopStatus(status, id).subscribe({
+      next: (updatedShop) => {
+        const index = this.shops.findIndex(b => b._id === id);
+
+        if (index !== -1) {
+          
+          const newShops = [...this.shops];
+          
+          newShops[index] = updatedShop;
+          
+          this.shops = newShops;
+          
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        console.error('Erreur mise à jour status', err);
+      }
+    });
+  }
 
   
   getStatusLabelString(s:string):string{

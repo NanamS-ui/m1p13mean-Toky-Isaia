@@ -35,10 +35,27 @@ const deleteShopStatus = async (id) => {
   return status;
 };
 
+const getStatusByValue = async (value) => {
+  if (!value || typeof value !== "string") {
+    throw { status: 400, message: "Invalid status value" };
+  }
+
+  const status = await ShopStatus.findOne({
+    value: value.trim()
+  });
+
+  if (!status) {
+    throw { status: 404, message: "Status not found" };
+  }
+
+  return status;
+};
+
 module.exports = {
   createShopStatus,
   getShopStatuses,
   getShopStatusById,
   updateShopStatus,
-  deleteShopStatus
+  deleteShopStatus,
+  getStatusByValue
 };

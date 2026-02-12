@@ -11,5 +11,6 @@ router.get("/:id", ShopCtrl.getShopById);
 router.put("/:id", requireRole("ADMIN"), ShopCtrl.updateShop);
 router.delete("/:id", requireRole("ADMIN"), ShopCtrl.deleteShop);
 router.post("/:id/suspensions", requireRole("ADMIN"), ShopCtrl.addSuspension);
+router.put("/shop/status", ShopCtrl.updateShopStatus);
 
 module.exports = router;

@@ -27,6 +27,24 @@ exports.getDoorById = async (req, res) => {
     }
 };
 
+exports.getDoorsByFloor = async(req, res)=>{
+    try{
+        const doors = await DoorService.getDoorsByFloor(req.params.idFloor);
+        res.json(doors);
+    }catch(error){
+        res.status(error.status || 500).json({message : error.message});
+    }
+};
+
+exports.getAvailableDoorsByFloor = async(req, res)=>{
+    try{
+        const doors = await DoorService.getAvailableDoorsByFloor(req.params.idFloor);
+        res.json(doors);
+    }catch(error){
+        res.status(error.status || 500).json({message : error.message});
+    }
+};
+
 exports.updateDoor = async (req, res) => {
     try {
         const door = await DoorService.updateDoor(req.params.id, req.body);

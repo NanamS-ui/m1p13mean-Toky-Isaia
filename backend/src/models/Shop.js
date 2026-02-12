@@ -35,6 +35,11 @@ const ShopSchema = new mongoose.Schema(
       type: [SuspensionSchema],
       default: []
     },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 1000
+    },
     door: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Door",
@@ -55,6 +60,10 @@ const ShopSchema = new mongoose.Schema(
       ref : "Users",
       required : true
     },
+    validate_date: {
+      type: Date,
+      default: null
+    },
     deleted_at: {
       type: Date,
       default: null
@@ -72,6 +81,10 @@ ShopSchema.index({ name: 1 }, { unique: true });
 ShopSchema.index({ shop_category: 1 });
 ShopSchema.index({shop_status : 1});
 ShopSchema.index({ owner : 1});
+ShopSchema.index({ door: 1 });;
+ShopSchema.index({ deleted_at: 1 });
+ShopSchema.index({ validate_date: 1 });
+
 
 
 module.exports = mongoose.model("Shop", ShopSchema, "shops");

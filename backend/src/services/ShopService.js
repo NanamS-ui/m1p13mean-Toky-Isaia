@@ -1,6 +1,7 @@
 const Shop = require("../models/Shop");
 const ShopStatus = require("../models/ShopStatus")
-
+const ShopStatusService = require("./ShopStatusService");
+const mongoose = require("mongoose");
 const buildError = (message, status) => {
   const error = new Error(message);
   error.status = status;
@@ -69,11 +70,43 @@ const addSuspension = async (id, suspension) => {
   return shop;
 };
 
+const updateShopStatus = async (status_value, id_shop) => {
+  console.log(status_value);
+  if (!mongoose.Types.ObjectId.isValid(id_shop)) {
+    throw { status: 400, message: "Invalid shop id" };
+  }
+  const status = await ShopStatusService.getStatusByValue(status_value);
+  
+  const updateData = {
+    shop_status: status._id
+  };
+
+  if (status.value === "Active") {
+    updateData.validate_date = new Date();
+  }
+
+  const updatedShop = await Shop.findByIdAndUpdate(
+    id_shop,
+    { $set: updateData },
+    { new: true }
+  ).populate("door")
+    .populate("shop_status")
+    .populate("owner")
+    .populate("shop_category");
+
+  if (!updatedShop) {
+    throw { status: 404, message: "Shop not found" };
+  }
+
+  return updatedShop;
+};
+
 module.exports = {
   createShop,
   getShops,
   getShopById,
   updateShop,
   deleteShop,
-  addSuspension
+  addSuspension,
+  updateShopStatus
 };
