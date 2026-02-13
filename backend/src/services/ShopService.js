@@ -21,7 +21,7 @@ const createShop = async (payload, userId) =>{
 
 const getShops = async () =>
   Shop.find({ deleted_at: null })
-    .populate("door")
+    .populate({ path: "door", populate: { path: "floor" } })
     .populate("shop_status")
     .populate("owner")
     .populate("shop_category");

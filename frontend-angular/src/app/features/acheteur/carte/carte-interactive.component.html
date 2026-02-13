@@ -1,5 +1,4 @@
 <div class="carte-page">
-  <!-- Header -->
   <div class="carte-header">
     <h1>
       <span class="material-symbols-outlined">map</span>
@@ -8,6 +7,18 @@
     <p class="carte-header__subtitle">Explorez le centre commercial et trouvez vos boutiques</p>
   </div>
 
+  @if (loading()) {
+    <div class="carte-loading">
+      <span class="material-symbols-outlined">progress_activity</span>
+      <p>Chargement de la carte...</p>
+    </div>
+  } @else if (error()) {
+    <div class="carte-error">
+      <span class="material-symbols-outlined">error</span>
+      <p>{{ error() }}</p>
+      <button class="btn btn--primary" (click)="loadData()">Réessayer</button>
+    </div>
+  } @else {
   <div class="carte-content">
     <!-- Sidebar -->
     <div class="carte-sidebar">
@@ -18,15 +29,18 @@
           Niveaux
         </h3>
         <div class="floor-selector">
-          @for (floor of floors; track floor.number) {
+          @for (floor of floors(); track floor._id) {
             <button
               class="floor-btn"
-              [class.floor-btn--active]="selectedFloor() === floor.number"
-              (click)="setFloor(floor.number)"
+              [class.floor-btn--active]="selectedFloorId() === floor._id"
+              (click)="setFloor(floor._id)"
             >
-              <span class="material-symbols-outlined">{{ floor.icon }}</span>
-              {{ floor.label }}
+              <span class="material-symbols-outlined">stairs</span>
+              {{ floor.value }}
             </button>
+          }
+          @empty {
+            <p class="empty-text">Aucun niveau</p>
           }
         </div>
       </div>
@@ -42,11 +56,12 @@
           <input
             type="text"
             placeholder="Nom de la boutique..."
-            [(ngModel)]="searchQuery"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
             class="search-input"
           />
           @if (searchQuery()) {
-            <button class="search-clear" (click)="searchQuery.set('')">
+            <button class="search-clear" type="button" (click)="searchQuery.set('')">
               <span class="material-symbols-outlined">close</span>
             </button>
           }
@@ -60,29 +75,29 @@
           Filtres
         </h3>
         <div class="filters">
-          <!-- Category Filter -->
           <div class="filter-group">
             <label>Catégorie</label>
             <div class="category-chips">
-              @for (cat of categories; track cat.value) {
+              @for (cat of categoriesWithAll(); track cat._id) {
                 <button
+                  type="button"
                   class="category-chip"
-                  [class.category-chip--active]="selectedCategory() === cat.value"
-                  (click)="selectedCategory.set(cat.value)"
+                  [class.category-chip--active]="(selectedCategoryId() || '') === (cat._id || '')"
+                  (click)="setCategory(cat._id ? cat._id : null)"
                 >
-                  <span class="material-symbols-outlined">{{ cat.icon }}</span>
-                  {{ cat.label }}
+                  <span class="material-symbols-outlined">category</span>
+                  {{ cat.value }}
                 </button>
               }
             </div>
           </div>
 
-          <!-- Open Now Filter -->
           <div class="filter-group">
             <label class="checkbox-label">
               <input
                 type="checkbox"
-                [(ngModel)]="showOpenOnly"
+                [checked]="showOpenOnly()"
+                (change)="showOpenOnly.set($any($event.target).checked)"
                 class="checkbox-input"
               />
               <span class="checkbox-custom"></span>
@@ -93,8 +108,8 @@
             </label>
           </div>
 
-          @if (searchQuery() || selectedCategory() !== 'all' || showOpenOnly()) {
-            <button class="btn-clear-filters" (click)="clearFilters()">
+          @if (searchQuery() || selectedCategoryId() || showOpenOnly()) {
+            <button type="button" class="btn-clear-filters" (click)="clearFilters()">
               <span class="material-symbols-outlined">clear_all</span>
               Réinitialiser
             </button>
@@ -109,14 +124,17 @@
           Légende
         </h3>
         <div class="legend">
-          @for (cat of categories.slice(1); track cat.value) {
+          @for (cat of categories(); track cat._id) {
             <div class="legend-item">
               <span
                 class="legend-marker"
                 [style.background-color]="getCategoryColor(cat.value)"
               ></span>
-              <span class="legend-label">{{ cat.label }}</span>
+              <span class="legend-label">{{ cat.value }}</span>
             </div>
+          }
+          @empty {
+            <p class="empty-text">Aucune catégorie</p>
           }
         </div>
       </div>
@@ -136,6 +154,7 @@
           } @else {
             @for (shop of filteredShops(); track shop.id) {
               <button
+                type="button"
                 class="shop-list-item"
                 [class.shop-list-item--active]="selectedShop()?.id === shop.id"
                 [class.shop-list-item--closed]="!shop.isOpen"
@@ -145,8 +164,8 @@
                 <div class="shop-list-info">
                   <h4>{{ shop.name }}</h4>
                   <p>
-                    <span class="material-symbols-outlined">schedule</span>
-                    {{ shop.openingHours }}
+                    <span class="material-symbols-outlined">location_on</span>
+                    {{ shop.doorValue }} · {{ shop.floorLabel }}
                     @if (!shop.isOpen) {
                       <span class="status-closed">Fermé</span>
                     } @else {
@@ -165,20 +184,39 @@
     <!-- Map Area -->
     <div class="carte-map-area">
       <div class="map-container">
-        <!-- Map Background (Visual Mockup) -->
         <div class="map-background">
-          <!-- Entrance Marker -->
+          <!-- Plan d'étage : Allée A, Allée B, couloir central -->
+          <svg class="floor-plan-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <pattern id="floor-pattern" width="4" height="4" patternUnits="userSpaceOnUse">
+                <rect width="4" height="4" fill="none" stroke="rgba(148,163,184,0.15)" stroke-width="0.3"/>
+              </pattern>
+              <linearGradient id="corridor-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f8fafc"/>
+                <stop offset="100%" stop-color="#f1f5f9"/>
+              </linearGradient>
+            </defs>
+            <rect x="2" y="5" width="96" height="88" fill="var(--korus-card-bg)" stroke="var(--korus-border)" stroke-width="0.5" rx="1"/>
+            <rect x="44" y="8" width="12" height="82" fill="url(#corridor-grad)" stroke="rgba(148,163,184,0.3)" stroke-width="0.4"/>
+            <path d="M 40 88 L 40 93 L 60 93 L 60 88 Z" fill="var(--korus-accent-dim)" stroke="var(--korus-accent)" stroke-width="0.5"/>
+            <rect x="6" y="8" width="8" height="6" fill="rgba(148,163,184,0.2)" stroke="rgba(148,163,184,0.4)" stroke-width="0.3" rx="0.5"/>
+            <rect x="86" y="8" width="8" height="6" fill="rgba(148,163,184,0.2)" stroke="rgba(148,163,184,0.4)" stroke-width="0.3" rx="0.5"/>
+            <rect x="4" y="18" width="36" height="66" fill="url(#floor-pattern)" stroke="rgba(148,163,184,0.25)" stroke-width="0.3" rx="0.5"/>
+            <text x="22" y="24" font-size="2.2" fill="var(--korus-text-muted)" font-weight="600">Allée A</text>
+            <rect x="60" y="18" width="36" height="66" fill="url(#floor-pattern)" stroke="rgba(148,163,184,0.25)" stroke-width="0.3" rx="0.5"/>
+            <text x="78" y="24" font-size="2.2" fill="var(--korus-text-muted)" font-weight="600">Allée B</text>
+          </svg>
+
           <div class="entrance-marker" [class.entrance-marker--route]="showRoute() && routeFromEntrance()">
             <span class="material-symbols-outlined">door_front</span>
             <span class="entrance-label">Entrée</span>
           </div>
 
-          <!-- Route Line (if showing route) -->
           @if (showRoute() && selectedShop() && routeFromEntrance()) {
             <svg class="route-line" viewBox="0 0 100 100" preserveAspectRatio="none">
               <line
-                x1="10"
-                y1="90"
+                x1="50"
+                y1="92"
                 [attr.x2]="selectedShop()!.x"
                 [attr.y2]="selectedShop()!.y"
                 stroke="var(--korus-accent)"
@@ -194,9 +232,9 @@
             </svg>
           }
 
-          <!-- Shop Markers -->
           @for (shop of filteredShops(); track shop.id) {
             <button
+              type="button"
               class="shop-marker"
               [class.shop-marker--selected]="selectedShop()?.id === shop.id"
               [class.shop-marker--closed]="!shop.isOpen"
@@ -214,17 +252,15 @@
           }
         </div>
 
-        <!-- Floor Label -->
         <div class="floor-label">
           <span class="material-symbols-outlined">layers</span>
-          {{ floors[selectedFloor()].label }}
+          {{ selectedFloorLabel() }}
         </div>
       </div>
 
-      <!-- Shop Popup -->
       @if (selectedShop()) {
         <div class="shop-popup">
-          <button class="popup-close" (click)="closeShopPopup()">
+          <button type="button" class="popup-close" (click)="closeShopPopup()">
             <span class="material-symbols-outlined">close</span>
           </button>
           <div class="popup-header">
@@ -254,26 +290,28 @@
           <div class="popup-body">
             <div class="popup-info">
               <div class="info-item">
-                <span class="material-symbols-outlined">schedule</span>
+                <span class="material-symbols-outlined">location_on</span>
                 <div>
-                  <strong>Horaires:</strong>
-                  <p>{{ selectedShop()!.openingHours }}</p>
-                </div>
-              </div>
-              <div class="info-item">
-                <span class="material-symbols-outlined">layers</span>
-                <div>
-                  <strong>Niveau:</strong>
-                  <p>{{ floors[selectedShop()!.floor].label }}</p>
+                  <strong>Emplacement:</strong>
+                  <p>Porte {{ selectedShop()!.doorValue }} · {{ selectedShop()!.floorLabel }}</p>
                 </div>
               </div>
               <div class="info-item">
                 <span class="material-symbols-outlined">category</span>
                 <div>
                   <strong>Catégorie:</strong>
-                  <p>{{ getSelectedShopCategoryLabel() }}</p>
+                  <p>{{ selectedShop()!.category }}</p>
                 </div>
               </div>
+              @if (selectedShop()!._raw.description) {
+                <div class="info-item">
+                  <span class="material-symbols-outlined">info</span>
+                  <div>
+                    <strong>Description:</strong>
+                    <p>{{ selectedShop()!._raw.description }}</p>
+                  </div>
+                </div>
+              }
             </div>
             <div class="popup-actions">
               <a
@@ -284,6 +322,7 @@
                 Voir la boutique
               </a>
               <button
+                type="button"
                 class="btn-secondary"
                 (click)="toggleRoute()"
               >
@@ -296,4 +335,5 @@
       }
     </div>
   </div>
+  }
 </div>

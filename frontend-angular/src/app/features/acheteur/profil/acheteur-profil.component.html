@@ -1,5 +1,11 @@
 <div class="profil-page">
   <div class="profil-card">
+    @if (loading()) {
+      <div class="profil-loading">
+        <span class="material-symbols-outlined">progress_activity</span>
+        <p>Chargement du profil...</p>
+      </div>
+    }
     <!-- Profile Header -->
     <div class="profil-header">
       <div class="profil-avatar">
@@ -30,7 +36,7 @@
         [class.tab-btn--active]="activeTab() === 'addresses'"
         (click)="activeTab.set('addresses')">
         <span class="material-symbols-outlined">location_on</span>
-        Adresses
+        Adresse
       </button>
       <button 
         type="button"
@@ -49,6 +55,18 @@
         <div class="tab-panel">
           <h2 class="tab-panel__title">Informations personnelles</h2>
           <form [formGroup]="personalInfoForm" (ngSubmit)="onSavePersonalInfo()" class="profil-form">
+            @if (saveSuccess()) {
+              <div class="alert alert--success">
+                <span class="material-symbols-outlined">check_circle</span>
+                Profil mis à jour avec succès
+              </div>
+            }
+            @if (saveError()) {
+              <div class="alert alert--error">
+                <span class="material-symbols-outlined">error</span>
+                {{ saveError() }}
+              </div>
+            }
             <div class="form-group">
               <label for="firstName">Prénom</label>
               <input 
@@ -127,159 +145,37 @@
         </div>
       }
 
-      <!-- Addresses Tab -->
+      <!-- Adresse Tab (modèle backend : champ unique) -->
       @if (activeTab() === 'addresses') {
         <div class="tab-panel">
-          <h2 class="tab-panel__title">Mes adresses</h2>
-          
-          <!-- Address List -->
-          <div class="addresses-list">
-            @for (address of addresses(); track address.id) {
-              <div class="address-card" [class.address-card--default]="address.isDefault">
-                <div class="address-card__header">
-                  <div class="address-card__label">
-                    <span class="material-symbols-outlined">home</span>
-                    {{ address.label }}
-                    @if (address.isDefault) {
-                      <span class="badge badge--default">Par défaut</span>
-                    }
-                  </div>
-                  <div class="address-card__actions">
-                    @if (!address.isDefault) {
-                      <button 
-                        type="button"
-                        class="btn-icon"
-                        (click)="onSetDefaultAddress(address.id)"
-                        title="Définir par défaut">
-                        <span class="material-symbols-outlined">star</span>
-                      </button>
-                    }
-                    <button 
-                      type="button"
-                      class="btn-icon"
-                      (click)="onEditAddress(address)"
-                      title="Modifier">
-                      <span class="material-symbols-outlined">edit</span>
-                    </button>
-                    <button 
-                      type="button"
-                      class="btn-icon btn-icon--danger"
-                      (click)="onDeleteAddress(address.id)"
-                      title="Supprimer">
-                      <span class="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="address-card__body">
-                  <p>{{ address.street }}</p>
-                  <p>{{ address.city }}, {{ address.postalCode }}</p>
-                  <p>{{ address.country }}</p>
-                </div>
-              </div>
-            } @empty {
-              <div class="empty-state">
-                <span class="material-symbols-outlined">location_off</span>
-                <p>Aucune adresse enregistrée</p>
+          <h2 class="tab-panel__title">Mon adresse</h2>
+          <form [formGroup]="adresseForm" (ngSubmit)="onSaveAdresse()" class="profil-form">
+            @if (addressSaveSuccess()) {
+              <div class="alert alert--success">
+                <span class="material-symbols-outlined">check_circle</span>
+                Adresse mise à jour avec succès
               </div>
             }
-          </div>
-
-          <!-- Address Form -->
-          <div class="address-form-section">
-            <h3 class="address-form-section__title">
-              {{ editingAddressId() ? 'Modifier l\'adresse' : 'Ajouter une nouvelle adresse' }}
-            </h3>
-            <form [formGroup]="addressForm" (ngSubmit)="editingAddressId() ? onUpdateAddress() : onAddAddress()" class="profil-form">
-              <div class="form-group">
-                <label for="addressLabel">Libellé</label>
-                <input 
-                  id="addressLabel" 
-                  type="text" 
-                  formControlName="label" 
-                  placeholder="Ex: Domicile, Bureau"
-                  [class.error]="addressForm.get('label')?.invalid && addressForm.get('label')?.touched" />
-                @if (addressForm.get('label')?.invalid && addressForm.get('label')?.touched) {
-                  <span class="error-text">Le libellé est requis</span>
-                }
+            @if (addressSaveError()) {
+              <div class="alert alert--error">
+                <span class="material-symbols-outlined">error</span>
+                {{ addressSaveError() }}
               </div>
-
-              <div class="form-group">
-                <label for="street">Rue</label>
-                <input 
-                  id="street" 
-                  type="text" 
-                  formControlName="street" 
-                  placeholder="Numéro et nom de rue"
-                  [class.error]="addressForm.get('street')?.invalid && addressForm.get('street')?.touched" />
-                @if (addressForm.get('street')?.invalid && addressForm.get('street')?.touched) {
-                  <span class="error-text">La rue est requise</span>
-                }
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="city">Ville</label>
-                  <input 
-                    id="city" 
-                    type="text" 
-                    formControlName="city" 
-                    placeholder="Ville"
-                    [class.error]="addressForm.get('city')?.invalid && addressForm.get('city')?.touched" />
-                  @if (addressForm.get('city')?.invalid && addressForm.get('city')?.touched) {
-                    <span class="error-text">La ville est requise</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="postalCode">Code postal</label>
-                  <input 
-                    id="postalCode" 
-                    type="text" 
-                    formControlName="postalCode" 
-                    placeholder="Code postal"
-                    [class.error]="addressForm.get('postalCode')?.invalid && addressForm.get('postalCode')?.touched" />
-                  @if (addressForm.get('postalCode')?.invalid && addressForm.get('postalCode')?.touched) {
-                    <span class="error-text">Le code postal est requis</span>
-                  }
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="country">Pays</label>
-                <input 
-                  id="country" 
-                  type="text" 
-                  formControlName="country" 
-                  placeholder="Pays"
-                  [class.error]="addressForm.get('country')?.invalid && addressForm.get('country')?.touched" />
-                @if (addressForm.get('country')?.invalid && addressForm.get('country')?.touched) {
-                  <span class="error-text">Le pays est requis</span>
-                }
-              </div>
-
-              <div class="form-group form-group--checkbox">
-                <label class="checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    formControlName="isDefault" />
-                  <span>Définir comme adresse par défaut</span>
-                </label>
-              </div>
-
-              <div class="form-actions">
-                <button type="submit" class="btn btn--primary" [disabled]="addressForm.invalid">
-                  <span class="material-symbols-outlined">{{ editingAddressId() ? 'save' : 'add' }}</span>
-                  {{ editingAddressId() ? 'Enregistrer les modifications' : 'Ajouter l\'adresse' }}
-                </button>
-                @if (editingAddressId()) {
-                  <button type="button" class="btn btn--secondary" (click)="onCancelEdit()">
-                    <span class="material-symbols-outlined">cancel</span>
-                    Annuler
-                  </button>
-                }
-              </div>
-            </form>
-          </div>
+            }
+            <div class="form-group">
+              <label for="adresse">Adresse complète</label>
+              <textarea 
+                id="adresse" 
+                formControlName="adresse" 
+                placeholder="Ex: Lot II M 12 Bis Ambohimanarina, Antananarivo 101, Madagascar"
+                rows="3"
+                class="form-textarea"></textarea>
+            </div>
+            <button type="submit" class="btn btn--primary">
+              <span class="material-symbols-outlined">save</span>
+              Enregistrer l'adresse
+            </button>
+          </form>
         </div>
       }
 
@@ -288,6 +184,18 @@
         <div class="tab-panel">
           <h2 class="tab-panel__title">Changer le mot de passe</h2>
           <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="profil-form">
+            @if (passwordSaveSuccess()) {
+              <div class="alert alert--success">
+                <span class="material-symbols-outlined">check_circle</span>
+                Mot de passe modifié avec succès
+              </div>
+            }
+            @if (passwordSaveError()) {
+              <div class="alert alert--error">
+                <span class="material-symbols-outlined">error</span>
+                {{ passwordSaveError() }}
+              </div>
+            }
             <div class="form-group">
               <label for="currentPassword">Mot de passe actuel</label>
               <input 

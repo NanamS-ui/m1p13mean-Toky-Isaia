@@ -1,24 +1,57 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { ShopService } from '../../../core/services/shop/shop.service';
+import { FloorService } from '../../../core/services/shop/floor.service';
+import { ShopCategoryService } from '../../../core/services/shop/shop-category.service';
+import type { Shop } from '../../../core/models/shop/shop.model';
+import type { Floor } from '../../../core/models/shop/floor.model';
+import type { Door } from '../../../core/models/shop/door.model';
+import type { ShopCategory } from '../../../core/models/shop/shopCategory.model';
 
-interface Shop {
+/** Boutique affichée sur la carte avec position calculée */
+interface MapShop {
   id: string;
+  _raw: Shop;
   name: string;
-  category: 'mode' | 'food' | 'tech' | 'beauty' | 'sport' | 'other';
-  floor: number;
-  x: number; // Position percentage (0-100)
-  y: number; // Position percentage (0-100)
+  category: string;
+  categoryId: string;
+  floorId: string;
+  floorLabel: string;
+  doorValue: string;
+  x: number;
+  y: number;
   isOpen: boolean;
-  openingHours: string;
-  description?: string;
+  statusLabel: string;
 }
 
-interface MapMarker {
-  shop: Shop;
-  element: HTMLElement | null;
-}
+/** Couleur par catégorie (fallback si non mappée) */
+const CATEGORY_COLORS: Record<string, string> = {
+  mode: '#f59e0b',
+  Mode: '#f59e0b',
+  food: '#10b981',
+  Restaurant: '#10b981',
+  tech: '#3b82f6',
+  Technologie: '#3b82f6',
+  beauty: '#ec4899',
+  Beauté: '#ec4899',
+  sport: '#ef4444',
+  Sport: '#ef4444',
+  other: '#8b5cf6',
+  Autre: '#8b5cf6',
+  default: '#94a3b8'
+};
+
+const CATEGORY_ICONS: Record<string, string> = {
+  mode: 'checkroom', Mode: 'checkroom',
+  food: 'restaurant', Restaurant: 'restaurant',
+  tech: 'devices', Technologie: 'devices',
+  beauty: 'face', Beauté: 'face',
+  sport: 'sports_soccer', Sport: 'sports_soccer',
+  default: 'store'
+};
 
 @Component({
   selector: 'app-carte-interactive',
@@ -27,113 +60,182 @@ interface MapMarker {
   templateUrl: './carte-interactive.component.html',
   styleUrl: './carte-interactive.component.css'
 })
-export class CarteInteractiveComponent {
-  selectedFloor = signal<number>(0);
-  selectedShop = signal<Shop | null>(null);
+export class CarteInteractiveComponent implements OnInit {
+  private readonly shopService = inject(ShopService);
+  private readonly floorService = inject(FloorService);
+  private readonly categoryService = inject(ShopCategoryService);
+
+  loading = signal(true);
+  error = signal<string | null>(null);
+
+  floors = signal<Floor[]>([]);
+  categories = signal<ShopCategory[]>([]);
+  mapShops = signal<MapShop[]>([]);
+  /** Map doorId -> { x, y } par étage */
+  doorPositions = signal<Map<string, { x: number; y: number }>>(new Map());
+
+  selectedFloorId = signal<string | null>(null);
+  selectedShop = signal<MapShop | null>(null);
   searchQuery = signal('');
-  selectedCategory = signal<string>('all');
+  selectedCategoryId = signal<string | null>(null);
   showOpenOnly = signal(false);
   showRoute = signal(false);
   routeFromEntrance = signal(false);
 
-  // Mock shops data
-  shops = signal<Shop[]>([
-    // Floor 0
-    { id: '1', name: 'Mode & Style', category: 'mode', floor: 0, x: 20, y: 30, isOpen: true, openingHours: '9h-20h' },
-    { id: '2', name: 'TechZone', category: 'tech', floor: 0, x: 60, y: 25, isOpen: true, openingHours: '9h-20h' },
-    { id: '3', name: 'Food Court', category: 'food', floor: 0, x: 80, y: 70, isOpen: true, openingHours: '10h-22h' },
-    { id: '4', name: 'Beauté & Soins', category: 'beauty', floor: 0, x: 40, y: 60, isOpen: true, openingHours: '9h-19h' },
-    
-    // Floor 1
-    { id: '5', name: 'Sport Pro', category: 'sport', floor: 1, x: 30, y: 40, isOpen: true, openingHours: '9h-20h' },
-    { id: '6', name: 'Fashion House', category: 'mode', floor: 1, x: 70, y: 35, isOpen: true, openingHours: '9h-20h' },
-    { id: '7', name: 'Gaming Store', category: 'tech', floor: 1, x: 50, y: 65, isOpen: false, openingHours: '10h-20h' },
-    
-    // Floor 2
-    { id: '8', name: 'Luxe Mode', category: 'mode', floor: 2, x: 25, y: 30, isOpen: true, openingHours: '10h-19h' },
-    { id: '9', name: 'Restaurant Le Jardin', category: 'food', floor: 2, x: 75, y: 50, isOpen: true, openingHours: '11h-23h' },
-    { id: '10', name: 'Electronics Plus', category: 'tech', floor: 2, x: 55, y: 70, isOpen: true, openingHours: '9h-20h' },
-    
-    // Floor 3
-    { id: '11', name: 'Cinéma Korus', category: 'other', floor: 3, x: 50, y: 40, isOpen: true, openingHours: '12h-23h' },
-    { id: '12', name: 'Arcade Zone', category: 'other', floor: 3, x: 30, y: 60, isOpen: true, openingHours: '10h-22h' }
-  ]);
+  /** Catégories avec "Toutes" pour le filtre */
+  categoriesWithAll = computed(() => {
+    const cats = this.categories();
+    return [{ _id: '', value: 'Toutes' } as ShopCategory, ...cats];
+  });
 
-  categories = [
-    { value: 'all', label: 'Toutes', icon: 'apps' },
-    { value: 'mode', label: 'Mode', icon: 'checkroom' },
-    { value: 'food', label: 'Restaurant', icon: 'restaurant' },
-    { value: 'tech', label: 'Technologie', icon: 'devices' },
-    { value: 'beauty', label: 'Beauté', icon: 'face' },
-    { value: 'sport', label: 'Sport', icon: 'sports_soccer' },
-    { value: 'other', label: 'Autres', icon: 'more_horiz' }
-  ];
-
-  floors = [
-    { number: 0, label: 'Niveau 0', icon: 'stairs' },
-    { number: 1, label: 'Niveau 1', icon: 'stairs' },
-    { number: 2, label: 'Niveau 2', icon: 'stairs' },
-    { number: 3, label: 'Niveau 3', icon: 'stairs' }
-  ];
-
-  // Filtered shops based on current floor and filters
+  /** Boutiques filtrées pour l'étage et les filtres actuels */
   filteredShops = computed(() => {
-    let filtered = this.shops().filter(shop => shop.floor === this.selectedFloor());
+    const floorId = this.selectedFloorId();
+    const shops = this.mapShops();
+    let filtered = floorId ? shops.filter(s => s.floorId === floorId) : shops;
 
-    // Filter by category
-    if (this.selectedCategory() !== 'all') {
-      filtered = filtered.filter(shop => shop.category === this.selectedCategory());
+    if (this.selectedCategoryId()) {
+      filtered = filtered.filter(s => s.categoryId === this.selectedCategoryId());
     }
-
-    // Filter by open status
     if (this.showOpenOnly()) {
-      filtered = filtered.filter(shop => shop.isOpen);
+      filtered = filtered.filter(s => s.isOpen);
     }
-
-    // Filter by search query
-    if (this.searchQuery().trim()) {
-      const query = this.searchQuery().toLowerCase();
-      filtered = filtered.filter(shop =>
-        shop.name.toLowerCase().includes(query)
+    const query = this.searchQuery().trim().toLowerCase();
+    if (query) {
+      filtered = filtered.filter(s =>
+        s.name.toLowerCase().includes(query) ||
+        s.category.toLowerCase().includes(query) ||
+        s.doorValue.toLowerCase().includes(query)
       );
     }
-
     return filtered;
   });
 
-  // Get category color
-  getCategoryColor(category: string): string {
-    const colors: Record<string, string> = {
-      mode: '#f59e0b',
-      food: '#10b981',
-      tech: '#3b82f6',
-      beauty: '#ec4899',
-      sport: '#ef4444',
-      other: '#8b5cf6'
-    };
-    return colors[category] || '#94a3b8';
+  /** Label de l'étage sélectionné */
+  selectedFloorLabel = computed(() => {
+    const id = this.selectedFloorId();
+    if (!id) return 'Sélectionner un niveau';
+    return this.floors().find(f => f._id === id)?.value ?? 'Niveau';
+  });
+
+  ngOnInit(): void {
+    this.loadData();
   }
 
-  // Get category icon
-  getCategoryIcon(category: string): string {
-    const icons: Record<string, string> = {
-      mode: 'checkroom',
-      food: 'restaurant',
-      tech: 'devices',
-      beauty: 'face',
-      sport: 'sports_soccer',
-      other: 'more_horiz'
-    };
-    return icons[category] || 'store';
+  loadData(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    forkJoin({
+      floors: this.floorService.getFloors(),
+      categories: this.categoryService.getShopCategories(),
+      shops: this.shopService.getShops()
+    }).subscribe({
+        next: ({ floors, categories, shops }) => {
+          const sortedFloors = [...floors].sort((a, b) =>
+            (a.value ?? '').localeCompare(b.value ?? '', undefined, { numeric: true })
+          );
+          this.floors.set(sortedFloors);
+          this.categories.set(categories);
+
+          if (sortedFloors.length > 0 && !this.selectedFloorId()) {
+            this.selectedFloorId.set(sortedFloors[0]._id);
+          }
+
+          this.buildDoorPositions(sortedFloors, shops);
+          this.mapShops.set(this.buildMapShops(shops));
+          this.loading.set(false);
+        },
+        error: err => {
+          this.error.set(err?.error?.message ?? 'Erreur de chargement des données');
+          this.loading.set(false);
+        }
+      });
   }
 
-  setFloor(floor: number): void {
-    this.selectedFloor.set(floor);
+  /**
+   * Calcule les positions x,y des boutiques sur le plan (allée A gauche, allée B droite).
+   * Sans x,y en base : positionnement automatique selon le plan.
+   */
+  private buildDoorPositions(floors: Floor[], shops: Shop[]): void {
+    const map = new Map<string, { x: number; y: number }>();
+    for (const floor of floors) {
+      const floorId = floor._id;
+      const shopDoors = this.getShopDoorsOnFloor(shops, floorId);
+      shopDoors.forEach(({ doorId }, idx) => {
+        const pos = this.getPlanGridPosition(idx, shopDoors.length);
+        map.set(`${floorId}:${doorId}`, pos);
+      });
+    }
+    this.doorPositions.set(map);
+  }
+
+  /** Position sur le plan : Allée A (gauche) et Allée B (droite) */
+  private getPlanGridPosition(index: number, total: number): { x: number; y: number } {
+    const half = Math.ceil(total / 2);
+    const isLeft = index < half;
+    const idx = isLeft ? index : index - half;
+    const sideCount = isLeft ? half : total - half;
+    const x = isLeft ? 18 + (idx / Math.max(sideCount - 1, 1)) * 16 : 66 + (idx / Math.max(sideCount - 1, 1)) * 16;
+    const y = 22 + (idx / Math.max(sideCount - 1, 1)) * 58;
+    return { x, y };
+  }
+
+  private getShopDoorsOnFloor(shops: Shop[], floorId: string): { doorId: string }[] {
+    const seen = new Set<string>();
+    const result: { doorId: string }[] = [];
+    for (const shop of shops) {
+      const door = shop.door as Door & { floor?: Floor | string };
+      if (!door) continue;
+      const fid = typeof door.floor === 'object' && door.floor ? door.floor._id : door.floor;
+      if (fid === floorId && door._id && !seen.has(door._id)) {
+        seen.add(door._id);
+        result.push({ doorId: door._id });
+      }
+    }
+    return result.sort((a, b) => a.doorId.localeCompare(b.doorId));
+  }
+
+  private buildMapShops(shops: Shop[]): MapShop[] {
+    const positions = this.doorPositions();
+    const result: MapShop[] = [];
+    for (const shop of shops) {
+      if (shop.deleted_at) continue;
+      const door = shop.door as Door & { floor?: Floor | string };
+      if (!door) continue;
+      const floorId = typeof door.floor === 'object' && door.floor ? door.floor._id : (door.floor as string);
+      const floor = this.floors().find(f => f._id === floorId);
+      const key = `${floorId}:${door._id}`;
+      const pos = positions.get(key) ?? { x: 50, y: 50 };
+      const category = shop.shop_category as ShopCategory;
+      const catValue = category?.value ?? 'Autre';
+      const isOpen = (shop.shop_status?.value ?? '').toLowerCase().includes('active');
+
+      result.push({
+        id: shop._id,
+        _raw: shop,
+        name: shop.name,
+        category: catValue,
+        categoryId: category?._id ?? '',
+        floorId: floorId ?? '',
+        floorLabel: floor?.value ?? 'Niveau',
+        doorValue: door.value ?? '',
+        x: pos.x,
+        y: pos.y,
+        isOpen,
+        statusLabel: shop.shop_status?.value ?? 'Inconnu'
+      });
+    }
+    return result;
+  }
+
+  setFloor(floorId: string): void {
+    this.selectedFloorId.set(floorId);
     this.selectedShop.set(null);
     this.showRoute.set(false);
   }
 
-  selectShop(shop: Shop): void {
+  selectShop(shop: MapShop): void {
     this.selectedShop.set(shop);
     this.showRoute.set(false);
   }
@@ -149,26 +251,21 @@ export class CarteInteractiveComponent {
     }
   }
 
+  setCategory(catId: string | null): void {
+    this.selectedCategoryId.set(catId || null);
+  }
+
   clearFilters(): void {
     this.searchQuery.set('');
-    this.selectedCategory.set('all');
+    this.selectedCategoryId.set(null);
     this.showOpenOnly.set(false);
   }
 
-  getShopMarkerStyle(shop: Shop): Record<string, string> {
-    return {
-      left: `${shop.x}%`,
-      top: `${shop.y}%`,
-      '--marker-color': this.getCategoryColor(shop.category)
-    };
+  getCategoryColor(category: string): string {
+    return CATEGORY_COLORS[category] ?? CATEGORY_COLORS['default'];
   }
 
-  // Get selected shop category label
-  getSelectedShopCategoryLabel(): string | undefined {
-    const shop = this.selectedShop();
-    if (!shop) {
-      return undefined;
-    }
-    return this.categories.find(c => c.value === shop.category)?.label;
+  getCategoryIcon(category: string): string {
+    return CATEGORY_ICONS[category] ?? CATEGORY_ICONS['default'];
   }
 }

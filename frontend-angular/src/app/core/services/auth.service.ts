@@ -2,7 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
-import { AuthUser } from '../models/user.model';
+import { AuthUser, UserProfile } from '../models/user.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -82,6 +82,39 @@ export class AuthService {
 
   getAccessToken(): string | null {
     return localStorage.getItem(this.accessTokenKey);
+  }
+
+  /** Récupère le profil complet de l'utilisateur connecté */
+  getProfile(): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`${this.apiBaseUrl}/auth/me`);
+  }
+
+  /** Met à jour le profil de l'utilisateur connecté */
+  updateProfile(payload: { firstName?: string; lastName?: string; email?: string; phone?: string; adresse?: string }): Observable<UserProfile> {
+    return this.http.put<UserProfile>(`${this.apiBaseUrl}/auth/me`, payload).pipe(
+      tap((profile) => {
+        this.currentUserSignal.update((u) =>
+          u ? { ...u, firstName: profile.firstName, lastName: profile.lastName, email: profile.email, phone: profile.phone, adresse: profile.adresse } : null
+        );
+        const stored = localStorage.getItem(this.userKey);
+        if (stored) {
+          try {
+            const user = JSON.parse(stored) as AuthUser;
+            user.firstName = profile.firstName;
+            user.lastName = profile.lastName;
+            user.email = profile.email;
+            user.phone = profile.phone;
+            user.adresse = profile.adresse;
+            localStorage.setItem(this.userKey, JSON.stringify(user));
+          } catch {}
+        }
+      })
+    );
+  }
+
+  /** Change le mot de passe de l'utilisateur connecté */
+  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<{ success: boolean }> {
+    return this.http.put<{ success: boolean }>(`${this.apiBaseUrl}/auth/me/password`, payload);
   }
 
   /** Retourne la route de redirection selon le rôle */

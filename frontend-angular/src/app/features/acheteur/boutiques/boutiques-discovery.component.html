@@ -48,10 +48,14 @@
           <span class="material-symbols-outlined">layers</span>
           Étage
         </label>
-        <select [(ngModel)]="selectedFloor" class="filter-select">
-          <option value="">Tous les étages</option>
+        <select
+          [ngModel]="selectedFloor()"
+          (ngModelChange)="onFloorChange($event)"
+          class="filter-select"
+        >
+          <option [ngValue]="''">Tous les étages</option>
           @for (floor of floors(); track floor) {
-            <option [value]="floor">Étage {{ floor }}</option>
+            <option [ngValue]="floor">{{ getFloorLabel(floor) }}</option>
           }
         </select>
       </div>
@@ -130,47 +134,45 @@
   @if (filteredBoutiques().length > 0) {
     <div class="boutiques-container" [class.boutiques-container--grid]="viewMode() === 'grid'" [class.boutiques-container--list]="viewMode() === 'list'">
       @for (boutique of filteredBoutiques(); track boutique.id) {
-        <a [routerLink]="['/acheteur/boutiques', boutique.id]" class="boutique-card">
-          <div class="boutique-card__logo">
-            @if (boutique.logoUrl) {
-              <img [src]="boutique.logoUrl" [alt]="boutique.name" />
-            } @else {
-              <span class="material-symbols-outlined">store</span>
-            }
-            @if (boutique.isOpen) {
-              <span class="boutique-card__status boutique-card__status--open">
-                <span class="material-symbols-outlined">check_circle</span>
-                Ouvert
+        <article class="boutique-card">
+          <a [routerLink]="['/acheteur/boutiques', boutique.id]" class="boutique-card__link">
+            <div class="boutique-card__media">
+              @if (boutique.logoUrl) {
+                <img [src]="boutique.logoUrl" [alt]="boutique.name" class="boutique-card__img" />
+              } @else {
+                <div class="boutique-card__placeholder">
+                  <span class="material-symbols-outlined">store</span>
+                </div>
+              }
+              <span class="boutique-card__badge" [class.boutique-card__badge--open]="boutique.isOpen" [class.boutique-card__badge--closed]="!boutique.isOpen">
+                <span class="material-symbols-outlined">{{ boutique.isOpen ? 'check_circle' : 'cancel' }}</span>
+                {{ boutique.isOpen ? 'Ouvert' : 'Fermé' }}
               </span>
-            } @else {
-              <span class="boutique-card__status boutique-card__status--closed">
-                <span class="material-symbols-outlined">cancel</span>
-                Fermé
-              </span>
-            }
-          </div>
-          <div class="boutique-card__content">
-            <div class="boutique-card__header">
-              <h3 class="boutique-card__name">{{ boutique.name }}</h3>
+            </div>
+            <div class="boutique-card__body">
               <span class="boutique-card__category">{{ getCategoryLabel(boutique.category) }}</span>
-            </div>
-            <p class="boutique-card__description">{{ boutique.description }}</p>
-            <div class="boutique-card__meta">
-              <div class="boutique-card__rating">
-                <span class="material-symbols-outlined filled-icon">star</span>
-                <span class="rating-value">{{ boutique.rating }}</span>
-                <span class="rating-count">({{ boutique.reviewCount }})</span>
+              <h3 class="boutique-card__name">{{ boutique.name }}</h3>
+              @if (boutique.description) {
+                <p class="boutique-card__description">{{ boutique.description }}</p>
+              }
+              <div class="boutique-card__footer">
+                <div class="boutique-card__location">
+                  <span class="material-symbols-outlined">location_on</span>
+                  <span>{{ getFloorLabel(boutique.floor) }}@if (boutique.zone) { • {{ boutique.zone }} }</span>
+                </div>
+                <div class="boutique-card__rating">
+                  <span class="material-symbols-outlined filled-icon">star</span>
+                  <span>{{ boutique.rating }}</span>
+                  <span class="rating-count">({{ boutique.reviewCount }} avis)</span>
+                </div>
               </div>
-              <div class="boutique-card__floor">
-                <span class="material-symbols-outlined">layers</span>
-                Étage {{ boutique.floor }}
-                @if (boutique.zone) {
-                  <span class="boutique-card__zone">• {{ boutique.zone }}</span>
-                }
-              </div>
             </div>
-          </div>
-        </a>
+          </a>
+          <a [routerLink]="['/acheteur/carte']" [queryParams]="{ floor: boutique.floor }" class="boutique-card__map-link" title="Voir sur la carte">
+            <span class="material-symbols-outlined">map</span>
+            Carte
+          </a>
+        </article>
       }
     </div>
   } @else {

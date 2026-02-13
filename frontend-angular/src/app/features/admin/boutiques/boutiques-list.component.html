@@ -48,7 +48,18 @@
           <tr *ngFor="let b of filteredBoutiques">
           <!-- @for (b of filteredBoutiques; track b._id) {
             <tr> -->
-              <td><strong>{{ b.name }}</strong></td>
+              <td>
+                <div class="boutique-cell">
+                  @if (b.logo) {
+                    <img [src]="b.logo" [alt]="b.name" class="boutique-logo" />
+                  } @else {
+                    <div class="boutique-logo boutique-logo--placeholder">
+                      <span class="material-symbols-outlined">store</span>
+                    </div>
+                  }
+                  <strong>{{ b.name }}</strong>
+                </div>
+              </td>
               <td>{{ b.shop_category.value }}</td>
               <td>
                 <span class="badge" [class]="'badge--' + getStatusLabelString(b.shop_status.value)">{{b.shop_status.value }}</span>
