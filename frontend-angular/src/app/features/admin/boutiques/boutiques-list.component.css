@@ -63,6 +63,38 @@
   transition: background 0.1s;
 }
 
+.boutique-cell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.boutique-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--korus-bg);
+  flex-shrink: 0;
+}
+
+.boutique-logo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
+  color: #999;
+  border: 1px solid var(--korus-border);
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+
+.boutique-logo--placeholder .material-symbols-outlined {
+  font-size: 1.4rem;
+}
+
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover td { background: #fdfbf7; } /* Tinted hover */
 

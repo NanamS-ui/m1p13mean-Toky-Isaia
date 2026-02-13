@@ -9,10 +9,21 @@ export interface User {
   lastName: string;
   role: UserRole;
   status: UserStatus;
+  phone?: string;
+  adresse?: string;
   avatarUrl?: string;
   createdAt: Date;
   lastLoginAt?: Date;
   boutiqueId?: string; // pour profil BOUTIQUE
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  adresse: string;
 }
 
 export interface AuthUser extends User {

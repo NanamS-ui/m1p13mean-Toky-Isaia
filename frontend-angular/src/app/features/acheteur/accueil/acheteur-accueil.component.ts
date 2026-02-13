@@ -1,6 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { ShopService } from '../../../core/services/shop/shop.service';
+import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
+import type { Shop } from '../../../core/models/shop/shop.model';
 
 interface FeaturedBoutique {
   id: string;
@@ -11,22 +15,22 @@ interface FeaturedBoutique {
   isOpen: boolean;
 }
 
-interface FeaturedProduct {
-  id: string;
-  name: string;
-  boutique: string;
-  price: number;
-  promoPrice?: number;
-  image?: string;
+interface CategoryWithCount {
+  icon: string;
+  label: string;
+  value: BoutiqueCategory;
+  count: number;
 }
 
-interface Promotion {
-  id: string;
-  title: string;
-  boutique: string;
-  discount: number;
-  endDate: string;
-}
+const CATEGORY_ICONS: Record<BoutiqueCategory, string> = {
+  MODE: 'checkroom',
+  FOOD: 'restaurant',
+  TECH: 'devices',
+  BEAUTE: 'spa',
+  SPORT: 'sports_soccer',
+  MAISON: 'chair',
+  AUTRE: 'more_horiz'
+};
 
 @Component({
   selector: 'app-acheteur-accueil',
@@ -35,52 +39,81 @@ interface Promotion {
   templateUrl: './acheteur-accueil.component.html',
   styleUrl: './acheteur-accueil.component.css'
 })
-export class AcheteurAccueilComponent {
-  userName = signal('Jean');
+export class AcheteurAccueilComponent implements OnInit {
+  boutiques = signal<Shop[]>([]);
 
-  featuredBoutiques = signal<FeaturedBoutique[]>([
-    { id: '1', name: 'Mode & Style', category: 'Mode', rating: 4.8, isOpen: true },
-    { id: '2', name: 'TechZone', category: 'Électronique', rating: 4.6, isOpen: true },
-    { id: '3', name: 'Beauty Corner', category: 'Beauté', rating: 4.9, isOpen: false },
-    { id: '4', name: 'Sport Plus', category: 'Sport', rating: 4.5, isOpen: true },
-    { id: '5', name: 'Bijoux Précieux', category: 'Bijouterie', rating: 4.7, isOpen: true },
-    { id: '6', name: 'Home Design', category: 'Maison', rating: 4.4, isOpen: true }
-  ]);
+  userName = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return 'invité';
+    const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    return name || user.email?.split('@')[0] || 'invité';
+  });
 
-  featuredProducts = signal<FeaturedProduct[]>([
-    { id: '1', name: 'Robe été fleurie', boutique: 'Mode & Style', price: 75000, promoPrice: 59000 },
-    { id: '2', name: 'Casque Bluetooth Pro', boutique: 'TechZone', price: 185000 },
-    { id: '3', name: 'Coffret parfum luxe', boutique: 'Beauty Corner', price: 120000, promoPrice: 95000 },
-    { id: '4', name: 'Sneakers urbaines', boutique: 'Sport Plus', price: 145000 },
-    { id: '5', name: 'Montre connectée', boutique: 'TechZone', price: 250000, promoPrice: 199000 },
-    { id: '6', name: 'Collier perles', boutique: 'Bijoux Précieux', price: 85000 }
-  ]);
+  featuredBoutiques = computed(() => {
+    const shops = this.boutiques();
+    return shops.slice(0, 6).map(s => this.mapShopToFeaturedBoutique(s));
+  });
 
-  promotions = signal<Promotion[]>([
-    { id: '1', title: 'Soldes d\'hiver', boutique: 'Mode & Style', discount: 30, endDate: '2026-02-15' },
-    { id: '2', title: 'Flash Sale Tech', boutique: 'TechZone', discount: 20, endDate: '2026-02-05' },
-    { id: '3', title: 'Beauté en fête', boutique: 'Beauty Corner', discount: 25, endDate: '2026-02-10' }
-  ]);
+  categories = computed<CategoryWithCount[]>(() => {
+    const shops = this.boutiques();
+    return BOUTIQUE_CATEGORIES.map(cat => ({
+      icon: CATEGORY_ICONS[cat.value],
+      label: cat.label,
+      value: cat.value,
+      count: shops.filter(s => this.normalizeCategory(s.shop_category?.value) === cat.value).length
+    }));
+  });
 
-  categories = [
-    { icon: 'checkroom', label: 'Mode', count: 24 },
-    { icon: 'devices', label: 'Électronique', count: 12 },
-    { icon: 'spa', label: 'Beauté', count: 18 },
-    { icon: 'sports_soccer', label: 'Sport', count: 8 },
-    { icon: 'diamond', label: 'Bijouterie', count: 6 },
-    { icon: 'restaurant', label: 'Alimentation', count: 15 },
-    { icon: 'chair', label: 'Maison', count: 10 },
-    { icon: 'more_horiz', label: 'Autres', count: 20 }
-  ];
+  promotionsCount = signal(0);
 
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(value);
+  totalBoutiques = computed(() => this.boutiques().length);
+
+  constructor(
+    private auth: AuthService,
+    private shopService: ShopService
+  ) {}
+
+  ngOnInit(): void {
+    this.shopService.getShops().subscribe({
+      next: (shops) => this.boutiques.set(shops),
+      error: () => this.boutiques.set([])
+    });
   }
 
-  getDaysRemaining(endDate: string): number {
-    const end = new Date(endDate);
-    const now = new Date();
-    const diff = end.getTime() - now.getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  private mapShopToFeaturedBoutique(shop: Shop): FeaturedBoutique {
+    const category = this.normalizeCategory(shop.shop_category?.value);
+    const label = BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
+    const { rating } = this.getMockRating(shop._id);
+    const isOpen = shop.is_accepted || this.isStatusActive(shop.shop_status?.value);
+
+    return {
+      id: shop._id,
+      name: shop.name,
+      category: label,
+      logo: shop.logo,
+      rating,
+      isOpen
+    };
+  }
+
+  private normalizeCategory(value?: string): BoutiqueCategory {
+    const normalized = (value ?? '').toUpperCase().replace(/\s+/g, '');
+    const match = BOUTIQUE_CATEGORIES.find(c => c.value === normalized);
+    return (match?.value as BoutiqueCategory) ?? 'AUTRE';
+  }
+
+  private getMockRating(shopId: string): { rating: number } {
+    let hash = 0;
+    for (let i = 0; i < shopId.length; i++) {
+      hash = ((hash << 5) - hash) + shopId.charCodeAt(i) | 0;
+    }
+    const n = Math.abs(hash);
+    const rating = 3.2 + (n % 18) / 10;
+    return { rating: Math.round(rating * 10) / 10 };
+  }
+
+  private isStatusActive(value?: string): boolean {
+    if (!value) return false;
+    return value.toLowerCase().includes('active');
   }
 }

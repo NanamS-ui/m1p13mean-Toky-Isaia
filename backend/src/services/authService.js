@@ -310,11 +310,64 @@ const resendVerificationCode = async (payload) => {
   return { userId: user._id, email: user.email };
 };
 
+const getMe = async (userId) => {
+  const user = await User.findById(userId).select("-password -email_verification_code -email_verification_expires -refresh_token_hash");
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+  return user;
+};
+
+const updateMe = async (userId, payload) => {
+  const updates = {};
+  if (payload.firstName !== undefined || payload.lastName !== undefined) {
+    const firstName = (payload.firstName ?? "").trim();
+    const lastName = (payload.lastName ?? "").trim();
+    updates.name = `${firstName} ${lastName}`.trim();
+  }
+  if (payload.email !== undefined) updates.email = payload.email.trim().toLowerCase();
+  if (payload.phone !== undefined) updates.phone = payload.phone.trim();
+  if (payload.adresse !== undefined) updates.adresse = payload.adresse?.trim() ?? "";
+
+  const user = await User.findByIdAndUpdate(userId, updates, {
+    new: true,
+    runValidators: true
+  }).select("-password -email_verification_code -email_verification_expires -refresh_token_hash");
+
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+  return user;
+};
+
+const changePassword = async (userId, payload) => {
+  const { currentPassword, newPassword } = payload;
+  if (!currentPassword || !newPassword) {
+    throw buildError("Mot de passe actuel et nouveau mot de passe requis", 400);
+  }
+  if (newPassword.length < 6) {
+    throw buildError("Le nouveau mot de passe doit contenir au moins 6 caractères", 400);
+  }
+
+  const user = await User.findById(userId);
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+  if (!user.password) throw buildError("Ce compte n'a pas de mot de passe défini", 400);
+
+  const match = await bcrypt.compare(currentPassword, user.password);
+  if (!match) {
+    throw buildError("Mot de passe actuel incorrect", 400);
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await User.findByIdAndUpdate(userId, { password: hashed });
+
+  return { success: true };
+};
+
 module.exports = {
   registerAcheteur,
   login,
   refreshAccessToken,
   logout,
   verifyEmailCode,
-  resendVerificationCode
+  resendVerificationCode,
+  getMe,
+  updateMe,
+  changePassword
 };
