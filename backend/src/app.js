@@ -18,6 +18,8 @@ app.use("/api/floors", require("./routes/FloorRoute"));
 app.use("/api/doors", require("./routes/DoorRoute"));
 app.use("/api/shops", require("./routes/ShopRoute"));
 app.use("/api/shopStatus", require("./routes/ShopStatusRoute"));
+app.use("/api/productCategories", require("./routes/product/ProductCategoryRoute"));
+app.use("/api/products", require("./routes/product/ProductRoute"));
 
 
 
