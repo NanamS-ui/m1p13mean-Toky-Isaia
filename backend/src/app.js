@@ -20,6 +20,10 @@ app.use("/api/shops", require("./routes/ShopRoute"));
 app.use("/api/shopStatus", require("./routes/ShopStatusRoute"));
 app.use("/api/productCategories", require("./routes/product/ProductCategoryRoute"));
 app.use("/api/products", require("./routes/product/ProductRoute"));
+app.use("/api/stocks", require("./routes/product/StockRoute"));
+app.use("/api/promotions", require("./routes/product/PromotionRoute"));
+app.use("/api/prices", require("./routes/product/PriceRoute"));
+
 
 
 
