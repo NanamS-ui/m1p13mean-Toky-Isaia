@@ -9,7 +9,22 @@ const ProductSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      trim: true
+      trim: true,
+      required: true
+    },
+    reference : {
+      type: String,
+      trim: true,
+      required: true
+    },
+    poids : {
+      type: Number,
+      required: true
+    },
+    dimension:{
+      type:String,
+      trim: true,
+      required: true
     },
     image: {
       type: String,
@@ -19,7 +34,13 @@ const ProductSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "ProductCategory",
       required: true
-    }
+    },
+    tags: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Tag"
+      }
+    ]
   },
   {
     timestamps: {

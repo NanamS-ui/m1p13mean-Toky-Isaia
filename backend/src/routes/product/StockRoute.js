@@ -14,16 +14,8 @@ router.post(
   ctrl.createStock
 );
 
-router.put(
-  "/:id",
-  requireRole("ADMIN", "BOUTIQUE"),
-  ctrl.updateStock
-);
-
-router.delete(
-  "/:id",
-  requireRole("ADMIN", "BOUTIQUE"),
-  ctrl.deleteStock
-);
+router.put("/:id",requireRole("ADMIN", "BOUTIQUE"),ctrl.updateStock);
+router.delete("/:id",requireRole("ADMIN", "BOUTIQUE"),ctrl.deleteStock);
+router.get("/owner/:id",requireRole("ADMIN", "BOUTIQUE"),ctrl.getStockByOwner);
 
 module.exports = router;

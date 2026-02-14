@@ -1,5 +1,7 @@
 const Stock = require("../../models/product/Stock");
-
+const StockView = require("../../models/product/view/StockView");
+const Shop = require("../../models/shop/Shop");
+const mongoose = require("mongoose");
 const buildError = (message, status) => {
   const error = new Error(message);
   error.status = status;
@@ -25,23 +27,19 @@ const getStockById = async (id) => {
   return stock;
 };
 
+
 const updateStock = async (id, payload) => {
-    if(payload.in !== undefined && payload.out !== undefined){
-        payload.reste = payload.in - payload.out;
-    }
-    if(payload.reste<0) throw buildError("Stock insuffisant", 404);
+  const stock = await Stock.findById(id)
+    .populate("product")
+    .populate("shop");
+  if (!stock) throw buildError("Stock introuvable", 404);
 
-    const stock = await Stock.findOneAndUpdate(
-        {_id : id, deleted_at : null},
-        payload,
-        {new : true, runValidators : true})
-        .populate("product")
-        .populate("shop");
-    if (!stock) throw buildError("Stock introuvable", 404);
+  Object.assign(stock, payload);
+  stock.reste = stock.in - stock.out;
 
-    return stock;
+  await stock.save();
+  return stock;
 };
-
 const deleteStock = async (id) => {
   const stock = await Stock.findOneAndUpdate(
     {_id : id, deleted_at : null},
@@ -53,10 +51,18 @@ const deleteStock = async (id) => {
   return stock;
 };
 
+const getStockByOwner = async (idOwner)=>{
+  const stocks = await StockView.find({
+    "shop.owner" :  new mongoose.Types.ObjectId(idOwner)
+  });
+  return stocks;
+
+}
 module.exports = {
   createStock,
   getStocks,
   getStockById,
   updateStock,
-  deleteStock
+  deleteStock,
+  getStockByOwner
 };

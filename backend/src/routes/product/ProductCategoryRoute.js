@@ -8,8 +8,8 @@ router.get("/", ctrl.getProductCategories);
 router.get("/:id", ctrl.getProductCategoryById);
 
 
-router.post("/", requireRole("ADMIN"), ctrl.createProductCategory);
-router.put("/:id", requireRole("ADMIN"), ctrl.updateProductCategory);
-router.delete("/:id", requireRole("ADMIN"), ctrl.deleteProductCategory);
+router.post("/", requireRole("ADMIN","BOUTIQUE"), ctrl.createProductCategory);
+router.put("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.updateProductCategory);
+router.delete("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.deleteProductCategory);
 
 module.exports = router;

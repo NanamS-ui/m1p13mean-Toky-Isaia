@@ -14,5 +14,4 @@ export class FloorService{
     getFloors():Observable<Floor[]>{
         return this.http.get<Floor[]>(`${this.apiBaseUrl}/floors`);
     }
-
 }
