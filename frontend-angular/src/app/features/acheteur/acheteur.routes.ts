@@ -15,6 +15,10 @@ export const acheteurRoutes: Routes = [
         loadComponent: () => import('./profil/acheteur-profil.component').then(m => m.AcheteurProfilComponent)
       },
       { 
+        path: 'profil', 
+        loadComponent: () => import('./profil/acheteur-profil.component').then(m => m.AcheteurProfilComponent)
+      },
+      { 
         path: 'boutiques', 
         loadComponent: () => import('./boutiques/boutiques-discovery.component').then(m => m.BoutiquesDiscoveryComponent)
       },

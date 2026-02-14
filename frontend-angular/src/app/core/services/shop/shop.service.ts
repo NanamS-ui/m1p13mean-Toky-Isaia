@@ -15,6 +15,9 @@ export class ShopService {
   getShops():Observable<Shop[]>{
     return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops`);
   }
+  getShopsByOwner():Observable<Shop[]>{
+    return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops/shop/owner`);
+  }
   getShopById(id: string): Observable<Shop> {
     return this.http.get<Shop>(`${this.apiBaseUrl}/shops/${id}`);
   }

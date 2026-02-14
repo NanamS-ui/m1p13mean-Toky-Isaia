@@ -11,9 +11,14 @@ export const boutiqueRoutes: Routes = [
         loadComponent: () => import('./dashboard/boutique-dashboard.component').then(m => m.BoutiqueDashboardComponent)
       },
       { 
-        path: 'profil', 
+        path: 'profil/list', 
+        loadComponent: () => import('./profil/boutiques-list.component').then(m => m.BoutiquesListComponent)
+      },
+      { 
+        path: 'profil/:id', 
         loadComponent: () => import('./profil/boutique-profil.component').then(m => m.BoutiqueProfilComponent)
       },
+      
       { 
         path: 'produits', 
         loadComponent: () => import('./produits/produits-list.component').then(m => m.ProduitsListComponent)

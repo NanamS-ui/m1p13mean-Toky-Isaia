@@ -1,7 +1,12 @@
 import { Floor } from "./floor.model";
 
-export interface Door {
+export class Door {
   _id: string;
   value: string;
-  floor: string | Floor;
+  floor:  Floor;
+  constructor(init?:Partial<Door>){
+    this._id = init?._id || '';
+    this.value = init?.value || '';
+    this.floor = init?.floor || new Floor();
+  }
 }

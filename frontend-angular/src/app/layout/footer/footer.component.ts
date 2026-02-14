@@ -6,7 +6,7 @@ import { Component } from '@angular/core';
   template: `
     <footer class="app-footer">
       <div class="footer-content">
-        <p>RABENJA Mandresy Isaia et RAHAJAMANANA Ralison Toky</p>
+        <p>RABENJA Mandresy Isaia  et RAHAJAMANANA Ralison Toky</p>
       </div>
     </footer>
   `,

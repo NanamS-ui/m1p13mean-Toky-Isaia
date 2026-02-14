@@ -20,21 +20,25 @@ const OpeningHourSchema = new mongoose.Schema(
     day: {
       type: String,
       enum: [
-        "LUNDI",
-        "MARDI",
-        "MERCREDI",
-        "JEUDI",
-        "VENDREDI",
-        "SAMEDI",
-        "DIMANCHE"
+        'Lundi',
+        'Mardi',
+        'Mercredi',
+        'Jeudi',
+        'Vendredi',
+        'Samedi',
+        'Dimanche'
       ],
       required: true
     },
-    heure_debut: {
+    isOpen : {
+      type: Boolean,
+      required: true
+    },
+    openTime: {
       type: String,
       required: true
     },
-    heure_fin: {
+    closeTime: {
       type: String,
       required: true
     }
@@ -53,10 +57,22 @@ const ShopSchema = new mongoose.Schema(
     logo: {
       type: String,
       trim: true
+    },banner: {
+      type: String,
+      trim: true
     },
     is_accepted: {
       type: Boolean,
       default: false
+    },
+    phone: {
+      type: String,
+      trim: true
+    },
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true
     },
     suspensions: {
       type: [SuspensionSchema],
@@ -65,13 +81,13 @@ const ShopSchema = new mongoose.Schema(
     opening_hours:{
       type: [OpeningHourSchema],
       default: () => [
-        { day: "LUNDI", heure_debut: "09:00", heure_fin: "19:00" },
-        { day: "MARDI", heure_debut: "09:00", heure_fin: "19:00" },
-        { day: "MERCREDI", heure_debut: "09:00", heure_fin: "19:00" },
-        { day: "JEUDI", heure_debut: "09:00", heure_fin: "19:00" },
-        { day: "VENDREDI", heure_debut: "09:00", heure_fin: "19:00" },
-        { day: "SAMEDI", heure_debut: "09:00", heure_fin: "19:00" },
-        { day: "DIMANCHE", heure_debut: "09:00", heure_fin: "19:00" }
+        { day: 'Lundi', isOpen: true, openTime: '09:00', closeTime: '19:00' },
+      { day: 'Mardi', isOpen: true, openTime: '09:00', closeTime: '19:00' },
+      { day: 'Mercredi', isOpen: true, openTime: '09:00', closeTime: '19:00' },
+      { day: 'Jeudi', isOpen: true, openTime: '09:00', closeTime: '19:00' },
+      { day: 'Vendredi', isOpen: true, openTime: '09:00', closeTime: '19:00' },
+      { day: 'Samedi', isOpen: true, openTime: '09:00', closeTime: '20:00' },
+      { day: 'Dimanche', isOpen: false, openTime: '10:00', closeTime: '18:00' }
       ]
     },
     description: {

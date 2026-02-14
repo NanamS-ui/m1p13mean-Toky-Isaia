@@ -1,13 +1,13 @@
-export interface OpeningHour {
+export interface OpeningHourShop {
   day: 
-    | 'LUNDI'
-    | 'MARDI'
-    | 'MERCREDI'
-    | 'JEUDI'
-    | 'VENDREDI'
-    | 'SAMEDI'
-    | 'DIMANCHE';
-
-  heure_debut: string;  
-  heure_fin: string;    
+    | 'Lundi'
+    | 'Mardi'
+    | 'Mercredi'
+    | 'Jeudi'
+    | 'Vendredi'
+    | 'Samedi'
+    | 'Dimanche';
+  isOpen : boolean;
+  openTime: string;  
+  closeTime: string;    
 }

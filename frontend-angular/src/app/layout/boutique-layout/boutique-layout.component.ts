@@ -32,7 +32,8 @@ export class BoutiqueLayoutComponent {
 
   navItems: NavItem[] = [
     { route: '/boutique/dashboard', label: 'Tableau de bord', icon: 'dashboard' },
-    { route: '/boutique/profil', label: 'Ma boutique', icon: 'store' },
+    // { route: '/boutique/profil', label: 'Ma boutique', icon: 'store' },
+    { route: '/boutique/profil/list', label: 'Mes boutiques', icon: 'store' },
     { route: '/boutique/produits', label: 'Produits', icon: 'inventory_2' },
     { route: '/boutique/commandes', label: 'Commandes', icon: 'shopping_bag', badge: this.pendingOrders },
     { route: '/boutique/statistiques', label: 'Statistiques', icon: 'analytics' },

@@ -28,14 +28,31 @@ const getShops = async () =>
 
 const getShopById = async (id) => {
   const shop = await Shop.findOne({ _id: id, deleted_at: null })
-    .populate("door")
+    .populate({
+      path: "door",
+      populate: {
+        path: "floor"
+      }
+    })
     .populate("shop_status")
     .populate("owner")
     .populate("shop_category");
   if (!shop) throw buildError("Boutique introuvable", 404);
   return shop;
 };
-
+const getByIdOwner = async (idOwner) =>{
+  
+  if (!mongoose.Types.ObjectId.isValid(idOwner)) {
+      throw { status: 400, message: "Invalid owner ID" };
+  }
+  const shops = await Shop.find({owner : idOwner})
+  .populate("door")
+    .populate("shop_status")
+    .populate("owner")
+    .populate("shop_category");
+  
+  return shops;
+}
 const updateShop = async (id, payload) => {
   const shop = await Shop.findOneAndUpdate(
     { _id: id, deleted_at: null },
@@ -108,5 +125,6 @@ module.exports = {
   updateShop,
   deleteShop,
   addSuspension,
-  updateShopStatus
+  updateShopStatus,
+  getByIdOwner
 };

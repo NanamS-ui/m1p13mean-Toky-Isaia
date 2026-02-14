@@ -4,33 +4,34 @@
       <h2>Ma Boutique</h2>
       <p>Gérez les informations de votre boutique</p>
     </div>
-    <div class="header__status" [class]="'status--' + boutique().status">
-      <span class="material-symbols-outlined">{{ boutique().status === 'active' ? 'check_circle' : 'pending' }}</span>
-      {{ getStatusLabel(boutique().status) }}
+    <div class="header__status" [class]="'status--' + getStatusLabelString(shop.shop_status.value) ">
+      <span class="material-symbols-outlined">{{ getStatusLabelString(shop.shop_status.value) === 'active' ? 'check_circle' : 'pending' }}</span>
+      {{ getStatusLabel(getStatusLabelString(shop.shop_status.value)) }}
     </div>
   </div>
 
   <!-- Preview Card -->
   <div class="preview-card">
-    <div class="preview-banner" [style.backgroundImage]="bannerPreview() ? 'url(' + bannerPreview() + ')' : ''">
-      @if (!bannerPreview()) {
+    <div class="preview-banner" [style.backgroundImage]="shop.banner ? 'url(' + shop.banner + ')' : ''">
+      @if (!shop.banner) {
         <span class="material-symbols-outlined">panorama</span>
       }
     </div>
     <div class="preview-content">
       <div class="preview-logo">
-        @if (logoPreview()) {
-          <img [src]="logoPreview()" alt="Logo" />
+        @if (shop.logo) {
+          <img [src]="shop.logo" alt="Logo" />
         } @else {
           <span class="material-symbols-outlined">storefront</span>
         }
       </div>
       <div class="preview-info">
         <h3>{{ form.get('name')?.value || 'Nom de la boutique' }}</h3>
-        <span class="preview-category">{{ form.get('category')?.value }}</span>
+        <span class="preview-category">{{ shop.shop_category.value }}</span>
         <span class="preview-location">
           <span class="material-symbols-outlined">location_on</span>
-          {{ boutique().location }}
+          <!-- {{ boutique().location }} -->
+          {{shop.door.floor.value}} - porte {{shop.door.value}}
         </span>
       </div>
     </div>
@@ -76,8 +77,8 @@
           <div class="form-group">
             <label for="category">Catégorie *</label>
             <select id="category" formControlName="category">
-              @for (cat of categories; track cat) {
-                <option [value]="cat">{{ cat }}</option>
+              @for (cat of shopCategories; track cat._id) {
+                <option [value]="cat._id">{{ cat.value }}</option>
               }
             </select>
           </div>
@@ -104,7 +105,7 @@
           <span class="material-symbols-outlined">location_on</span>
           <div class="info-box__content">
             <strong>Emplacement</strong>
-            <p>{{ boutique().location }}</p>
+            <p>{{shop.door.floor.value}} - porte {{shop.door.value}}</p>
             <span class="info-box__note">Pour modifier votre emplacement, contactez l'administration.</span>
           </div>
         </div>
@@ -142,7 +143,7 @@
         </div>
 
         <div class="quick-actions">
-          <button type="button" class="btn btn--outline btn--sm">
+          <button type="button" class="btn btn--outline btn--sm" (click)="copyFormMonday()">
             <span class="material-symbols-outlined">content_copy</span>
             Copier lundi sur tous les jours
           </button>
@@ -217,7 +218,7 @@
 
     <!-- Submit -->
     <div class="form-actions">
-      <button type="button" class="btn btn--outline">Annuler</button>
+      <!-- <button type="button" class="btn btn--outline">Annuler</button> -->
       <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
         <span class="material-symbols-outlined">save</span>
         Enregistrer les modifications

@@ -27,8 +27,16 @@ exports.getShopById = async (req, res) => {
     res.status(error.status || 400).json({ message: error.message });
   }
 };
-
+exports.getShopByIdOwner = async (req, res)=>{
+  try{
+    const shops =await ShopService.getByIdOwner(req.user.id);
+    res.json(shops);
+  }catch(error){
+    res.status(error.status || 400).json({ message: error.message });
+  }
+}
 exports.updateShop = async (req, res) => {
+  console.log(req.user);
   try {
     const shop = await ShopService.updateShop(req.params.id, req.body);
     res.json(shop);
