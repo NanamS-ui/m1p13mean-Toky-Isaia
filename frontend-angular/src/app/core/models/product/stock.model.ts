@@ -1,7 +1,5 @@
 import { Product } from './product.model';
-export class StockView{
-    
-}
+
 export class Stock {
   _id: string;
   in: number;
