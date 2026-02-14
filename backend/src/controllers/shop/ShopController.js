@@ -19,6 +19,15 @@ exports.getShops = async (req, res) => {
   }
 };
 
+exports.getActiveShops = async (req, res) => {
+  try {
+    const shops = await ShopService.getActiveShops();
+    res.json(shops);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
+
 exports.getShopById = async (req, res) => {
   try {
     const shop = await ShopService.getShopById(req.params.id);
@@ -27,14 +36,14 @@ exports.getShopById = async (req, res) => {
     res.status(error.status || 400).json({ message: error.message });
   }
 };
-exports.getShopByIdOwner = async (req, res)=>{
-  try{
-    const shops =await ShopService.getByIdOwner(req.user.id);
+exports.getShopByIdOwner = async (req, res) => {
+  try {
+    const shops = await ShopService.getByIdOwner(req.user.id);
     res.json(shops);
-  }catch(error){
+  } catch (error) {
     res.status(error.status || 400).json({ message: error.message });
   }
-}
+};
 exports.updateShop = async (req, res) => {
   console.log(req.user);
   try {

@@ -26,6 +26,15 @@ const getShops = async () =>
     .populate("owner")
     .populate("shop_category");
 
+const getActiveShops = async () => {
+  const activeStatus = await ShopStatusService.getStatusByValue("Active");
+  return Shop.find({ deleted_at: null, shop_status: activeStatus._id })
+    .populate({ path: "door", populate: { path: "floor" } })
+    .populate("shop_status")
+    .populate("owner")
+    .populate("shop_category");
+};
+
 const getShopById = async (id) => {
   const shop = await Shop.findOne({ _id: id, deleted_at: null })
     .populate({
@@ -121,6 +130,7 @@ const updateShopStatus = async (status_value, id_shop) => {
 module.exports = {
   createShop,
   getShops,
+  getActiveShops,
   getShopById,
   updateShop,
   deleteShop,

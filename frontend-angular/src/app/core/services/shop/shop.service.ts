@@ -12,8 +12,12 @@ export class ShopService {
   
   constructor(private http : HttpClient){}
 
-  getShops():Observable<Shop[]>{
+  getShops(): Observable<Shop[]> {
     return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops`);
+  }
+
+  getActiveShops(): Observable<Shop[]> {
+    return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops/active`);
   }
   getShopsByOwner():Observable<Shop[]>{
     return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops/shop/owner`);

@@ -15,6 +15,7 @@ export class Shop {
   is_accepted: boolean;
   suspensions: Suspension[];
   opening_hours: OpeningHourShop[];
+  isOpenNow?: boolean;
   door: Door;
   shop_category: ShopCategory;
   shop_status: ShopStatus;

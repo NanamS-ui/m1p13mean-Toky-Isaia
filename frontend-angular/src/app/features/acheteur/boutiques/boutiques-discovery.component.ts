@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
 import { ShopService } from '../../../core/services/shop/shop.service';
+import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import type { Shop } from '../../../core/models/shop/shop.model';
 
 interface BoutiqueDiscovery {
@@ -45,6 +46,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
 
   constructor(
     private shopService: ShopService,
+    private openingHours: OpeningHoursService,
     private route: ActivatedRoute
   ) {}
 
@@ -56,7 +58,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
       }
     });
 
-    this.shopService.getShops().subscribe({
+    this.shopService.getActiveShops().subscribe({
       next: (shops) => this.boutiques.set(shops.map(shop => this.mapShopToDiscovery(shop))),
       error: () => this.boutiques.set([])
     });
@@ -157,7 +159,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
       logoUrl: shop.logo,
       rating,
       reviewCount,
-      isOpen: shop.is_accepted || this.isStatusActive(shop.shop_status?.value),
+      isOpen: shop.is_accepted && this.openingHours.isShopOpenNow(shop),
       floor,
       zone: this.extractZone(shop.door),
       description: shop.description ?? '',

@@ -84,14 +84,11 @@
   opacity: 0.9;
 }
 
-/* Filters Section */
+/* Filters Section - défile naturellement avec la page */
 .filters-section {
   background: white;
   padding: 2rem 0;
   border-bottom: 1px solid var(--korus-border);
-  position: sticky;
-  top: 80px;
-  z-index: 50;
 }
 
 .search-bar {
@@ -476,9 +473,6 @@
     padding: 0 1rem;
   }
   
-  .filters-section {
-    top: 70px;
-  }
   
   .filters-row {
     flex-direction: column;
