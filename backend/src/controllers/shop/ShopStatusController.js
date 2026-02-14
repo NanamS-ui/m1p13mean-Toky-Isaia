@@ -1,4 +1,4 @@
-const ShopStatusService = require("../services/ShopStatusService");
+const ShopStatusService = require("../../services/shop/ShopStatusService");
 
 
 exports.createShopStatus = async (req, res) => {

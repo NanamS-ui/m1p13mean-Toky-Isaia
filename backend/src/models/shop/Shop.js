@@ -15,6 +15,33 @@ const SuspensionSchema = new mongoose.Schema(
   },
   { _id: false }
 );
+const OpeningHourSchema = new mongoose.Schema(
+  {
+    day: {
+      type: String,
+      enum: [
+        "LUNDI",
+        "MARDI",
+        "MERCREDI",
+        "JEUDI",
+        "VENDREDI",
+        "SAMEDI",
+        "DIMANCHE"
+      ],
+      required: true
+    },
+    heure_debut: {
+      type: String,
+      required: true
+    },
+    heure_fin: {
+      type: String,
+      required: true
+    }
+  },
+  { _id: false }
+);
+
 
 const ShopSchema = new mongoose.Schema(
   {
@@ -34,6 +61,18 @@ const ShopSchema = new mongoose.Schema(
     suspensions: {
       type: [SuspensionSchema],
       default: []
+    },
+    opening_hours:{
+      type: [OpeningHourSchema],
+      default: () => [
+        { day: "LUNDI", heure_debut: "09:00", heure_fin: "19:00" },
+        { day: "MARDI", heure_debut: "09:00", heure_fin: "19:00" },
+        { day: "MERCREDI", heure_debut: "09:00", heure_fin: "19:00" },
+        { day: "JEUDI", heure_debut: "09:00", heure_fin: "19:00" },
+        { day: "VENDREDI", heure_debut: "09:00", heure_fin: "19:00" },
+        { day: "SAMEDI", heure_debut: "09:00", heure_fin: "19:00" },
+        { day: "DIMANCHE", heure_debut: "09:00", heure_fin: "19:00" }
+      ]
     },
     description: {
       type: String,

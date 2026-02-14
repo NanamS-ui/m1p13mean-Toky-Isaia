@@ -1,4 +1,4 @@
-const Role = require("../models/Role");
+const Role = require("../../models/user/Role");
 
 const buildError = (message, status) => {
   const error = new Error(message);

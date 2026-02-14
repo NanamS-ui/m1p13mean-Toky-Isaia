@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const FloorCtrl = require("../controllers/FloorController");
-const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const FloorCtrl = require("../../controllers/shop/FloorController");
+const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 
 router.use(requireAuth);
 

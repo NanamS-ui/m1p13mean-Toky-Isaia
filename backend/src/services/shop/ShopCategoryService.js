@@ -1,4 +1,4 @@
-const ShopCategory = require("../models/ShopCategory");
+const ShopCategory = require("../../models/shop/ShopCategory");
 
 const buildError = (message, status) =>{
     const error = new Error(message);

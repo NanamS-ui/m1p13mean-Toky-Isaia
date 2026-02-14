@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const roleCtrl = require("../controllers/RoleController");
-const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const roleCtrl = require("../../controllers/user/RoleController");
+const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 
 router.use(requireAuth, requireRole("ADMIN"));
 

@@ -1,8 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const Role = require("../models/Role");
-const User = require("../models/User");
+const Role = require("../models/user/Role");
+const User = require("../models/user/User");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "dev-refresh-secret";

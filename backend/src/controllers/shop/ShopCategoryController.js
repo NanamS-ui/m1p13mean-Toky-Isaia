@@ -1,4 +1,4 @@
-const ShopCategoryService = require("../services/ShopCategoryService");
+const ShopCategoryService = require("../../services/shop/ShopCategoryService");
 
 exports.createShopCategory = async (req, res) =>{
     try{

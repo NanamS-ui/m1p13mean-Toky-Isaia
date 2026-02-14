@@ -1,5 +1,5 @@
-const ShopService = require("../services/ShopService");
-const UploadService = require("../services/UploadService");
+const ShopService = require("../../services/shop/ShopService");
+const UploadService = require("../../services/UploadService");
 
 exports.createShop = async (req, res) => {
   try {

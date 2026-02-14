@@ -10,14 +10,14 @@ app.use(cors());
 app.use(express.json());
 
 // Définition des routes
-app.use("/api/users", require("./routes/UserRoute"));
-app.use("/api/roles", require("./routes/RoleRoute"));
+app.use("/api/users", require("./routes/user/UserRoute"));
+app.use("/api/roles", require("./routes/user/RoleRoute"));
 app.use("/api/auth", require("./routes/AuthRoute"));
-app.use("/api/shopCategories", require("./routes/ShopCategoryRoute"));
-app.use("/api/floors", require("./routes/FloorRoute"));
-app.use("/api/doors", require("./routes/DoorRoute"));
-app.use("/api/shops", require("./routes/ShopRoute"));
-app.use("/api/shopStatus", require("./routes/ShopStatusRoute"));
+app.use("/api/shopCategories", require("./routes/shop/ShopCategoryRoute"));
+app.use("/api/floors", require("./routes/shop/FloorRoute"));
+app.use("/api/doors", require("./routes/shop/DoorRoute"));
+app.use("/api/shops", require("./routes/shop/ShopRoute"));
+app.use("/api/shopStatus", require("./routes/shop/ShopStatusRoute"));
 app.use("/api/productCategories", require("./routes/product/ProductCategoryRoute"));
 app.use("/api/products", require("./routes/product/ProductRoute"));
 app.use("/api/stocks", require("./routes/product/StockRoute"));

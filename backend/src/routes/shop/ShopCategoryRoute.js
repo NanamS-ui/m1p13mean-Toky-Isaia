@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const ShopCategoryCtrl = require("../controllers/ShopCategoryController");
-const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const ShopCategoryCtrl = require("../../controllers/shop/ShopCategoryController");
+const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 
 router.use(requireAuth);
 

@@ -1,4 +1,4 @@
-const Floor = require("../models/Floor");
+const Floor = require("../../models/shop/Floor");
 
 const buildError = (message, status) => {
     const error = new Error(message);

@@ -1,4 +1,4 @@
-const DoorService = require("../services/DoorService");
+const DoorService = require("../../services/shop/DoorService");
 
 exports.createDoor = async (req, res) => {
     try {

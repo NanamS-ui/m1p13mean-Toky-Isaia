@@ -1,4 +1,4 @@
-const FloorService = require("../services/FloorService");
+const FloorService = require("../../services/shop/FloorService");
 
 exports.createFloor = async (req, res) => {
     try {

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const DoorCtrl = require("../controllers/DoorController");
-const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const DoorCtrl = require("../../controllers/shop/DoorController");
+const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 
 router.use(requireAuth);
 

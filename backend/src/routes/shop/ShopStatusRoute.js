@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const shopStatusCtrl = require("../controllers/ShopStatusController");
-const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const shopStatusCtrl = require("../../controllers/shop/ShopStatusController");
+const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 
 
 router.get("/", shopStatusCtrl.getShopStatuses);

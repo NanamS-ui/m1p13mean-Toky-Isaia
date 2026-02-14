@@ -1,5 +1,5 @@
-const Shop = require("../models/Shop");
-const ShopStatus = require("../models/ShopStatus")
+const Shop = require("../../models/shop/Shop");
+const ShopStatus = require("../../models/shop/ShopStatus")
 const ShopStatusService = require("./ShopStatusService");
 const mongoose = require("mongoose");
 const buildError = (message, status) => {

@@ -3,7 +3,7 @@ import { User } from "../user.model";
 import { Door } from "./door.model";
 import { ShopCategory } from "./shopCategory.model";
 import { ShopStatus } from "./shopStatus.model";
-
+import { OpeningHour } from "./openingHours.model";
 export interface Shop {
   _id: string;              
   name: string;
@@ -11,6 +11,7 @@ export interface Shop {
   description : string;
   is_accepted: boolean;
   suspensions: Suspension[];
+  opening_hours : OpeningHour[];
   door: string | Door;       
   shop_category:  ShopCategory;
   shop_status:  ShopStatus;

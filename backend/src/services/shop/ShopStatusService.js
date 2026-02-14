@@ -1,5 +1,5 @@
-const ShopStatus = require("../models/ShopStatus");
-const buildError = require("../utils/buildError");
+const ShopStatus = require("../../models/shop/ShopStatus");
+const buildError = require("../../utils/buildError");
 
 
 const createShopStatus = async (data) => {

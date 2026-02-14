@@ -1,4 +1,4 @@
-const Door = require("../models/Door");
+const Door = require("../../models/shop/Door");
 const mongoose = require("mongoose");
 const buildError = (message, status) => {
     const error = new Error(message);
