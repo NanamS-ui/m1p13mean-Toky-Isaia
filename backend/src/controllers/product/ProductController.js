@@ -9,6 +9,15 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+exports.createProductStock = async (req, res) => {
+  try {
+    const product = await ProductService.createProductStock(req.body);
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
 exports.getProducts = async (req, res) => {
   try {
     const products = await ProductService.getProducts();
@@ -30,6 +39,17 @@ exports.getProductById = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const product = await ProductService.updateProduct(
+      req.params.id,
+      req.body
+    );
+    res.json(product);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+exports.updateProductByFormulaire = async (req, res) => {
+  try {
+    const product = await ProductService.updateProductStockByFormulaire(
       req.params.id,
       req.body
     );

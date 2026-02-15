@@ -1,7 +1,13 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { ProductCategory } from '../../../core/models/product/product-category.model';
+import { Shop } from '../../../core/models/shop/shop.model';
+import { ProductCategoryService } from '../../../core/services/product/product-category.service';
+import { ShopService } from '../../../core/services/shop/shop.service';
+import { forkJoin } from 'rxjs';
+import { ProductService } from '../../../core/services/product/product.service';
 
 @Component({
   selector: 'app-produit-form',
@@ -15,7 +21,8 @@ export class ProduitFormComponent {
   isEditMode = false;
   activeTab = signal<'general' | 'images' | 'pricing' | 'stock'>('general');
   imagePreviews = signal<string[]>([]);
-
+  productCategories : ProductCategory[] =[];
+  shops : Shop[] =[]; 
   categories = [
     'Vêtements Femme',
     'Vêtements Homme',
@@ -28,22 +35,39 @@ export class ProduitFormComponent {
   selectedTags = signal<string[]>([]);
   newTag = '';
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private productCategoryService : ProductCategoryService,
+    private shopService : ShopService, private cdr : ChangeDetectorRef,
+    private productService : ProductService, private router : Router
+  ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
       sku: [''],
       description: [''],
       category: ['', Validators.required],
+      boutique: ['', Validators.required],
       price: [null, [Validators.required, Validators.min(0)]],
       promoPrice: [null],
       promoStart: [''],
       promoEnd: [''],
+      priceStart: [''],
+      priceEnd: [''],
       stock: [0, [Validators.required, Validators.min(0)]],
       lowStockAlert: [5],
       weight: [null],
       dimensions: [''],
       isActive: [true]
     });
+    this.initData();
+  }
+  private initData():void{
+    forkJoin({
+      categories : this.productCategoryService.getProductCategories(),
+      shops : this.shopService.getShopsByOwner()
+    }).subscribe(({categories, shops})=>{
+      this.productCategories = categories;
+      this.shops = shops;
+      this.cdr.detectChanges();
+    })
   }
 
   setTab(tab: 'general' | 'images' | 'pricing' | 'stock'): void {
@@ -99,6 +123,21 @@ export class ProduitFormComponent {
       tags: this.selectedTags(),
       images: this.imagePreviews()
     };
+    this.submitForm();
     console.log('Produit enregistré:', data);
+  }
+  private submitForm():void{
+    const formValue = this.form.getRawValue();
+    const request$ = this.productService.createProductStock(formValue);
+    request$.subscribe({
+      next: () => {
+        
+        this.router.navigate(['/boutique/produits']);
+      },
+      error: (err) => {
+        
+        console.error('Erreur lors de la sauvegarde', err);
+      }
+    })
   }
 }

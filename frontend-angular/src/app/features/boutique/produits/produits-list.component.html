@@ -16,28 +16,28 @@
     <div class="stat-card">
       <span class="material-symbols-outlined">inventory_2</span>
       <div class="stat-card__content">
-        <span class="stat-card__value">{{ stats().total }}</span>
+        <span class="stat-card__value">{{ stats.total }}</span>
         <span class="stat-card__label">Total produits</span>
       </div>
     </div>
     <div class="stat-card stat-card--green">
       <span class="material-symbols-outlined">check_circle</span>
       <div class="stat-card__content">
-        <span class="stat-card__value">{{ stats().active }}</span>
-        <span class="stat-card__label">Actifs</span>
+        <span class="stat-card__value">{{ stats.shop }}</span>
+        <span class="stat-card__label">Boutiques</span>
       </div>
     </div>
     <div class="stat-card stat-card--orange">
       <span class="material-symbols-outlined">warning</span>
       <div class="stat-card__content">
-        <span class="stat-card__value">{{ stats().lowStock }}</span>
+        <span class="stat-card__value">{{ stats.lowStock }}</span>
         <span class="stat-card__label">Stock faible</span>
       </div>
     </div>
     <div class="stat-card stat-card--red">
       <span class="material-symbols-outlined">error</span>
       <div class="stat-card__content">
-        <span class="stat-card__value">{{ stats().outOfStock }}</span>
+        <span class="stat-card__value">{{ stats.outOfStock }}</span>
         <span class="stat-card__label">Rupture</span>
       </div>
     </div>
@@ -58,12 +58,12 @@
         }
       </select>
 
-      <!-- <select [(ngModel)]="selectedStatus">
-        <option value="">Tous les statuts</option>
-        <option value="active">Actif</option>
-        <option value="inactive">Inactif</option>
-        <option value="outOfStock">Rupture</option>
-      </select> -->
+      <select [(ngModel)]="selectedStatus">
+        <option value="">Tous les boutiques</option>
+        @for (cat of shops; track cat._id) {
+          <option [value]="cat._id">{{ cat.name }}</option>
+        }
+      </select>
     </div>
 
     <div class="view-toggle">

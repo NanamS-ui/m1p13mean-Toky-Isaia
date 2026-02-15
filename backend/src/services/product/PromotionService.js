@@ -5,6 +5,55 @@ const buildError = (message, status) => {
   error.status = status;
   return error;
 };
+const createPromotionStock = async(idStock, payload)=>{
+  const promotion = {
+    percent : payload.promoPrice,
+    stock : idStock,
+    started_date : payload.promoStart && payload.promoStart !== ''
+    ? new Date(payload.promoStart)
+    : new Date(),
+    end_date : payload.promoEnd && payload.promoEnd !== ''
+    ? new Date(payload.promoEnd)
+    : new Date(8640000000000000)
+  };
+  await Promotion.create(promotion);
+};
+
+const updatePromotionByProduct = async(payload, stockToUpdate)=>{
+  if(payload.percent == stockToUpdate.current_promotion.promoPrice) {
+    
+    if(payload.promoStart == stockToUpdate.current_promotion.started_date ||
+      payload.promoEnd == stockToUpdate.current_promotion.end_date
+    ){
+        const pricePayload = {
+        price : payload.price,
+        stock : stockToUpdate._id,
+        started_date : payload.promoStart && payload.promoStart !== ''
+        ? new Date(payload.promoStart)
+        : new Date(),
+        end_date : payload.promoEnd && payload.promoEnd !== ''
+        ? new Date(payload.promoEnd)
+        : new Date(8640000000000000)
+      };
+      await updatePromotion(stockToUpdate.current_promotion._id, pricePayload);
+      return;
+    }
+  }
+  else{
+    await updatePromotion(stockToUpdate.current_promotion._id, {end_date : new Date()});
+    pricePayload = {
+      price : payload.price,
+      stock : stockToUpdate._id,
+      started_date : payload.promoStart && payload.promoStart !== ''
+      ? new Date(payload.promoStart)
+      : new Date(),
+      end_date : payload.promoEnd && payload.promoEnd !== ''
+      ? new Date(payload.promoEnd)
+      : new Date(8640000000000000)
+    };
+    await createPromotion(pricePayload);
+  }
+}
 
 const createPromotion = async (payload) => {
   return Promotion.create(payload);
@@ -71,5 +120,7 @@ module.exports = {
   getPromotions,
   getPromotionById,
   updatePromotion,
-  deletePromotion
+  deletePromotion,
+  createPromotionStock,
+  updatePromotionByProduct
 };

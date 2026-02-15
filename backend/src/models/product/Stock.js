@@ -1,19 +1,22 @@
 const mongoose = require("mongoose");
+const Shop = require("../shop/Shop");
 
 const StockSchema = new mongoose.Schema(
   {
     in: {
       type: Number,
-      required: true,
       min: 0
     },
     out: {
       type: Number,
-      required: true,
-      default: 0,
       min: 0
     },
     reste: {
+      type: Number,
+      required : true,
+      default: 0
+    },
+    alerte: {
       type: Number,
       default: 0
     },
@@ -30,7 +33,8 @@ const StockSchema = new mongoose.Schema(
     deleted_at: {
       type: Date,
       default: null
-    }
+    },
+
   },
   {
     timestamps: {

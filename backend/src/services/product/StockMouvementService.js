@@ -29,9 +29,9 @@ const createMouvement = async (payload) => {
   const mouvement = await StockMouvement.create(payload);
 
   
-  stock.in += payload.in || 0;
-  stock.out += payload.out || 0;
-  stock.reste = stock.in - stock.out;
+  const stockIn = payload.in || 0;
+  const stockOut = payload.out || 0;
+  stock.reste = stockIn - stockOut;
 
   if (stock.reste < 0) throw buildError("Stock insuffisant", 500);
 
@@ -46,6 +46,22 @@ const getMouvements = async () => {
     .populate("stock");
 };
 
+const getLastMouvementByStock = async (stockId) => {
+  if (!mongoose.Types.ObjectId.isValid(stockId)) {
+    throw buildError("Stock invalide", 400);
+  }
+
+  
+  const mouvement = await StockMouvement.findOne({
+    stock: stockId,
+    deleted_at: null
+  })
+    .sort({ created_at: -1 }); 
+
+  if (!mouvement) throw buildError("Aucun mouvement trouvé", 404);
+
+  return mouvement;
+};
 
 const getMouvementByStock = async (stockId) => {
 
@@ -78,5 +94,6 @@ module.exports = {
   getMouvements,
   getMouvementByStock,
   deleteMouvement,
-  createMouvementSansUpdate
+  createMouvementSansUpdate,
+  getLastMouvementByStock
 };

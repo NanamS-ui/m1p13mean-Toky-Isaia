@@ -9,11 +9,21 @@ const buildError = (message, status) => {
   return error;
 };
 
+const createStockByProduct = async (idProduct, payload)=>{
+  const stockPayload = {
+    reste : payload.stock,
+    alerte : payload.lowStockAlert,
+    product : idProduct,
+    shop  : payload.boutique
+  };
+  const stock = await createStock(stockPayload);
+  return stock;
+};
+
 const createStock = async (payload) => {
   const stock = await Stock.create(payload);
   const mouvementStock = {
-    in : stock.in,
-    out : stock.out,
+    in : stock.reste,
     stock : stock._id
   }
   await StockMouvementService.createMouvementSansUpdate(mouvementStock);
@@ -41,7 +51,20 @@ const getStockById = async (id) => {
   return stock;
 };
 
-
+const updateStockByUpdateProduct = async(id, payload, stockToUpdate) =>{
+  if(payload.stock == stockToUpdate.reste && payload.lowStockAlert == stockToUpdate.alerte ) return;
+  let mvtPayload = {
+    in : payload.stock > stockToUpdate.reste? payload.stock: 0,
+    out : payload.stock < stockToUpdate.reste? payload.stock: 0,
+    stock : id
+  };
+  await StockMouvementService.createMouvement(mvtPayload);
+  
+  const stockPayload = {
+    alerte : payload.lowStockAlert
+  };
+  await updateStock(id,stockPayload);
+}
 const updateStock = async (id, payload) => {
   const stock = await Stock.findById(id)
     .populate("product")
@@ -72,11 +95,22 @@ const getStockByOwner = async (idOwner)=>{
   return stocks;
 
 }
+
+const getStockViewById = async (idStock)=>{
+  const stocks = await StockView.find({
+    "_id" :  new mongoose.Types.ObjectId(idStock)
+  });
+  return stocks;
+
+}
 module.exports = {
   createStock,
   getStocks,
   getStockById,
   updateStock,
   deleteStock,
-  getStockByOwner
+  getStockByOwner,
+  createStockByProduct,
+  getStockViewById,
+  updateStockByUpdateProduct
 };

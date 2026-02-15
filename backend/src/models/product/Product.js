@@ -18,13 +18,11 @@ const ProductSchema = new mongoose.Schema(
       required: true
     },
     poids : {
-      type: Number,
-      required: true
+      type: Number
     },
     dimension:{
       type:String,
-      trim: true,
-      required: true
+      trim: true
     },
     image: {
       type: String,

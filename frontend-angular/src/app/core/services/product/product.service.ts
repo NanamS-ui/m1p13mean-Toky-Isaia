@@ -21,12 +21,19 @@ export class ProductService {
     return this.http.get<Product>(`${this.apiBaseUrl}/products/${id}`);
   }
 
+  createProductStock(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiBaseUrl}/products/product/stock`, payload);
+  }
+
   createProduct(payload: Partial<Product>): Observable<Product> {
     return this.http.post<Product>(`${this.apiBaseUrl}/products`, payload);
   }
 
   updateProduct(id: string, payload: Partial<Product>): Observable<Product> {
     return this.http.put<Product>(`${this.apiBaseUrl}/products/${id}`, payload);
+  }
+  updateProductByFormulaire(id: string, payload: Partial<any>): Observable<any> {
+    return this.http.put<any>(`${this.apiBaseUrl}/products/product/stock/${id}`, payload);
   }
 
   deleteProduct(id: string): Observable<{ message: string }> {

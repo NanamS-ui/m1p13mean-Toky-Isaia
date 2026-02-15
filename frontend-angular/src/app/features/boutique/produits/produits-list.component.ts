@@ -7,6 +7,7 @@ import { Stock, StockView } from '../../../core/models/product/stock.model';
 import { ProductCategoryService } from '../../../core/services/product/product-category.service';
 import { StockService } from '../../../core/services/product/stock.service';
 import { forkJoin } from 'rxjs';
+import { Shop } from '../../../core/models/shop/shop.model';
 
 interface Product {
   id: string;
@@ -36,7 +37,8 @@ export class ProduitsListComponent {
   viewMode = signal<'grid' | 'list'>('grid');
 
   productCategories : ProductCategory[] = [];
-  stockViews : Stock[] =[]
+  stockViews : Stock[] =[];
+  shops : Shop[] = [];
   constructor(private productCategoryService: ProductCategoryService, 
     private stockService : StockService, private cdr : ChangeDetectorRef
   ){}
@@ -47,6 +49,13 @@ export class ProduitsListComponent {
     }).subscribe(({categories,stocks})=>{
       this.productCategories = categories;
       this.stockViews = stocks;
+      const shopMap: Record<string, Shop> = {};
+      stocks.forEach(stock => {
+        if (stock.shop && !shopMap[stock.shop._id]) {
+          shopMap[stock.shop._id] = stock.shop;
+        }
+      });
+    this.shops = Object.values(shopMap);
       this.cdr.detectChanges();
     })
   }
@@ -159,8 +168,9 @@ export class ProduitsListComponent {
       const matchReference = !product.reference || !query || product.reference.toLowerCase().includes(query);
 
       const matchCategory = !this.selectedCategory || product.product_category._id === this.selectedCategory;
+      const matchBoutique = !this.selectedStatus || stock.shop._id === this.selectedStatus;
 
-      return matchName && matchReference && matchCategory;
+      return matchName && matchReference && matchCategory && matchBoutique;
     });
   }
 
@@ -188,15 +198,16 @@ export class ProduitsListComponent {
   });
 
   
-  stats = computed(() => {
-    const all = this.products();
+  get stats()  {
+    const all = this.stockViews;
+    const shops = this.shops;
     return {
       total: all.length,
-      active: all.filter(p => p.status === 'active').length,
-      outOfStock: all.filter(p => p.stock === 0).length,
-      lowStock: all.filter(p => p.stock > 0 && p.stock <= 5).length
+      shop: shops.length,
+      outOfStock: all.filter(p => p.reste === 0).length,
+      lowStock: all.filter(p => p.reste > 0 && p.reste <= p.alerte).length
     };
-  });
+  }
 
   setViewMode(mode: 'grid' | 'list'): void {
     this.viewMode.set(mode);

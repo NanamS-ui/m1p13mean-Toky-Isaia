@@ -54,8 +54,8 @@
               <label for="category">Catégorie *</label>
               <select id="category" formControlName="category">
                 <option value="">Sélectionner une catégorie</option>
-                @for (cat of categories; track cat) {
-                  <option [value]="cat">{{ cat }}</option>
+                @for (cat of productCategories; track cat._id) {
+                  <option [value]="cat._id">{{ cat.value }}</option>
                 }
               </select>
             </div>
@@ -69,7 +69,7 @@
         </section>
 
         <section class="card">
-          <h4>Tags & Mots-clés</h4>
+          <!-- <h4>Tags & Mots-clés</h4>
           <p class="section-desc">Ajoutez des tags pour améliorer la recherche</p>
 
           <div class="tags-selector">
@@ -92,9 +92,22 @@
               <span class="material-symbols-outlined">add</span>
               Ajouter
             </button>
+          </div> -->
+          <h4>Votre boutique qui vend ce produit</h4>
+
+          <div class="form-group">
+            <label for="boutique">Boutiques*</label>
+            <select id="boutique" formControlName="boutique">
+              <option value="">Sélectionner votre boutique</option>
+              @for (cat of shops; track cat._id) {
+                <option [value]="cat._id">{{ cat.name }}</option>
+              }
+            </select>
           </div>
 
+
           <h4 class="mt-1">Détails physiques</h4>
+          <p class="section-desc">Détails pour la livraison</p>
           <div class="form-row">
             <div class="form-group">
               <label for="weight">Poids (kg)</label>
@@ -153,7 +166,7 @@
       <div class="form-grid">
         <section class="card">
           <h4>Prix de vente</h4>
-
+          <p class="section-desc">Date début par defaut aujourd'hui</p>
           <div class="form-group">
             <label for="price">Prix *</label>
             <div class="input-currency">
@@ -162,12 +175,18 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" formControlName="isActive" />
-              <span class="checkbox-text">Produit actif et visible</span>
-            </label>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="priceStart">Date de début</label>
+              <input id="priceStart" type="date" formControlName="priceStart" />
+            </div>
+            <div class="form-group">
+              <label for="priceEnd">Date de fin</label>
+              <input id="priceEnd" type="date" formControlName="priceEnd" />
+            </div>
           </div>
+
+          
         </section>
 
         <section class="card">
@@ -175,10 +194,10 @@
           <p class="section-desc">Configurez une promotion temporaire</p>
 
           <div class="form-group">
-            <label for="promoPrice">Prix promotionnel</label>
+            <label for="promoPrice">Pourcentage promotionnel</label>
             <div class="input-currency">
               <input id="promoPrice" type="number" formControlName="promoPrice" placeholder="0" />
-              <span class="currency-label">MGA</span>
+              <span class="currency-label">%</span>
             </div>
           </div>
 
@@ -196,11 +215,11 @@
           @if (form.get('promoPrice')?.value && form.get('price')?.value) {
             <div class="promo-preview">
               <div class="promo-preview__discount">
-                -{{ (((form.get('price')?.value - form.get('promoPrice')?.value) / form.get('price')?.value) * 100).toFixed(0) }}%
+                -{{ form.get('promoPrice')?.value }}%
               </div>
               <div class="promo-preview__prices">
                 <span class="promo-preview__old">{{ form.get('price')?.value | number }} MGA</span>
-                <span class="promo-preview__new">{{ form.get('promoPrice')?.value | number }} MGA</span>
+                <span class="promo-preview__new">{{ form.get('price')?.value*(1-(form.get('promoPrice')?.value/100))   }} MGA</span>
               </div>
             </div>
           }

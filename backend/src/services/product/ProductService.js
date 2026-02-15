@@ -1,11 +1,45 @@
 const Product = require("../../models/product/Product");
-
+const StockService = require("./StockService");
+const PriceService = require ("./PriceService");
+const PromotionService = require("./PromotionService")
 const buildError = (message, status) => {
   const error = new Error(message);
   error.status = status;
   return error;
 };
+const updateProductStockByFormulaire = async (idStock, payload) => {
+  const stockToUpdate = StockService.getStockViewById(idStock);
+  const productPayload ={
+    name : payload.name,
+    reference  : payload.sku,
+    description : payload.description,
+    product_category : payload.category,
+    poids : payload.weight,
+    dimension : payload.dimensions
+  };
+  await updateProduct(stockToUpdate.product._id,productPayload);
+  await StockService.updateStockByUpdateProduct(idStock, payload, stockToUpdate);
+  await PriceService.updatePriceByProduct(payload, stockToUpdate);
+  await PromotionService.updatePromotionByProduct(payload,stockToUpdate);
+  
+};
+const createProductStock = async (payload)=>{
+    const productPayload ={
+      name : payload.name,
+      reference  : payload.sku,
+      description : payload.description,
+      product_category : payload.category,
+      poids : payload.weight,
+      dimension : payload.dimensions
+    };
+    const product = await Product.create(productPayload);
+    const stock = await StockService.createStockByProduct(product._id, payload);
+    await PriceService.createPriceStock(stock._id, payload);
+    if(payload.promoPrice && payload.promoPrice !== '')
+      await PromotionService.createPromotionStock(stock._id,payload);
+    
 
+}
 const createProduct = async (payload) =>
   Product.create(payload);
 
@@ -42,5 +76,7 @@ module.exports = {
   getProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  createProductStock,
+  updateProductStockByFormulaire
 };

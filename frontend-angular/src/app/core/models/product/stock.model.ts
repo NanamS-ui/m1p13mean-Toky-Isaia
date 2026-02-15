@@ -9,6 +9,7 @@ export class Stock {
   in: number;
   out: number;
   reste: number;
+  alerte: number;
   product: Product;
   shop: Shop; 
   deleted_at: Date | null;
@@ -22,6 +23,7 @@ export class Stock {
     this.in = init?.in ?? 0;
     this.out = init?.out ?? 0;
     this.reste = init?.reste ?? 0;
+    this.alerte = init?.alerte ?? 0;
 
     this.product = init?.product
       ? new Product(init.product)

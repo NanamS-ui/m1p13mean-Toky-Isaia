@@ -6,6 +6,20 @@ const buildError = (message, status) => {
   return error;
 };
 
+const createPriceStock= async(stockId, payload)=>{
+  const pricePayload = {
+    price : payload.price,
+    stock : stockId,
+    started_date : payload.priceStart && payload.priceStart !== ''
+    ? new Date(payload.priceStart)
+    : new Date(),
+    end_date : payload.priceEnd && payload.priceEnd !== ''
+    ? new Date(payload.priceEnd)
+    : new Date(8640000000000000)
+  };
+  await Price.create(pricePayload);
+}
+
 const createPrice = async (payload) => {
   return Price.create(payload);
 };
@@ -34,6 +48,41 @@ const getPriceById = async (id) => {
   if (!price) throw buildError("Prix introuvable", 404);
   return price;
 };
+const updatePriceByProduct = async(payload, stockToUpdate)=>{
+  if(payload.price == stockToUpdate.current_price.price) {
+    
+    if(payload.priceStart == stockToUpdate.current_price.started_date ||
+      payload.priceEnd == stockToUpdate.current_price.end_date
+    ){
+        const pricePayload = {
+        price : payload.price,
+        stock : stockToUpdate._id,
+        started_date : payload.priceStart && payload.priceStart !== ''
+        ? new Date(payload.priceStart)
+        : new Date(),
+        end_date : payload.priceEnd && payload.priceEnd !== ''
+        ? new Date(payload.priceEnd)
+        : new Date(8640000000000000)
+      };
+      await updatePrice(stockToUpdate.current_price._id, pricePayload);
+      return;
+    }
+  }
+  else{
+    await updatePrice(stockToUpdate.current_price._id, {end_date : new Date()});
+    pricePayload = {
+      price : payload.price,
+      stock : stockToUpdate._id,
+      started_date : payload.priceStart && payload.priceStart !== ''
+      ? new Date(payload.priceStart)
+      : new Date(),
+      end_date : payload.priceEnd && payload.priceEnd !== ''
+      ? new Date(payload.priceEnd)
+      : new Date(8640000000000000)
+    };
+    await Price.create(pricePayload);
+  }
+}
 
 const updatePrice = async (id, payload) => {
   if (payload.started_date && payload.end_date) {
@@ -70,5 +119,7 @@ module.exports = {
   getPrices,
   getPriceById,
   updatePrice,
-  deletePrice
+  deletePrice,
+  createPriceStock,
+  updatePriceByProduct
 };
