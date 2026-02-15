@@ -10,7 +10,7 @@ const createProduct = async (payload) =>
   Product.create(payload);
 
 const getProducts = async () =>
-  Product.find().populate("product_category");
+  Product.find().populate("product_category").populate("tags");
 
 const getProductById = async (id) => {
   const product = await Product.findById(id)

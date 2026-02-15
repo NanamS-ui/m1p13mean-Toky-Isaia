@@ -1,4 +1,10 @@
 <div class="catalog-page">
+  @if (loading()) {
+    <div class="loading-state">
+      <span class="material-symbols-outlined animate-spin">progress_activity</span>
+      <p>Chargement du catalogue...</p>
+    </div>
+  } @else {
   <!-- Header -->
   <div class="catalog-header">
     <h1>
@@ -84,7 +90,7 @@
       </div>
 
       <!-- Clear Filters -->
-      @if (selectedCategory() || minPrice() || maxPrice() || inStockOnly() || onPromoOnly()) {
+      @if (hasActiveFilters()) {
         <button class="btn-clear-filters" (click)="clearFilters()">
           <span class="material-symbols-outlined">filter_alt_off</span>
           Réinitialiser
@@ -150,9 +156,6 @@
             @if (product.onPromo) {
               <span class="product-card__promo">Promo</span>
             }
-            @if (!product.inStock) {
-              <span class="product-card__out-of-stock">Rupture</span>
-            }
           </div>
           <div class="product-card__content">
             <span class="product-card__boutique">{{ product.boutiqueName }}</span>
@@ -168,6 +171,13 @@
             </div>
             <div class="product-card__meta">
               <span class="product-card__category">{{ product.category }}</span>
+              @if (product.tags.length > 0) {
+                <div class="product-card__tags">
+                  @for (tag of product.tags.slice(0, 3); track tag) {
+                    <span class="product-tag">{{ tag }}</span>
+                  }
+                </div>
+              }
               <span class="product-card__popularity">
                 <span class="material-symbols-outlined">trending_up</span>
                 {{ product.popularity }}
@@ -177,7 +187,7 @@
           <button
             class="product-card__cart"
             [disabled]="!product.inStock"
-            (click)="addToCart(product.id, $event)"
+            (click)="addToCart(product.id, $event, product.stockId)"
           >
             <span class="material-symbols-outlined">add_shopping_cart</span>
           </button>
@@ -191,5 +201,6 @@
       <p>Essayez de modifier vos critères de recherche</p>
       <button class="btn-primary" (click)="clearFilters()">Réinitialiser les filtres</button>
     </div>
+  }
   }
 </div>

@@ -14,7 +14,13 @@ const createStock = async (payload) => {
 
 const getStocks = async () => {
   return Stock.find({ deleted_at: null })
-    .populate("product")
+    .populate({
+      path: "product",
+      populate: [
+        { path: "product_category" },
+        { path: "tags" }
+      ]
+    })
     .populate("shop");
 };
 

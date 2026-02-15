@@ -2,6 +2,29 @@
    Produits Catalog Component
    ============================================ */
 
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 1rem;
+}
+
+.loading-state .material-symbols-outlined {
+  font-size: 40px;
+  color: var(--korus-accent);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .catalog-page {
   display: flex;
   flex-direction: column;
@@ -402,8 +425,9 @@
 
 .product-card__meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--korus-border);
@@ -427,6 +451,20 @@
 .product-card__popularity .material-symbols-outlined {
   font-size: 16px;
   color: var(--korus-accent);
+}
+
+.product-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.product-tag {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  background: var(--korus-bg);
+  color: var(--korus-text-muted);
+  border-radius: 6px;
 }
 
 .product-card__cart {

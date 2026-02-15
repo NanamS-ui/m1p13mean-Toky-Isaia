@@ -1,27 +1,16 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  promoPrice?: number;
-  category: string;
-  boutiqueId: string;
-  boutiqueName: string;
-  boutiqueLogo?: string;
-  image?: string;
-  images?: string[];
-  inStock: boolean;
-  stockQuantity: number;
-  onPromo: boolean;
-  popularity: number;
-  createdAt: string;
-  specs?: { [key: string]: string };
-}
+import { forkJoin } from 'rxjs';
+import { StockService } from '../../../core/services/product/stock.service';
+import { PriceService } from '../../../core/services/product/price.service';
+import { PromotionService } from '../../../core/services/product/promotion.service';
+import { CatalogFilterService } from '../../../core/services/product/catalog-filter.service';
+import {
+  CatalogProduct,
+  CatalogFilterCriteria
+} from '../../../core/models/product/catalog-product.model';
 
 @Component({
   selector: 'app-produits-catalog',
@@ -30,7 +19,7 @@ interface Product {
   templateUrl: './produits-catalog.component.html',
   styleUrl: './produits-catalog.component.css'
 })
-export class ProduitsCatalogComponent {
+export class ProduitsCatalogComponent implements OnInit {
   // Filter signals
   searchQuery = signal('');
   selectedCategory = signal('');
@@ -40,223 +29,126 @@ export class ProduitsCatalogComponent {
   onPromoOnly = signal(false);
   sortBy = signal<'popularity' | 'newest' | 'price-asc' | 'price-desc'>('popularity');
 
-  // Mock products data
-  products = signal<Product[]>([
-    {
-      id: '1',
-      name: 'Robe été fleurie',
-      description: 'Robe légère et élégante pour l\'été',
-      price: 75000,
-      promoPrice: 59000,
-      category: 'Mode',
-      boutiqueId: '1',
-      boutiqueName: 'Mode & Style',
-      image: undefined,
-      inStock: true,
-      stockQuantity: 12,
-      onPromo: true,
-      popularity: 95,
-      createdAt: '2026-01-15'
-    },
-    {
-      id: '2',
-      name: 'Casque Bluetooth Pro',
-      description: 'Casque sans fil avec réduction de bruit',
-      price: 185000,
-      category: 'Électronique',
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      image: undefined,
-      inStock: true,
-      stockQuantity: 15,
-      onPromo: false,
-      popularity: 88,
-      createdAt: '2026-01-20'
-    },
-    {
-      id: '3',
-      name: 'Sac à main cuir',
-      description: 'Sac élégant en cuir véritable',
-      price: 120000,
-      category: 'Mode',
-      boutiqueId: '1',
-      boutiqueName: 'Mode & Style',
-      image: undefined,
-      inStock: false,
-      stockQuantity: 0,
-      onPromo: false,
-      popularity: 75,
-      createdAt: '2026-01-10'
-    },
-    {
-      id: '4',
-      name: 'Chaussures de sport',
-      description: 'Chaussures confortables pour le sport',
-      price: 95000,
-      promoPrice: 75000,
-      category: 'Sport',
-      boutiqueId: '3',
-      boutiqueName: 'Sport Pro',
-      image: undefined,
-      inStock: true,
-      stockQuantity: 8,
-      onPromo: true,
-      popularity: 82,
-      createdAt: '2026-01-22'
-    },
-    {
-      id: '5',
-      name: 'Montre connectée',
-      description: 'Montre intelligente avec suivi fitness',
-      price: 250000,
-      promoPrice: 199000,
-      category: 'Électronique',
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      image: undefined,
-      inStock: true,
-      stockQuantity: 8,
-      onPromo: true,
-      popularity: 90,
-      createdAt: '2026-01-18'
-    },
-    {
-      id: '6',
-      name: 'Parfum premium',
-      description: 'Parfum de luxe pour homme',
-      price: 150000,
-      category: 'Beauté',
-      boutiqueId: '4',
-      boutiqueName: 'Beauté & Soins',
-      image: undefined,
-      inStock: true,
-      stockQuantity: 20,
-      onPromo: false,
-      popularity: 70,
-      createdAt: '2026-01-12'
-    },
-    {
-      id: '7',
-      name: 'Téléphone portable',
-      description: 'Smartphone dernière génération',
-      price: 450000,
-      category: 'Électronique',
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      image: undefined,
-      inStock: true,
-      stockQuantity: 5,
-      onPromo: false,
-      popularity: 98,
-      createdAt: '2026-01-28'
-    },
-    {
-      id: '8',
-      name: 'Veste en jean',
-      description: 'Veste décontractée en jean',
-      price: 65000,
-      category: 'Mode',
-      boutiqueId: '1',
-      boutiqueName: 'Mode & Style',
-      image: undefined,
-      inStock: true,
-      stockQuantity: 10,
-      onPromo: false,
-      popularity: 65,
-      createdAt: '2026-01-25'
-    }
-  ]);
+  loading = signal(true);
+  products = signal<CatalogProduct[]>([]);
 
-  // Computed: categories from products
-  categories = computed(() => {
-    const cats = new Set<string>();
-    this.products().forEach(product => {
-      if (product.category) {
-        cats.add(product.category);
+  constructor(
+    private stockService: StockService,
+    private priceService: PriceService,
+    private promotionService: PromotionService,
+    private catalogFilterService: CatalogFilterService
+  ) {}
+
+  ngOnInit(): void {
+    this.loadCatalog();
+  }
+
+  private loadCatalog(): void {
+    this.loading.set(true);
+    forkJoin({
+      stocks: this.stockService.getStocks(),
+      prices: this.priceService.getPrices(),
+      promotions: this.promotionService.getPromotions()
+    }).subscribe({
+      next: ({ stocks, prices, promotions }) => {
+        const catalog = this.buildCatalog(stocks, prices, promotions);
+        this.products.set(catalog);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.products.set([]);
+        this.loading.set(false);
       }
     });
-    return Array.from(cats).sort();
-  });
+  }
 
-  // Computed: filtered products
-  filteredProducts = computed(() => {
-    let filtered = this.products();
-
-    // Search filter
-    const query = this.searchQuery().toLowerCase().trim();
-    if (query) {
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query) ||
-        p.boutiqueName.toLowerCase().includes(query)
-      );
+  private buildCatalog(stocks: any[], prices: any[], promotions: any[]): CatalogProduct[] {
+    const now = new Date();
+    const priceByStock = new Map<string, { price: number }>();
+    for (const p of prices) {
+      if (p.deleted_at) continue;
+      const start = new Date(p.started_date).getTime();
+      const end = new Date(p.end_date).getTime();
+      if (now.getTime() >= start && now.getTime() <= end) {
+        const stockId = typeof p.stock === 'string' ? p.stock : p.stock?._id;
+        if (stockId) priceByStock.set(stockId, { price: p.price });
+      }
+    }
+    const promoByStock = new Map<string, { percent: number }>();
+    for (const pr of promotions) {
+      if (pr.deleted_at) continue;
+      const start = new Date(pr.started_date).getTime();
+      const end = new Date(pr.end_date).getTime();
+      if (now.getTime() >= start && now.getTime() <= end) {
+        const stockId = typeof pr.stock === 'string' ? pr.stock : pr.stock?._id;
+        if (stockId) promoByStock.set(stockId, { percent: pr.percent });
+      }
     }
 
-    // Category filter
-    const category = this.selectedCategory();
-    if (category) {
-      filtered = filtered.filter(p => p.category === category);
-    }
+    return stocks
+      .filter(s => s.product && s.shop)
+      .map(stock => {
+        const product = stock.product;
+        const shop = typeof stock.shop === 'object' ? stock.shop : {};
+        const category = product?.product_category?.value ?? '';
+        const tags = Array.isArray(product?.tags)
+          ? product.tags.map((t: any) => (typeof t === 'string' ? t : t?.value ?? '')).filter(Boolean)
+          : [];
+        const prix = priceByStock.get(stock._id);
+        const promo = promoByStock.get(stock._id);
+        const price = prix?.price ?? 0;
+        const promoPrice = promo
+          ? Math.round(price * (1 - promo.percent / 100))
+          : undefined;
+        const hash = (stock._id + (product?._id ?? '')).split('').reduce((h: number, c: string) => ((h << 5) - h) + c.charCodeAt(0) | 0, 0);
+        const popularity = 50 + Math.abs(hash % 50);
 
-    // Price filters
-    const min = this.minPrice();
-    if (min !== null && min !== undefined) {
-      filtered = filtered.filter(p => {
-        const price = p.promoPrice ?? p.price;
-        return price >= min;
+        return {
+          id: product?._id ?? stock._id,
+          stockId: stock._id,
+          name: product?.name ?? '',
+          description: product?.description ?? '',
+          price,
+          promoPrice,
+          category,
+          tags,
+          boutiqueId: shop?._id ?? '',
+          boutiqueName: shop?.name ?? '',
+          boutiqueLogo: shop?.logo,
+          image: product?.image,
+          inStock: (stock.reste ?? 0) > 0,
+          stockQuantity: stock.reste ?? 0,
+          onPromo: !!promo,
+          popularity,
+          createdAt: stock.created_at ?? product?.created_at ?? new Date().toISOString()
+        };
       });
-    }
+  }
 
-    const max = this.maxPrice();
-    if (max !== null && max !== undefined) {
-      filtered = filtered.filter(p => {
-        const price = p.promoPrice ?? p.price;
-        return price <= max;
-      });
-    }
+  private filterCriteria = computed<CatalogFilterCriteria>(() => ({
+    searchQuery: this.searchQuery(),
+    selectedCategory: this.selectedCategory(),
+    minPrice: this.minPrice(),
+    maxPrice: this.maxPrice(),
+    inStockOnly: this.inStockOnly(),
+    onPromoOnly: this.onPromoOnly(),
+    sortBy: this.sortBy()
+  }));
 
-    // Stock filter
-    if (this.inStockOnly()) {
-      filtered = filtered.filter(p => p.inStock);
-    }
+  categories = computed(() =>
+    this.catalogFilterService.getCategories(this.products())
+  );
 
-    // Promo filter
-    if (this.onPromoOnly()) {
-      filtered = filtered.filter(p => p.onPromo);
-    }
+  filteredProducts = computed(() =>
+    this.catalogFilterService.filterAndSort(
+      this.products(),
+      this.filterCriteria()
+    )
+  );
 
-    // Sort
-    const sort = this.sortBy();
-    const sorted = [...filtered];
-    
-    switch (sort) {
-      case 'popularity':
-        sorted.sort((a, b) => b.popularity - a.popularity);
-        break;
-      case 'newest':
-        sorted.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        break;
-      case 'price-asc':
-        sorted.sort((a, b) => {
-          const priceA = a.promoPrice ?? a.price;
-          const priceB = b.promoPrice ?? b.price;
-          return priceA - priceB;
-        });
-        break;
-      case 'price-desc':
-        sorted.sort((a, b) => {
-          const priceA = a.promoPrice ?? a.price;
-          const priceB = b.promoPrice ?? b.price;
-          return priceB - priceA;
-        });
-        break;
-    }
-
-    return sorted;
-  });
+  hasActiveFilters = computed(() =>
+    this.catalogFilterService.hasActiveFilters(this.filterCriteria())
+  );
 
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('fr-MG', {
@@ -266,20 +158,20 @@ export class ProduitsCatalogComponent {
     }).format(value);
   }
 
-  addToCart(productId: string, event: Event): void {
+  addToCart(productId: string, event: Event, stockId?: string): void {
     event.preventDefault();
     event.stopPropagation();
-    // TODO: Implement cart service
-    console.log('Add to cart:', productId);
+    // TODO: Implement cart service (utiliser stockId pour identifier produit+boutique)
   }
 
   clearFilters(): void {
-    this.searchQuery.set('');
-    this.selectedCategory.set('');
-    this.minPrice.set(null);
-    this.maxPrice.set(null);
-    this.inStockOnly.set(false);
-    this.onPromoOnly.set(false);
-    this.sortBy.set('popularity');
+    const def = this.catalogFilterService.getDefaultCriteria();
+    this.searchQuery.set(def.searchQuery);
+    this.selectedCategory.set(def.selectedCategory);
+    this.minPrice.set(def.minPrice);
+    this.maxPrice.set(def.maxPrice);
+    this.inStockOnly.set(def.inStockOnly);
+    this.onPromoOnly.set(def.onPromoOnly);
+    this.sortBy.set(def.sortBy);
   }
 }
