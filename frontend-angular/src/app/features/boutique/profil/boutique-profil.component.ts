@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Shop } from '../../../core/models/shop/shop.model';
 import { ShopService } from '../../../core/services/shop/shop.service';
 import { ShopCategoryService } from '../../../core/services/shop/shop-category.service';
+import { UploadService } from '../../../core/services/shop/upload.service';
 import { forkJoin } from 'rxjs';
 import { ShopCategory } from '../../../core/models/shop/shopCategory.model';
 import { OpeningHourShop } from '../../../core/models/shop/openingHours.model';
@@ -47,6 +48,9 @@ export class BoutiqueProfilComponent {
   shopId: string | null = null;
   shop: Shop  = new Shop();
   shopCategories :ShopCategory[]=[];
+  isUploadingLogo = signal(false);
+  isUploadingBanner = signal(false);
+  uploadError = signal<string | null>(null);
 
   boutique = signal<BoutiqueProfil>({
     name: 'Ma Boutique Mode',
@@ -75,9 +79,14 @@ export class BoutiqueProfilComponent {
 
   days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
-  constructor(private fb: FormBuilder, private route : ActivatedRoute,
-    private shopService : ShopService, private shopCategoryService : ShopCategoryService,
-    private cdr : ChangeDetectorRef, private router :Router
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private shopService: ShopService,
+    private shopCategoryService: ShopCategoryService,
+    private uploadService: UploadService,
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {
     this.form = this.fb.group({
       name: ["", Validators.required],
@@ -108,6 +117,8 @@ export class BoutiqueProfilComponent {
           phone: [shop.phone, Validators.required],
           openingHours: this.fb.array(this.initOpeningHours(shop))
         });
+        this.logoPreview.set(shop.logo ?? null);
+        this.bannerPreview.set(shop.banner ?? null);
         this.cdr.detectChanges();
       });
     }
@@ -149,34 +160,90 @@ export class BoutiqueProfilComponent {
 
   onLogoChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.logoPreview.set(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      this.uploadError.set('Format accepté : JPG, PNG ou WebP');
+      return;
     }
+    if (file.size > 2 * 1024 * 1024) {
+      this.uploadError.set('Le logo doit faire moins de 2 Mo');
+      return;
+    }
+
+    this.uploadError.set(null);
+    this.isUploadingLogo.set(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = typeof reader.result === 'string' ? reader.result : '';
+      this.uploadService.uploadShopLogo(base64).subscribe({
+        next: (res) => {
+          this.logoPreview.set(res.url);
+          this.shop.logo = res.url;
+          this.isUploadingLogo.set(false);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.uploadError.set(err.error?.message ?? 'Erreur lors de l\'upload du logo');
+          this.isUploadingLogo.set(false);
+          this.cdr.detectChanges();
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
   }
 
   onBannerChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.bannerPreview.set(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      this.uploadError.set('Format accepté : JPG, PNG ou WebP');
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      this.uploadError.set('La bannière doit faire moins de 5 Mo');
+      return;
+    }
+
+    this.uploadError.set(null);
+    this.isUploadingBanner.set(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = typeof reader.result === 'string' ? reader.result : '';
+      this.uploadService.uploadShopBanner(base64).subscribe({
+        next: (res) => {
+          this.bannerPreview.set(res.url);
+          this.shop.banner = res.url;
+          this.isUploadingBanner.set(false);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.uploadError.set(err.error?.message ?? 'Erreur lors de l\'upload de la bannière');
+          this.isUploadingBanner.set(false);
+          this.cdr.detectChanges();
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
   }
 
   removeLogo(): void {
     this.logoPreview.set(null);
+    this.shop.logo = undefined;
+    this.uploadError.set(null);
+    this.cdr.detectChanges();
   }
 
   removeBanner(): void {
     this.bannerPreview.set(null);
+    this.shop.banner = undefined;
+    this.uploadError.set(null);
+    this.cdr.detectChanges();
   }
   copyFormMonday(){
     let open = this.form.getRawValue().openingHours;
@@ -198,13 +265,15 @@ export class BoutiqueProfilComponent {
     const payload = {
       name: formValue.name,
       description: formValue.description,
-      phone : formValue.phone,
-      email : formValue.email,
+      phone: formValue.phone,
+      email: formValue.email,
       shop_category: formValue.category,
-      opening_hours  :formValue.openingHours  
+      opening_hours: formValue.openingHours,
+      logo: this.logoPreview() ?? null,
+      banner: this.bannerPreview() ?? null
     };
-    if(this.shopId){
-      const request$ = this.shopService.updateShop(this.shopId, payload)
+    if (this.shopId) {
+      const request$ = this.shopService.updateShop(this.shopId, payload as unknown as Partial<Shop>)
 
       request$.subscribe({
         next: () => {

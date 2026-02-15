@@ -109,3 +109,23 @@ exports.uploadShopLogo = async (req, res) => {
     res.status(error.status || 500).json({ message: error.message });
   }
 };
+
+exports.uploadShopBanner = async (req, res) => {
+  try {
+    const { image } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ message: "Image requise" });
+    }
+
+    const result = await UploadService.uploadToCloudinary(image, "shop-banners");
+
+    res.status(200).json({
+      url: result.url,
+      publicId: result.publicId,
+      message: "Bannière uploadée avec succès"
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};

@@ -22,4 +22,10 @@ export class UploadService {
       image: base64Image
     });
   }
+
+  uploadShopBanner(base64Image: string): Observable<UploadResponse> {
+    return this.http.post<UploadResponse>(`${this.apiBaseUrl}/shops/upload/banner`, {
+      image: base64Image
+    });
+  }
 }
