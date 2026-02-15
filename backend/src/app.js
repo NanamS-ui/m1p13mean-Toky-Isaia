@@ -24,6 +24,8 @@ app.use("/api/stocks", require("./routes/product/StockRoute"));
 app.use("/api/promotions", require("./routes/product/PromotionRoute"));
 app.use("/api/prices", require("./routes/product/PriceRoute"));
 app.use("/api/tags", require("./routes/product/TagRoute"));
+app.use("/api/stock-mouvements", require("./routes/product/StockMouvementRoute"));
+
 
 
 

@@ -53,17 +53,17 @@
     <div class="filters">
       <select [(ngModel)]="selectedCategory">
         <option value="">Toutes les catégories</option>
-        @for (cat of categories; track cat) {
-          <option [value]="cat">{{ cat }}</option>
+        @for (cat of productCategories; track cat._id) {
+          <option [value]="cat._id">{{ cat.value }}</option>
         }
       </select>
 
-      <select [(ngModel)]="selectedStatus">
+      <!-- <select [(ngModel)]="selectedStatus">
         <option value="">Tous les statuts</option>
         <option value="active">Actif</option>
         <option value="inactive">Inactif</option>
         <option value="outOfStock">Rupture</option>
-      </select>
+      </select> -->
     </div>
 
     <div class="view-toggle">
@@ -79,49 +79,50 @@
   <!-- Products Grid -->
   @if (viewMode() === 'grid') {
     <div class="products-grid">
-      @for (product of filteredProducts(); track product.id) {
-        <div class="product-card" [class.product-card--inactive]="product.status !== 'active'">
+      @for (product of filteredStocks; track product._id) {
+        <div class="product-card" [class.product-card--inactive]="product.shop.shop_status.value">
           <div class="product-card__image">
-            @if (product.images.length > 0) {
-              <img [src]="product.images[0]" [alt]="product.name" />
+            @if (product.product.image) {
+              <img [src]="product.product.image" [alt]="product.product.name" />
             } @else {
               <span class="material-symbols-outlined">image</span>
             }
-            @if (product.promoPrice) {
+            @if (product.current_promotion) {
               <span class="product-card__promo-badge">Promo</span>
             }
             <div class="product-card__actions">
-              <a [routerLink]="['/boutique/produits', product.id]" class="action-btn">
+              <a [routerLink]="['/boutique/produits', product._id]" class="action-btn">
                 <span class="material-symbols-outlined">edit</span>
               </a>
-              <button type="button" class="action-btn" (click)="toggleProductStatus(product)">
-                <span class="material-symbols-outlined">{{ product.status === 'active' ? 'visibility_off' : 'visibility' }}</span>
-              </button>
-              <button type="button" class="action-btn action-btn--danger" (click)="deleteProduct(product)">
+              <!-- <button type="button" class="action-btn" (click)="toggleProductStatus()">
+                <span class="material-symbols-outlined">{{ product.shop.shop_status.value === 'active' ? 'visibility_off' : 'visibility' }}</span>
+              </button> -->
+              <button type="button" class="action-btn action-btn--danger" (click)="deleteProductStock(product)">
                 <span class="material-symbols-outlined">delete</span>
               </button>
             </div>
           </div>
           <div class="product-card__content">
-            <span class="product-card__category">{{ product.category }}</span>
-            <h4 class="product-card__name">{{ product.name }}</h4>
+            <span class="product-card__category">{{ product.product.product_category.value }}</span>
+            <h4 class="product-card__name">{{ product.product.name }}</h4>
+            <p class="product-card__name">{{ product.shop.name }}</p>
             <div class="product-card__price">
-              @if (product.promoPrice) {
-                <span class="price-promo">{{ formatCurrency(product.promoPrice) }}</span>
-                <span class="price-original">{{ formatCurrency(product.price) }}</span>
+              @if (product.current_promotion) {
+                <span class="price-promo">{{ formatCurrency( product.current_price.price *(1-(product.current_promotion.percent/100))) }}</span>
+                <span class="price-original">{{ formatCurrency(product.current_price.price) }}</span>
               } @else {
-                <span class="price-current">{{ formatCurrency(product.price) }}</span>
+                <span class="price-current">{{ formatCurrency(product.current_price.price) }}</span>
               }
             </div>
             <div class="product-card__footer">
-              <span class="stock-badge" [class]="'stock-badge--' + getStockStatus(product.stock)">
-                @switch (getStockStatus(product.stock)) {
+              <span class="stock-badge" [class]="'stock-badge--' + getStockStatus(product.reste)">
+                @switch (getStockStatus(product.reste)) {
                   @case ('out') { <span class="material-symbols-outlined">error</span> Rupture }
-                  @case ('low') { <span class="material-symbols-outlined">warning</span> {{ product.stock }} en stock }
-                  @default { <span class="material-symbols-outlined">check</span> {{ product.stock }} en stock }
+                  @case ('low') { <span class="material-symbols-outlined">warning</span> {{ product.reste }} en stock }
+                  @default { <span class="material-symbols-outlined">check</span> {{ product.reste }} en stock }
                 }
               </span>
-              <span class="product-card__sales">{{ product.sales }} vendus</span>
+              <!-- <span class="product-card__sales">{{ product.sales }} vendus</span> -->
             </div>
           </div>
         </div>
@@ -147,58 +148,58 @@
             <th>SKU</th>
             <th>Prix</th>
             <th>Stock</th>
-            <th>Ventes</th>
-            <th>Statut</th>
+            <!-- <th>Ventes</th> -->
+            <th>Boutique</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          @for (product of filteredProducts(); track product.id) {
-            <tr [class.row--inactive]="product.status !== 'active'">
+          @for (product of filteredStocks; track product._id) {
+            <tr [class.row--inactive]="product.shop.shop_status.value !== 'active'">
               <td>
                 <div class="product-cell">
                   <div class="product-cell__image">
-                    @if (product.images.length > 0) {
-                      <img [src]="product.images[0]" [alt]="product.name" />
+                    @if (product.product.image) {
+                      <img [src]="product.product.image" [alt]="product.product.name" />
                     } @else {
                       <span class="material-symbols-outlined">image</span>
                     }
                   </div>
                   <div class="product-cell__info">
-                    <span class="product-cell__name">{{ product.name }}</span>
-                    <span class="product-cell__category">{{ product.category }}</span>
+                    <span class="product-cell__name">{{ product.product.name }}</span>
+                    <span class="product-cell__category">{{ product.product.product_category.value }}</span>
                   </div>
                 </div>
               </td>
-              <td class="td-sku">{{ product.sku }}</td>
+              <td class="td-sku">{{ product.product.reference }}</td>
               <td class="td-price">
-                @if (product.promoPrice) {
-                  <span class="price-promo">{{ formatCurrency(product.promoPrice) }}</span>
-                  <span class="price-original-sm">{{ formatCurrency(product.price) }}</span>
+                @if (product.current_promotion) {
+                  <span class="price-promo">{{ formatCurrency(product.current_price.price *(1-(product.current_promotion.percent/100))) }}</span>
+                  <span class="price-original-sm">{{ formatCurrency(product.current_price.price) }}</span>
                 } @else {
-                  {{ formatCurrency(product.price) }}
+                  {{ formatCurrency(product.current_price.price) }}
                 }
               </td>
               <td>
-                <span class="stock-badge stock-badge--sm" [class]="'stock-badge--' + getStockStatus(product.stock)">
-                  {{ product.stock }}
+                <span class="stock-badge stock-badge--sm" [class]="'stock-badge--' + getStockStatus(product.reste)">
+                  {{ product.reste }}
                 </span>
               </td>
-              <td>{{ product.sales }}</td>
-              <td>
-                <span class="status-badge" [class]="'status-badge--' + product.status">
-                  {{ getStatusLabel(product.status) }}
+              <td>{{ product.shop.name }}</td>
+              <!-- <td>
+                <span class="status-badge" [class]="'status-badge--' + product.shop.shop_status.value">
+                  {{ getStatusLabel(product.shop.shop_status.value) }}
                 </span>
-              </td>
+              </td> -->
               <td>
                 <div class="table-actions">
-                  <a [routerLink]="['/boutique/produits', product.id]" class="action-btn action-btn--sm">
+                  <a [routerLink]="['/boutique/produits', product._id]" class="action-btn action-btn--sm">
                     <span class="material-symbols-outlined">edit</span>
                   </a>
-                  <button type="button" class="action-btn action-btn--sm" (click)="toggleProductStatus(product)">
+                  <!-- <button type="button" class="action-btn action-btn--sm" (click)="toggleProductStatus(product)">
                     <span class="material-symbols-outlined">{{ product.status === 'active' ? 'visibility_off' : 'visibility' }}</span>
-                  </button>
-                  <button type="button" class="action-btn action-btn--sm action-btn--danger" (click)="deleteProduct(product)">
+                  </button> -->
+                  <button type="button" class="action-btn action-btn--sm action-btn--danger" (click)="deleteProductStock(product)">
                     <span class="material-symbols-outlined">delete</span>
                   </button>
                 </div>

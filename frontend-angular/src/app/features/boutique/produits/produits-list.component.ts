@@ -1,7 +1,12 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ProductCategory } from '../../../core/models/product/product-category.model';
+import { Stock, StockView } from '../../../core/models/product/stock.model';
+import { ProductCategoryService } from '../../../core/services/product/product-category.service';
+import { StockService } from '../../../core/services/product/stock.service';
+import { forkJoin } from 'rxjs';
 
 interface Product {
   id: string;
@@ -29,6 +34,23 @@ export class ProduitsListComponent {
   selectedCategory = '';
   selectedStatus = '';
   viewMode = signal<'grid' | 'list'>('grid');
+
+  productCategories : ProductCategory[] = [];
+  stockViews : Stock[] =[]
+  constructor(private productCategoryService: ProductCategoryService, 
+    private stockService : StockService, private cdr : ChangeDetectorRef
+  ){}
+  ngOnInit(): void {
+    forkJoin({
+      categories : this.productCategoryService.getProductCategories(),
+      stocks : this.stockService.getStockPricePromotion()
+    }).subscribe(({categories,stocks})=>{
+      this.productCategories = categories;
+      this.stockViews = stocks;
+      this.cdr.detectChanges();
+    })
+  }
+
 
   categories = [
     'Vêtements Femme',
@@ -126,6 +148,22 @@ export class ProduitsListComponent {
       createdAt: '2025-06-15'
     }
   ]);
+  get filteredStocks(): Stock[] {
+    const query = this.searchQuery?.toLowerCase() || '';
+
+    return this.stockViews.filter(stock => {
+      const product = stock.product;
+
+      const matchName = !query || product.name.toLowerCase().includes(query);
+
+      const matchReference = !product.reference || !query || product.reference.toLowerCase().includes(query);
+
+      const matchCategory = !this.selectedCategory || product.product_category._id === this.selectedCategory;
+
+      return matchName && matchReference && matchCategory;
+    });
+  }
+
 
   filteredProducts = computed(() => {
     let result = this.products();
@@ -149,6 +187,7 @@ export class ProduitsListComponent {
     return result;
   });
 
+  
   stats = computed(() => {
     const all = this.products();
     return {
@@ -188,10 +227,16 @@ export class ProduitsListComponent {
       products.map(p => p.id === product.id ? { ...p, status: newStatus } : p)
     );
   }
+  
 
   deleteProduct(product: Product): void {
     if (confirm(`Supprimer "${product.name}" ?`)) {
       this.products.update(products => products.filter(p => p.id !== product.id));
+    }
+  }
+  deleteProductStock(stock: Stock): void {
+    if (confirm(`Supprimer "${stock.product.name}" ?`)) {
+      // this.stockViews.update(this.stockViews => stockViews.filter(p => p.stock._id !== stock.stock._id));
     }
   }
 }

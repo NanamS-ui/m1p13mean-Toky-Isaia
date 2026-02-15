@@ -2,6 +2,7 @@ const Stock = require("../../models/product/Stock");
 const StockView = require("../../models/product/view/StockView");
 const Shop = require("../../models/shop/Shop");
 const mongoose = require("mongoose");
+const StockMouvementService =  require("./StockMouvementService");
 const buildError = (message, status) => {
   const error = new Error(message);
   error.status = status;
@@ -9,7 +10,14 @@ const buildError = (message, status) => {
 };
 
 const createStock = async (payload) => {
-  return Stock.create(payload);
+  const stock = await Stock.create(payload);
+  const mouvementStock = {
+    in : stock.in,
+    out : stock.out,
+    stock : stock._id
+  }
+  await StockMouvementService.createMouvementSansUpdate(mouvementStock);
+  return stock;
 };
 
 const getStocks = async () => {

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Stock } from '../../models/product/stock.model';
+import { Stock, StockView } from '../../models/product/stock.model';
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +12,10 @@ export class StockService {
   private readonly apiBaseUrl = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) {}
+
+  getStockPricePromotion():Observable<Stock[]>{
+    return this.http.get<Stock[]>(`${this.apiBaseUrl}/stocks/stock/owner`)
+  }
 
   getStocks(): Observable<Stock[]> {
     return this.http.get<Stock[]>(`${this.apiBaseUrl}/stocks`);
