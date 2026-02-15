@@ -1,7 +1,10 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
+import { ShopService } from '../../../core/services/shop/shop.service';
+import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
+import type { Shop } from '../../../core/models/shop/shop.model';
 
 interface BoutiqueDetail {
   id: string;
@@ -45,6 +48,8 @@ interface Review {
   date: string;
 }
 
+const FRENCH_DAYS_ORDER = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
+
 @Component({
   selector: 'app-boutique-detail',
   standalone: true,
@@ -52,35 +57,13 @@ interface Review {
   templateUrl: './boutique-detail.component.html',
   styleUrl: './boutique-detail.component.css'
 })
-export class BoutiqueDetailComponent {
+export class BoutiqueDetailComponent implements OnInit {
   boutiqueId = signal<string>('');
   isFavorite = signal(false);
+  loading = signal(true);
+  error = signal<string | null>(null);
 
-  // Mock boutique data
-  boutique = signal<BoutiqueDetail | null>({
-    id: '1',
-    name: 'Mode & Style',
-    category: 'MODE',
-    description: 'Boutique de mode tendance pour hommes et femmes. Nous proposons une large sélection de vêtements, accessoires et chaussures des dernières tendances. Notre équipe passionnée vous conseille pour trouver le style qui vous correspond.',
-    rating: 4.8,
-    reviewCount: 124,
-    isOpen: true,
-    floor: 1,
-    zone: 'Zone A',
-    phone: '+261 34 12 345 67',
-    email: 'contact@mode-style.mg',
-    website: 'www.mode-style.mg',
-    hours: [
-      { day: 'Lundi', open: '09:00', close: '20:00' },
-      { day: 'Mardi', open: '09:00', close: '20:00' },
-      { day: 'Mercredi', open: '09:00', close: '20:00' },
-      { day: 'Jeudi', open: '09:00', close: '20:00' },
-      { day: 'Vendredi', open: '09:00', close: '21:00' },
-      { day: 'Samedi', open: '09:00', close: '21:00' },
-      { day: 'Dimanche', open: '10:00', close: '19:00' }
-    ],
-    isFavorite: false
-  });
+  boutique = signal<BoutiqueDetail | null>(null);
 
   // Mock products
   products = signal<Product[]>([
@@ -162,12 +145,118 @@ export class BoutiqueDetailComponent {
     }
   ]);
 
-  constructor(private route: ActivatedRoute) {
+  constructor(
+    private route: ActivatedRoute,
+    private shopService: ShopService,
+    private openingHours: OpeningHoursService
+  ) {}
+
+  ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.boutiqueId.set(params['id']);
-      // In a real app, fetch boutique data based on ID
-      this.isFavorite.set(this.boutique()?.isFavorite ?? false);
+      const id = params['id'];
+      this.boutiqueId.set(id);
+      if (id) {
+        this.loadShop(id);
+      } else {
+        this.loading.set(false);
+      }
     });
+  }
+
+  private loadShop(id: string): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.shopService.getShopById(id).subscribe({
+      next: (shop) => {
+        this.boutique.set(this.mapShopToDetail(shop));
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err?.message || 'Boutique introuvable');
+        this.boutique.set(null);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private mapShopToDetail(shop: Shop): BoutiqueDetail {
+    const category = this.normalizeCategory(shop.shop_category?.value);
+    const floor = this.extractFloor(shop.door);
+    const zone = this.extractZone(shop.door);
+    const { rating, reviewCount } = this.getMockRating(shop._id);
+    const hours = this.mapOpeningHours(shop.opening_hours);
+
+    return {
+      id: shop._id,
+      name: shop.name,
+      category,
+      logoUrl: shop.logo,
+      bannerUrl: shop.banner,
+      description: shop.description ?? '',
+      rating,
+      reviewCount,
+      isOpen: shop.is_accepted && this.openingHours.isShopOpenNow(shop),
+      floor,
+      zone,
+      phone: shop.phone,
+      email: shop.email,
+      website: undefined,
+      hours,
+      isFavorite: this.isFavorite()
+    };
+  }
+
+  private mapOpeningHours(openingHours: Shop['opening_hours']): { day: string; open: string; close: string }[] {
+    const order = [...FRENCH_DAYS_ORDER];
+    const byDay = new Map((openingHours || []).map(h => [h.day, h]));
+    return order.map(day => {
+      const h = byDay.get(day);
+      if (!h) return { day, open: '', close: '' };
+      return {
+        day,
+        open: h.isOpen ? h.openTime : '',
+        close: h.isOpen ? h.closeTime : ''
+      };
+    });
+  }
+
+  private extractFloor(door: Shop['door']): number {
+    if (!door || typeof door !== 'object') return 0;
+    const floor = (door as { floor?: unknown }).floor;
+    if (typeof floor === 'string') return this.parseFloorNumber(floor);
+    if (typeof floor === 'object' && floor && 'value' in floor) {
+      return this.parseFloorNumber((floor as { value?: string }).value ?? '');
+    }
+    return 0;
+  }
+
+  private extractZone(door: Shop['door']): string | undefined {
+    if (!door || typeof door !== 'object') return undefined;
+    const value = (door as { value?: unknown }).value;
+    return typeof value === 'string' ? value : undefined;
+  }
+
+  private parseFloorNumber(value: string): number {
+    if (!value || typeof value !== 'string') return 0;
+    const match = value.match(/(-?\d+)/);
+    return match ? Number.parseInt(match[1], 10) : 0;
+  }
+
+  private normalizeCategory(value?: string): BoutiqueCategory {
+    const normalized = (value ?? '').toUpperCase();
+    const match = BOUTIQUE_CATEGORIES.find(c => c.value === normalized);
+    return (match?.value as BoutiqueCategory) ?? 'AUTRE';
+  }
+
+  private getMockRating(shopId: string): { rating: number; reviewCount: number } {
+    let hash = 0;
+    for (let i = 0; i < shopId.length; i++) {
+      hash = ((hash << 5) - hash) + shopId.charCodeAt(i) | 0;
+    }
+    const n = Math.abs(hash);
+    const rating = 3.2 + (n % 18) / 10;
+    const reviewCount = 5 + (n % 95);
+    return { rating: Math.round(rating * 10) / 10, reviewCount };
   }
 
   getCategoryLabel(category: BoutiqueCategory): string {
@@ -190,6 +279,13 @@ export class BoutiqueDetailComponent {
       month: 'long', 
       day: 'numeric' 
     }).format(date);
+  }
+
+  getFloorLabel(floor: number): string {
+    if (floor === undefined || floor === null || Number.isNaN(floor)) return '—';
+    if (floor === 0) return 'Rez-de-chaussée';
+    if (floor === 1) return '1er étage';
+    return `Étage ${floor}`;
   }
 
   getCurrentDay(): string {

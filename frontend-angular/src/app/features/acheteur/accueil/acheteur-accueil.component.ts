@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ShopService } from '../../../core/services/shop/shop.service';
+import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
 import type { Shop } from '../../../core/models/shop/shop.model';
 
@@ -70,11 +71,12 @@ export class AcheteurAccueilComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
-    private shopService: ShopService
+    private shopService: ShopService,
+    private openingHours: OpeningHoursService
   ) {}
 
   ngOnInit(): void {
-    this.shopService.getShops().subscribe({
+    this.shopService.getActiveShops().subscribe({
       next: (shops) => this.boutiques.set(shops),
       error: () => this.boutiques.set([])
     });
@@ -84,7 +86,7 @@ export class AcheteurAccueilComponent implements OnInit {
     const category = this.normalizeCategory(shop.shop_category?.value);
     const label = BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
     const { rating } = this.getMockRating(shop._id);
-    const isOpen = shop.is_accepted || this.isStatusActive(shop.shop_status?.value);
+    const isOpen = shop.is_accepted && this.openingHours.isShopOpenNow(shop);
 
     return {
       id: shop._id,
@@ -112,8 +114,4 @@ export class AcheteurAccueilComponent implements OnInit {
     return { rating: Math.round(rating * 10) / 10 };
   }
 
-  private isStatusActive(value?: string): boolean {
-    if (!value) return false;
-    return value.toLowerCase().includes('active');
-  }
 }
