@@ -169,7 +169,7 @@ const login = async (payload) => {
     throw buildError("Champs obligatoires manquants", 400);
   }
 
-  const user = await User.findOne({ email }).populate("role");
+  const user = await User.findOne({ email }).select("password role email name is_verified created_at");
   if (!user) {
     throw buildError("Email ou mot de passe incorrect", 401);
   }
@@ -182,6 +182,8 @@ const login = async (payload) => {
   if (!user.is_verified) {
     throw buildError("Email non verifie", 403);
   }
+
+  await user.populate("role");
 
   const { accessToken, refreshToken, roleValue } = await buildTokens(user);
 
