@@ -2,22 +2,26 @@ const Order = require("../../models/order/Order");
 const OrderItem = require("../../models/order/OrderItem");
 const Stock = require("../../models/product/Stock");
 const StockMouvement = require("../../models/product/StockMouvement");
-
+const OrderCategory = require("../../models/order/OrderCategory");
+const mongoose = require("mongoose");
 const buildError = (message, status) => {
   const error = new Error(message);
   error.status = status;
   return error;
 };
 
-const createOrderWithItems = async (payload) => {
+const createOrderWithItems = async (payload, userId) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     
+    const defaultCategory = await OrderCategory.findOne({value : "En attente"});
+    
+    if(! defaultCategory) throw buildError("Categorie 'En attente' introuvable", 500);
     const order = await Order.create([{
       total: payload.total,
-      orderCategory: payload.orderCategory,
-      buyer: payload.buyer
+      orderCategory: defaultCategory._id,
+      buyer: userId
     }], { session });
 
     const orderId = order[0]._id;
@@ -52,10 +56,8 @@ const createOrderWithItems = async (payload) => {
     await session.commitTransaction();
     session.endSession();
 
-    const savedOrder = await Order.findById(orderId).populate({
-      path: "orderItems",
-      populate: "stock"
-    });
+    const savedOrder = await Order.findById(orderId).populate("orderCategory")
+                                                    .populate("buyer");
 
     return savedOrder;
 
@@ -110,5 +112,6 @@ module.exports = {
   getOrders,
   getOrderById,
   updateOrder,
-  deleteOrder
+  deleteOrder,
+  createOrderWithItems
 };

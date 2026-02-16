@@ -9,6 +9,15 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+exports.createOrderWithItems = async (req, res) => {
+  try {
+    const order = await OrderService.createOrderWithItems(req.body,req.user.id);
+    res.status(201).json(order);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
 exports.getOrders = async (req, res) => {
   try {
     const orders = await OrderService.getOrders();

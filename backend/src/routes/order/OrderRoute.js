@@ -8,8 +8,9 @@ router.use(requireAuth);
 router.get("/", ctrl.getOrders);
 router.get("/:id", ctrl.getOrderById);
 
-router.post("/", requireRole("ADMIN","BOUTIQUE"), ctrl.createOrder);
-router.put("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.updateOrder);
-router.delete("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.deleteOrder);
+router.post("/",  ctrl.createOrder);
+router.post("/items", ctrl.createOrderWithItems);
+router.put("/:id", ctrl.updateOrder);
+router.delete("/:id", ctrl.deleteOrder);
 
 module.exports = router;
