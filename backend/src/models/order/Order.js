@@ -31,5 +31,13 @@ const OrderSchema = new mongoose.Schema(
 
 // Index pour soft delete
 OrderSchema.index({ deleted_at: 1 });
+OrderSchema.virtual("orderItems", {
+  ref: "OrderItem",
+  localField: "_id",
+  foreignField: "order"
+});
+
+OrderSchema.set("toObject", { virtuals: true });
+OrderSchema.set("toJSON", { virtuals: true });
 
 module.exports = mongoose.model("Order", OrderSchema, "orders");

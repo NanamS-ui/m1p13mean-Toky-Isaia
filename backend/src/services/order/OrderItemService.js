@@ -19,6 +19,18 @@ const getOrderItemById = async (id) => {
   return item;
 };
 
+const getOrderId = async (Orderid) => {
+  const item = await OrderItem.find({ order: Orderid, deleted_at: null })
+  .populate({
+    path: "stock",
+    populate: [
+      { path: "product" },
+      { path: "shop" }
+    ]
+  });
+  return item;
+};
+
 
 const updateOrderItem = async (id, payload) => {
   const item = await OrderItem.findOneAndUpdate(

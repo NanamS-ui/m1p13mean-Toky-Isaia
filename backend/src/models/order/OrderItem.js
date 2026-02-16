@@ -20,6 +20,11 @@ const OrderItemSchema = new mongoose.Schema(
       ref: "Stock",
       required: true,
     },
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      required: true,
+    },
     deleted_at: {
       type: Date,
       default: null

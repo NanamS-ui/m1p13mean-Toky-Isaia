@@ -78,12 +78,29 @@ const getOrders = async () => Order.find({ deleted_at: null })
 
 
 const getOrderById = async (id) => {
-  const order = await Order.findOne({ _id: id, deleted_at: null })
-    .populate("orderCategory")
-    .populate("buyer");
+  const order = await Order.findOne({
+    _id: id,
+    deleted_at: null
+  })
+  .populate("orderCategory")
+  .populate("buyer")
+  .populate({
+    path: "orderItems",
+    match: { deleted_at: null },
+    populate: {
+      path: "stock",
+      populate: [
+        { path: "product" },
+        { path: "shop" }
+      ]
+    }
+  });
+
   if (!order) throw buildError("Commande introuvable", 404);
+
   return order;
 };
+
 
 
 const updateOrder = async (id, payload) => {
