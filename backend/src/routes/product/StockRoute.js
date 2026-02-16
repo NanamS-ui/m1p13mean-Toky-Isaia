@@ -17,5 +17,6 @@ router.post(
 router.put("/:id",requireRole("ADMIN", "BOUTIQUE"),ctrl.updateStock);
 router.delete("/:id",requireRole("ADMIN", "BOUTIQUE"),ctrl.deleteStock);
 router.get("/stock/owner",requireRole("ADMIN", "BOUTIQUE"),ctrl.getStockByOwner);
+router.get("/stock/view/:id",requireRole("ADMIN", "BOUTIQUE"),ctrl.getStockViewById);
 
 module.exports = router;

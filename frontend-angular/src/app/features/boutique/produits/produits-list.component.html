@@ -91,7 +91,7 @@
               <span class="product-card__promo-badge">Promo</span>
             }
             <div class="product-card__actions">
-              <a [routerLink]="['/boutique/produits', product._id]" class="action-btn">
+              <a [routerLink]="['/boutique/produits/nouveau', product._id]" class="action-btn">
                 <span class="material-symbols-outlined">edit</span>
               </a>
               <!-- <button type="button" class="action-btn" (click)="toggleProductStatus()">
@@ -107,10 +107,10 @@
             <h4 class="product-card__name">{{ product.product.name }}</h4>
             <p class="product-card__name">{{ product.shop.name }}</p>
             <div class="product-card__price">
-              @if (product.current_promotion) {
+              @if (product.current_promotion && product.current_price) {
                 <span class="price-promo">{{ formatCurrency( product.current_price.price *(1-(product.current_promotion.percent/100))) }}</span>
                 <span class="price-original">{{ formatCurrency(product.current_price.price) }}</span>
-              } @else {
+              } @else if (product.current_price) {
                 <span class="price-current">{{ formatCurrency(product.current_price.price) }}</span>
               }
             </div>
@@ -173,10 +173,10 @@
               </td>
               <td class="td-sku">{{ product.product.reference }}</td>
               <td class="td-price">
-                @if (product.current_promotion) {
+                @if (product.current_promotion && product.current_price) {
                   <span class="price-promo">{{ formatCurrency(product.current_price.price *(1-(product.current_promotion.percent/100))) }}</span>
                   <span class="price-original-sm">{{ formatCurrency(product.current_price.price) }}</span>
-                } @else {
+                } @else if (product.current_price) {
                   {{ formatCurrency(product.current_price.price) }}
                 }
               </td>

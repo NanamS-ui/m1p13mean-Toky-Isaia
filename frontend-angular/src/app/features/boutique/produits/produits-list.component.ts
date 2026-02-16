@@ -240,14 +240,25 @@ export class ProduitsListComponent {
   }
   
 
-  deleteProduct(product: Product): void {
-    if (confirm(`Supprimer "${product.name}" ?`)) {
-      this.products.update(products => products.filter(p => p.id !== product.id));
-    }
-  }
   deleteProductStock(stock: Stock): void {
-    if (confirm(`Supprimer "${stock.product.name}" ?`)) {
-      // this.stockViews.update(this.stockViews => stockViews.filter(p => p.stock._id !== stock.stock._id));
+    if (!confirm(`Vous êtes sûre de supprimer "${stock.product?.name}" ?`)) {
+      return;
     }
+
+    this.stockService.deleteStock(stock._id).subscribe({
+      next: () => {
+
+        this.stockViews = this.stockViews.filter(
+          s => s._id !== stock._id
+        );
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
   }
+
+
 }

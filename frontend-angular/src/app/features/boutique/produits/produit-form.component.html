@@ -270,7 +270,7 @@
       <a routerLink="/boutique/produits" class="btn btn--outline">Annuler</a>
       <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
         <span class="material-symbols-outlined">save</span>
-        {{ isEditMode ? 'Enregistrer les modifications' : 'Créer le produit' }}
+        {{ stockId ? 'Enregistrer les modifications' : 'Créer le produit' }}
       </button>
     </div>
   </form>

@@ -15,8 +15,8 @@ export class Stock {
   deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
-  current_price : Price;
-  current_promotion : Promotion;
+  current_price? : Price;
+  current_promotion ?: Promotion;
 
   constructor(init?: Partial<Stock>) {
     this._id = init?._id || '';
@@ -30,8 +30,11 @@ export class Stock {
       : new Product();
 
     this.shop = init?.shop || new Shop();
-    this.current_price = init?.current_price || new Price();
-    this.current_promotion = init?.current_promotion || new Promotion();
+    this.current_price = init?.current_price
+    ? new Price(init.current_price)
+    : undefined as any;
+
+    this.current_promotion = init?.current_promotion || undefined as any;
     this.deleted_at = init?.deleted_at ?? null;
     this.created_at = init?.created_at || new Date();
     this.updated_at = init?.updated_at || new Date();

@@ -13,6 +13,7 @@ export class StockService {
 
   constructor(private http: HttpClient) {}
 
+  
   getStockPricePromotion():Observable<Stock[]>{
     return this.http.get<Stock[]>(`${this.apiBaseUrl}/stocks/stock/owner`)
   }
@@ -23,6 +24,10 @@ export class StockService {
 
   getStockById(id: string): Observable<Stock> {
     return this.http.get<Stock>(`${this.apiBaseUrl}/stocks/${id}`);
+  }
+
+  getStockViewById(id: string): Observable<Stock> {
+    return this.http.get<Stock>(`${this.apiBaseUrl}/stocks/stock/view/${id}`);
   }
 
   createStock(payload: Partial<Stock>): Observable<Stock> {

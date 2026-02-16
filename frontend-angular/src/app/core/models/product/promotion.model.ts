@@ -3,7 +3,7 @@ import { Stock } from './stock.model';
 export class Promotion {
   _id: string;
   percent: number;
-  stock: Stock;
+  stock?: Stock;
   started_date: Date;
   end_date: Date;
   deleted_at: Date | null;
@@ -16,7 +16,7 @@ export class Promotion {
 
     this.stock = init?.stock
       ? new Stock(init.stock)
-      : new Stock();
+      : undefined;
 
     this.started_date = init?.started_date
       ? new Date(init.started_date)

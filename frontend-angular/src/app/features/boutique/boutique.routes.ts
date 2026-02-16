@@ -28,6 +28,10 @@ export const boutiqueRoutes: Routes = [
         loadComponent: () => import('./produits/produit-form.component').then(m => m.ProduitFormComponent)
       },
       { 
+        path: 'produits/nouveau/:id', 
+        loadComponent: () => import('./produits/produit-form.component').then(m => m.ProduitFormComponent)
+      },
+      { 
         path: 'produits/:id', 
         loadComponent: () => import('./produits/produit-form.component').then(m => m.ProduitFormComponent)
       },

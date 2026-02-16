@@ -8,7 +8,8 @@ const buildError = (message, status) => {
   return error;
 };
 const updateProductStockByFormulaire = async (idStock, payload) => {
-  const stockToUpdate = StockService.getStockViewById(idStock);
+  const stockToUpdate = await StockService.getStockViewById(idStock);
+  console.log(stockToUpdate);
   const productPayload ={
     name : payload.name,
     reference  : payload.sku,

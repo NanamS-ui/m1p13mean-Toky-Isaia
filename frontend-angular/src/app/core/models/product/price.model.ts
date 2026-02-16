@@ -5,7 +5,7 @@ export class Price {
   price: number;
   started_date: Date;
   end_date: Date;
-  stock: Stock;
+  stock?: Stock;
   deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -23,8 +23,9 @@ export class Price {
       : new Date();
 
     this.stock = init?.stock
-      ? new Stock(init.stock)
-      : new Stock();
+    ? new Stock(init.stock)
+    : undefined;
+
 
     this.deleted_at = init?.deleted_at ?? null;
 

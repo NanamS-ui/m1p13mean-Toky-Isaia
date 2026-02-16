@@ -26,6 +26,15 @@ exports.getStockById = async (req, res) => {
     res.status(error.status || 404).json({ message: error.message });
   }
 };
+
+exports.getStockViewById = async (req, res) => {
+  try {
+    const stock = await StockService.getStockViewById(req.params.id);
+    res.json(stock);
+  } catch (error) {
+    res.status(error.status || 404).json({ message: error.message });
+  }
+};
 exports.getStockByOwner = async (req, res) => {
   try {
     const stocks = await StockService.getStockByOwner(req.user.id);

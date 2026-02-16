@@ -51,8 +51,8 @@ const getPriceById = async (id) => {
 const updatePriceByProduct = async(payload, stockToUpdate)=>{
   if(payload.price == stockToUpdate.current_price.price) {
     
-    if(payload.priceStart == stockToUpdate.current_price.started_date ||
-      payload.priceEnd == stockToUpdate.current_price.end_date
+    if(payload.priceStart != stockToUpdate.current_price.started_date ||
+      payload.priceEnd != stockToUpdate.current_price.end_date
     ){
         const pricePayload = {
         price : payload.price,

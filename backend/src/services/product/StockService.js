@@ -90,14 +90,15 @@ const deleteStock = async (id) => {
 
 const getStockByOwner = async (idOwner)=>{
   const stocks = await StockView.find({
-    "shop.owner" :  new mongoose.Types.ObjectId(idOwner)
+    "shop.owner" :  new mongoose.Types.ObjectId(idOwner),
+    deleted_at: null
   });
   return stocks;
 
 }
 
 const getStockViewById = async (idStock)=>{
-  const stocks = await StockView.find({
+  const stocks = await StockView.findOne({
     "_id" :  new mongoose.Types.ObjectId(idStock)
   });
   return stocks;

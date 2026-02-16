@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Route, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { ProductCategory } from '../../../core/models/product/product-category.model';
 import { Shop } from '../../../core/models/shop/shop.model';
@@ -8,6 +8,8 @@ import { ProductCategoryService } from '../../../core/services/product/product-c
 import { ShopService } from '../../../core/services/shop/shop.service';
 import { forkJoin } from 'rxjs';
 import { ProductService } from '../../../core/services/product/product.service';
+import { Stock } from '../../../core/models/product/stock.model';
+import { StockService } from '../../../core/services/product/stock.service';
 
 @Component({
   selector: 'app-produit-form',
@@ -23,6 +25,8 @@ export class ProduitFormComponent {
   imagePreviews = signal<string[]>([]);
   productCategories : ProductCategory[] =[];
   shops : Shop[] =[]; 
+  stock : Stock = new Stock();
+  stockId : string | null = null;
   categories = [
     'Vêtements Femme',
     'Vêtements Homme',
@@ -37,7 +41,8 @@ export class ProduitFormComponent {
 
   constructor(private fb: FormBuilder, private productCategoryService : ProductCategoryService,
     private shopService : ShopService, private cdr : ChangeDetectorRef,
-    private productService : ProductService, private router : Router
+    private productService : ProductService, private router : Router,
+    private route : ActivatedRoute, private stockService : StockService
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -57,6 +62,9 @@ export class ProduitFormComponent {
       dimensions: [''],
       isActive: [true]
     });
+
+    this.stockId = this.route.snapshot.paramMap.get("id");
+
     this.initData();
   }
   private initData():void{
@@ -67,8 +75,45 @@ export class ProduitFormComponent {
       this.productCategories = categories;
       this.shops = shops;
       this.cdr.detectChanges();
+      if(this.stockId){
+        
+        this.loadStockForEdit(this.stockId);
+      }
     })
   }
+  private loadStockForEdit(id : string) : void{
+    this.stockService.getStockViewById(id).subscribe(stockResult =>{
+      console.log(stockResult);
+      this.stock = stockResult;
+      this.form.patchValue({
+        name: this.stock.product.name,
+        sku: this.stock.product.reference,
+        description: this.stock.product.description,
+        category: this.stock.product.product_category._id,
+        boutique: this.stock.shop._id,
+        price: this.stock.current_price?.price ?? 0,
+        promoPrice: this.stock.current_promotion?.percent ?? 0,
+        promoStart: this.formatDateForInput(this.stock.current_promotion?.started_date),
+        promoEnd: this.formatDateForInput(this.stock.current_promotion?.end_date),
+        priceStart: this.formatDateForInput(this.stock.current_price?.started_date),
+        priceEnd: this.formatDateForInput(this.stock.current_price?.end_date),
+        stock: this.stock.reste,
+        lowStockAlert: this.stock.alerte,
+        weight: this.stock.product.poids,
+        dimensions: this.stock.product.dimension,
+        isActive: [true]
+      },{ emitEvent: false });
+
+      this.cdr.detectChanges();
+    });
+  }
+  private formatDateForInput(date?: string | Date | null): string | null {
+    if (!date) return null;
+
+    const d = new Date(date);
+    return d.toISOString().split('T')[0];
+  }
+
 
   setTab(tab: 'general' | 'images' | 'pricing' | 'stock'): void {
     this.activeTab.set(tab);
@@ -92,22 +137,7 @@ export class ProduitFormComponent {
     this.imagePreviews.update(imgs => imgs.filter((_, i) => i !== index));
   }
 
-  toggleTag(tag: string): void {
-    this.selectedTags.update(tags => {
-      if (tags.includes(tag)) {
-        return tags.filter(t => t !== tag);
-      }
-      return [...tags, tag];
-    });
-  }
-
-  addTag(): void {
-    if (this.newTag.trim() && !this.tags().includes(this.newTag.trim())) {
-      this.tags.update(tags => [...tags, this.newTag.trim()]);
-      this.selectedTags.update(tags => [...tags, this.newTag.trim()]);
-      this.newTag = '';
-    }
-  }
+  
 
   generateSku(): void {
     const name = this.form.get('name')?.value || '';
@@ -128,14 +158,13 @@ export class ProduitFormComponent {
   }
   private submitForm():void{
     const formValue = this.form.getRawValue();
-    const request$ = this.productService.createProductStock(formValue);
+    const request$ = this.stockId ? this.productService.updateProductByFormulaire(this.stockId, formValue) :this.productService.createProductStock(formValue);
+    // const request$ = this.productService.createProductStock(formValue);
     request$.subscribe({
       next: () => {
-        
         this.router.navigate(['/boutique/produits']);
       },
       error: (err) => {
-        
         console.error('Erreur lors de la sauvegarde', err);
       }
     })

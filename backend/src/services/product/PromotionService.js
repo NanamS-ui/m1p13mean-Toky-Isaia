@@ -22,8 +22,8 @@ const createPromotionStock = async(idStock, payload)=>{
 const updatePromotionByProduct = async(payload, stockToUpdate)=>{
   if(payload.percent == stockToUpdate.current_promotion.promoPrice) {
     
-    if(payload.promoStart == stockToUpdate.current_promotion.started_date ||
-      payload.promoEnd == stockToUpdate.current_promotion.end_date
+    if(payload.promoStart != stockToUpdate.current_promotion.started_date ||
+      payload.promoEnd != stockToUpdate.current_promotion.end_date
     ){
         const pricePayload = {
         price : payload.price,
