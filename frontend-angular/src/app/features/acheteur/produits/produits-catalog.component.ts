@@ -73,17 +73,9 @@ export class ProduitsCatalogComponent {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', {
-      style: 'currency',
-      currency: 'MGA',
-      maximumFractionDigits: 0
-    }).format(value);
-  }
-
-  addToCart(productId: string, event: Event, stockId?: string): void {
-    event.preventDefault();
-    event.stopPropagation();
-    // TODO: Implement cart service (utiliser stockId pour identifier produit+boutique)
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   clearFilters(): void {

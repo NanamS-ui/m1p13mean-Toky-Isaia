@@ -40,6 +40,16 @@ export class StockService {
     return this.http.get<CatalogProduct[]>(`${this.apiBaseUrl}/stocks/catalog`, { params });
   }
 
+  getCatalogForShop(shopId: string): Observable<CatalogProduct[]> {
+    const params = new HttpParams().set('shopId', shopId);
+    return this.http.get<CatalogProduct[]>(`${this.apiBaseUrl}/stocks/catalog`, { params });
+  }
+
+  getCatalogByProduct(productId: string): Observable<CatalogProduct[]> {
+    const params = new HttpParams().set('productId', productId);
+    return this.http.get<CatalogProduct[]>(`${this.apiBaseUrl}/stocks/catalog`, { params });
+  }
+
   getStockById(id: string): Observable<Stock> {
     return this.http.get<Stock>(`${this.apiBaseUrl}/stocks/${id}`);
   }

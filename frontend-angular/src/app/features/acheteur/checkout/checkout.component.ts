@@ -2,25 +2,8 @@ import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  productImage?: string;
-  price: number;
-  promoPrice?: number;
-  quantity: number;
-  boutiqueId: string;
-  boutiqueName: string;
-}
-
-interface CartGroup {
-  boutiqueId: string;
-  boutiqueName: string;
-  items: CartItem[];
-  subtotal: number;
-}
+import { CartItem } from '../../../core/models/order/cart-item.model';
+import { CartGroup } from '../../../core/models/order/cart-group.model';
 
 interface DeliveryAddress {
   id: string;
@@ -58,43 +41,47 @@ export class CheckoutComponent {
   // Mock cart data (same structure as panier component)
   cartItems = signal<CartItem[]>([
     {
-      id: '1',
+      stockId: '1',
       productId: '1',
       productName: 'Robe été fleurie',
       price: 75000,
       promoPrice: 59000,
       quantity: 2,
       boutiqueId: '1',
-      boutiqueName: 'Mode & Style'
+      boutiqueName: 'Mode & Style',
+      inStock: true
     },
     {
-      id: '2',
+      stockId: '2',
       productId: '2',
       productName: 'Casque Bluetooth Pro',
       price: 185000,
       quantity: 1,
       boutiqueId: '2',
-      boutiqueName: 'TechZone'
+      boutiqueName: 'TechZone',
+      inStock: true
     },
     {
-      id: '3',
+      stockId: '3',
       productId: '5',
       productName: 'Montre connectée',
       price: 250000,
       promoPrice: 199000,
       quantity: 1,
       boutiqueId: '2',
-      boutiqueName: 'TechZone'
+      boutiqueName: 'TechZone',
+      inStock: true
     },
     {
-      id: '4',
+      stockId: '4',
       productId: '8',
       productName: 'Sac à main cuir',
       price: 180000,
       promoPrice: 140000,
       quantity: 1,
       boutiqueId: '1',
-      boutiqueName: 'Mode & Style'
+      boutiqueName: 'Mode & Style',
+      inStock: true
     }
   ]);
 
@@ -209,11 +196,9 @@ export class CheckoutComponent {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', {
-      style: 'currency',
-      currency: 'MGA',
-      maximumFractionDigits: 0
-    }).format(value);
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   getItemPrice(item: CartItem): number {

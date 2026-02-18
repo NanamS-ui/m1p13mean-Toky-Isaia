@@ -120,6 +120,8 @@ const getStockViewById = async (idStock)=>{
 const getCatalog = async (filters = {}) => {
   const searchQuery = (filters.searchQuery || "").trim();
   const selectedCategory = (filters.selectedCategory || "").trim();
+  const shopId = (filters.shopId || "").trim();
+  const productId = (filters.productId || "").trim();
   const minPrice = filters.minPrice !== undefined ? Number(filters.minPrice) : null;
   const maxPrice = filters.maxPrice !== undefined ? Number(filters.maxPrice) : null;
   const inStockOnly = filters.inStockOnly === true || filters.inStockOnly === "true";
@@ -147,6 +149,28 @@ const getCatalog = async (filters = {}) => {
       }
     }
   });
+
+  if (shopId) {
+    const shopFilters = [
+      { "shop._id": shopId },
+      { "shop": shopId }
+    ];
+    if (mongoose.Types.ObjectId.isValid(shopId)) {
+      shopFilters.push({ "shop._id": new mongoose.Types.ObjectId(shopId) });
+    }
+    pipeline.push({ $match: { $or: shopFilters } });
+  }
+
+  if (productId) {
+    const productFilters = [
+      { "product._id": productId },
+      { "product": productId }
+    ];
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      productFilters.push({ "product._id": new mongoose.Types.ObjectId(productId) });
+    }
+    pipeline.push({ $match: { $or: productFilters } });
+  }
 
   if (searchQuery) {
     const regex = new RegExp(escapeRegex(searchQuery), "i");

@@ -60,7 +60,7 @@
             <div class="price-promo">{{ formatCurrency(p.promoPrice) }}</div>
             <div class="price-original">{{ formatCurrency(p.price) }}</div>
             <div class="price-discount">
-              Économisez {{ formatCurrency(p.price - p.promoPrice) }}
+              Économisez  {{ formatCurrency(p.price - p.promoPrice) }}
             </div>
           } @else {
             <div class="price-current">{{ formatCurrency(p.price) }}</div>
