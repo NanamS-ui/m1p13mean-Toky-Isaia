@@ -30,6 +30,7 @@ app.use("/api/orders", require("./routes/order/OrderRoute"));
 app.use("/api/orderItems", require("./routes/order/OrderItemRoute"));
 app.use("/api/stats", require("./routes/statistic/OrderStatisticRouter"));
 app.use("/api/messenger", require("./routes/messenger/MessengerRoute"));
+app.use("/api/shopReviews", require("./routes/shop/ShopReviewRoute"));
 
 
 module.exports = app;
