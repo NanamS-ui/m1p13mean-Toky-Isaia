@@ -40,5 +40,7 @@ const OrderItemSchema = new mongoose.Schema(
 
 // Index pour soft delete
 OrderItemSchema.index({ deleted_at: 1 });
+OrderItemSchema.index({ created_at: 1});
+OrderItemSchema.index({ stock: 1 });
 
 module.exports = mongoose.model("OrderItem", OrderItemSchema, "order_items");

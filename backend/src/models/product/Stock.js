@@ -43,7 +43,8 @@ const StockSchema = new mongoose.Schema(
     }
   }
 );
-
+StockSchema.index({ shop: 1 });
+StockSchema.index({ product: 1 });
 /**
  * Calcul automatique du reste
  */

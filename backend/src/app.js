@@ -28,7 +28,7 @@ app.use("/api/stock-mouvements", require("./routes/product/StockMouvementRoute")
 app.use("/api/orderCategories", require("./routes/order/OrderCategoryRoute"));
 app.use("/api/orders", require("./routes/order/OrderRoute"));
 app.use("/api/orderItems", require("./routes/order/OrderItemRoute"));
-
+app.use("/api/stats", require("./routes/statistic/OrderStatisticRouter"));
 
 
 module.exports = app;
