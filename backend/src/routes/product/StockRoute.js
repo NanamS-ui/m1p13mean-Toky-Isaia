@@ -5,6 +5,7 @@ const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 
 router.use(requireAuth);
 
+router.get("/catalog", ctrl.getCatalog);
 router.get("/", ctrl.getStocks);
 router.get("/:id", ctrl.getStockById);
 

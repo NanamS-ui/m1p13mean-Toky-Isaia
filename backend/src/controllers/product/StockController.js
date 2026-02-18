@@ -18,6 +18,15 @@ exports.getStocks = async (req, res) => {
   }
 };
 
+exports.getCatalog = async (req, res) => {
+  try {
+    const catalog = await StockService.getCatalog(req.query);
+    res.json(catalog);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.getStockById = async (req, res) => {
   try {
     const stock = await StockService.getStockById(req.params.id);
