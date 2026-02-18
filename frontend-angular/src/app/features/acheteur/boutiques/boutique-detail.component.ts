@@ -1,10 +1,13 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
 import { ShopService } from '../../../core/services/shop/shop.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import type { Shop } from '../../../core/models/shop/shop.model';
+import { StockService } from '../../../core/services/product/stock.service';
+import type { CatalogProduct } from '../../../core/models/product/catalog-product.model';
 
 interface BoutiqueDetail {
   id: string;
@@ -65,53 +68,7 @@ export class BoutiqueDetailComponent implements OnInit {
 
   boutique = signal<BoutiqueDetail | null>(null);
 
-  // Mock products
-  products = signal<Product[]>([
-    {
-      id: '1',
-      name: 'Robe été fleurie',
-      price: 75000,
-      promoPrice: 59000,
-      stock: 15,
-      rating: 4.7
-    },
-    {
-      id: '2',
-      name: 'Jean slim noir',
-      price: 89000,
-      stock: 8,
-      rating: 4.5
-    },
-    {
-      id: '3',
-      name: 'T-shirt basic blanc',
-      price: 25000,
-      stock: 50,
-      rating: 4.6
-    },
-    {
-      id: '4',
-      name: 'Veste en cuir',
-      price: 320000,
-      stock: 3,
-      rating: 4.8
-    },
-    {
-      id: '5',
-      name: 'Sneakers urbaines',
-      price: 145000,
-      promoPrice: 115000,
-      stock: 12,
-      rating: 4.4
-    },
-    {
-      id: '6',
-      name: 'Sac à main cuir',
-      price: 180000,
-      stock: 7,
-      rating: 4.9
-    }
-  ]);
+  products = signal<Product[]>([]);
 
   // Mock reviews
   reviews = signal<Review[]>([
@@ -148,7 +105,8 @@ export class BoutiqueDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private shopService: ShopService,
-    private openingHours: OpeningHoursService
+    private openingHours: OpeningHoursService,
+    private stockService: StockService
   ) {}
 
   ngOnInit(): void {
@@ -166,14 +124,19 @@ export class BoutiqueDetailComponent implements OnInit {
   private loadShop(id: string): void {
     this.loading.set(true);
     this.error.set(null);
-    this.shopService.getShopById(id).subscribe({
-      next: (shop) => {
+    forkJoin({
+      shop: this.shopService.getShopById(id),
+      products: this.stockService.getCatalogForShop(id)
+    }).subscribe({
+      next: ({ shop, products }) => {
         this.boutique.set(this.mapShopToDetail(shop));
+        this.products.set(this.mapCatalogProducts(products));
         this.loading.set(false);
       },
       error: (err) => {
         this.error.set(err?.message || 'Boutique introuvable');
         this.boutique.set(null);
+        this.products.set([]);
         this.loading.set(false);
       }
     });
@@ -259,6 +222,28 @@ export class BoutiqueDetailComponent implements OnInit {
     return { rating: Math.round(rating * 10) / 10, reviewCount };
   }
 
+  private mapCatalogProducts(items: CatalogProduct[]): Product[] {
+    return (items || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      promoPrice: item.promoPrice,
+      imageUrl: item.image,
+      stock: item.stockQuantity,
+      rating: this.getMockProductRating(item.id)
+    }));
+  }
+
+  private getMockProductRating(productId: string): number {
+    let hash = 0;
+    for (let i = 0; i < productId.length; i++) {
+      hash = ((hash << 5) - hash) + productId.charCodeAt(i);
+      hash |= 0;
+    }
+    const n = Math.abs(hash);
+    return Math.round((3.5 + (n % 15) / 10) * 10) / 10;
+  }
+
   getCategoryLabel(category: BoutiqueCategory): string {
     return BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
   }
@@ -269,7 +254,9 @@ export class BoutiqueDetailComponent implements OnInit {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(value);
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   formatDate(dateString: string): string {

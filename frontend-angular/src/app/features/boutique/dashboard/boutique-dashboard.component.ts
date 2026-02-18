@@ -78,7 +78,9 @@ export class BoutiqueDashboardComponent {
   maxWeeklySales = Math.max(...this.weeklyData.map(d => d.sales));
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(value);
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   getStatusLabel(status: string): string {

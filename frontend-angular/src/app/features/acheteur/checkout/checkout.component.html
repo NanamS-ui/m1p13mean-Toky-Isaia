@@ -222,7 +222,7 @@
                     <span>{{ group.boutiqueName }}</span>
                   </div>
                   <div class="summary-items-list">
-                    @for (item of group.items; track item.id) {
+                    @for (item of group.items; track item.stockId) {
                       <div class="summary-item">
                         <span class="item-name">{{ item.productName }}</span>
                         <span class="item-quantity">x{{ item.quantity }}</span>
@@ -357,7 +357,7 @@
                     <span>{{ group.boutiqueName }}</span>
                   </div>
                   <div class="summary-items-list">
-                    @for (item of group.items; track item.id) {
+                    @for (item of group.items; track item.stockId) {
                       <div class="summary-item">
                         <span class="item-name">{{ item.productName }}</span>
                         <span class="item-quantity">x{{ item.quantity }}</span>

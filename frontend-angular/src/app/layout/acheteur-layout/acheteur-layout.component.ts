@@ -1,7 +1,8 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { CartService } from '../../core/services/order/cart.service';
 
 interface NavItem {
   route: string;
@@ -20,11 +21,12 @@ interface NavItem {
 export class AcheteurLayoutComponent {
   auth = inject(AuthService);
   user = this.auth.currentUser;
+  cartService = inject(CartService);
   
   sidebarOpen = true;
 
   // Mock data
-  cartItemsCount = signal(3);
+  cartItemsCount = this.cartService.totalItems;
   unreadNotifications = signal(5);
 
   navItems: NavItem[] = [
