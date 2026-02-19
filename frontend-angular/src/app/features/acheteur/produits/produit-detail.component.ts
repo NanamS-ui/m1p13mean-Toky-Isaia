@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
@@ -34,9 +34,12 @@ interface Product {
   templateUrl: './produit-detail.component.html',
   styleUrl: './produit-detail.component.css'
 })
-export class ProduitDetailComponent implements OnInit {
+export class ProduitDetailComponent implements OnInit, OnDestroy {
   quantity = signal(1);
   selectedImageIndex = signal(0);
+
+  cartFlash = signal(false);
+  private cartFlashTimer: ReturnType<typeof setTimeout> | null = null;
 
   product = signal<Product | null>(null);
 
@@ -56,6 +59,13 @@ export class ProduitDetailComponent implements OnInit {
     }
 
     this.loadProduct(productId);
+  }
+
+  ngOnDestroy(): void {
+    if (this.cartFlashTimer) {
+      clearTimeout(this.cartFlashTimer);
+      this.cartFlashTimer = null;
+    }
   }
 
   private loadProduct(productId: string): void {
@@ -143,7 +153,22 @@ export class ProduitDetailComponent implements OnInit {
         boutiqueName: product.boutiqueName,
         inStock: product.inStock
       }, this.quantity());
+
+      this.showCartFlash();
     }
+  }
+
+  private showCartFlash(): void {
+    this.cartFlash.set(true);
+
+    if (this.cartFlashTimer) {
+      clearTimeout(this.cartFlashTimer);
+    }
+
+    this.cartFlashTimer = setTimeout(() => {
+      this.cartFlash.set(false);
+      this.cartFlashTimer = null;
+    }, 1500);
   }
 
   selectImage(index: number): void {

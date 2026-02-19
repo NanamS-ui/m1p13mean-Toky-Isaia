@@ -413,6 +413,27 @@
   font-size: 24px;
 }
 
+.cart-flash {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--korus-border);
+  border-left: 4px solid var(--korus-accent);
+  border-radius: 12px;
+  background: var(--korus-bg);
+  color: var(--korus-text-dark);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.cart-flash .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--korus-accent);
+  font-variation-settings: 'FILL' 1;
+}
+
 /* Shop Info */
 .product-shop {
   padding-top: 1.5rem;
