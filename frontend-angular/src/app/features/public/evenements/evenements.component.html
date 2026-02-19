@@ -14,7 +14,7 @@
         <div class="featured-card">
           <div class="featured-card__image">
             @if (featured.image) {
-              <img [src]="featured.image" [alt]="featured.title" />
+              <img [src]="featured.image" alt="{{ featured.title }}" title="{{ featured.title }}" />
             } @else {
               <span class="material-symbols-outlined">celebration</span>
             }
@@ -37,10 +37,7 @@
                 <span>{{ featured.time }}</span>
               </div>
             </div>
-            <a href="#" class="btn btn--primary btn--lg">
-              <span class="material-symbols-outlined">info</span>
-              En savoir plus
-            </a>
+            
           </div>
         </div>
       </div>
@@ -51,22 +48,14 @@
   <section class="filters-section">
     <div class="container">
       <div class="filters">
-        @for (type of eventTypes; track type) {
+        @for (type of eventTypes; track type.value) {
           <button
             class="filter-btn"
-            [class.filter-btn--active]="selectedFilter() === type"
-            (click)="setFilter(type)"
+            [class.filter-btn--active]="selectedFilter() === type.value"
+            (click)="setFilter(type.value)"
             type="button">
-            @if (type === 'Tous') {
-              <span class="material-symbols-outlined">apps</span>
-            } @else if (type === 'Promotions') {
-              <span class="material-symbols-outlined">local_offer</span>
-            } @else if (type === 'Animations') {
-              <span class="material-symbols-outlined">celebration</span>
-            } @else if (type === 'Ateliers') {
-              <span class="material-symbols-outlined">workshop</span>
-            }
-            {{ type }}
+            <span class="material-symbols-outlined">{{ type.icon }}</span>
+            {{ type.label }}
           </button>
         }
       </div>
@@ -87,17 +76,9 @@
             <article class="event-card">
               <div class="event-card__image">
                 @if (event.image) {
-                  <img [src]="event.image" [alt]="event.title" />
+                  <img [src]="event.image" alt="{{ event.title }}" title="{{ event.title }}" />
                 } @else {
-                  <span class="material-symbols-outlined">
-                    @if (event.type === 'Promotions') {
-                      local_offer
-                    } @else if (event.type === 'Animations') {
-                      celebration
-                    } @else {
-                      workshop
-                    }
-                  </span>
+                  <span class="material-symbols-outlined">{{ getCategoryIcon(event.categoryValue) }}</span>
                 }
                 <div class="event-card__date">
                   <span class="day">{{ formatDateShort(event.date).split(' ')[0] }}</span>
@@ -113,10 +94,7 @@
                     <span class="material-symbols-outlined">schedule</span>
                     {{ event.time }}
                   </span>
-                  <a href="#" class="event-card__link">
-                    Détails
-                    <span class="material-symbols-outlined">arrow_forward</span>
-                  </a>
+                
                 </div>
               </div>
             </article>
@@ -145,17 +123,9 @@
             <article class="event-card event-card--past">
               <div class="event-card__image">
                 @if (event.image) {
-                  <img [src]="event.image" [alt]="event.title" />
+                  <img [src]="event.image" alt="{{ event.title }}" title="{{ event.title }}" />
                 } @else {
-                  <span class="material-symbols-outlined">
-                    @if (event.type === 'Promotions') {
-                      local_offer
-                    } @else if (event.type === 'Animations') {
-                      celebration
-                    } @else {
-                      workshop
-                    }
-                  </span>
+                  <span class="material-symbols-outlined">{{ getCategoryIcon(event.categoryValue) }}</span>
                 }
                 <div class="event-card__date">
                   <span class="day">{{ formatDateShort(event.date).split(' ')[0] }}</span>

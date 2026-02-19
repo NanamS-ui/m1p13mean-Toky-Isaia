@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { EventService } from '../../../core/services/events/event.service';
+import { EventEntity } from '../../../core/models/events/event.model';
 
 interface FeaturedBoutique {
   id: string;
@@ -15,6 +17,7 @@ interface Event {
   title: string;
   date: string;
   time: string;
+  categoryValue: string;
   image?: string;
   description: string;
 }
@@ -54,29 +57,35 @@ export class AccueilComponent {
     { id: '6', name: 'Kids Paradise', category: 'Enfants', description: 'Jouets et vêtements pour enfants' }
   ]);
 
-  upcomingEvents = signal<Event[]>([
-    { 
-      id: '1', 
-      title: 'Soldes d\'hiver', 
-      date: '2026-02-01', 
-      time: '09:00',
-      description: 'Jusqu\'à -50% sur une sélection d\'articles dans toutes nos boutiques partenaires'
-    },
-    { 
-      id: '2', 
-      title: 'Défilé de mode', 
-      date: '2026-02-14', 
-      time: '15:00',
-      description: 'Découvrez les nouvelles collections printemps-été lors de notre défilé exclusif'
-    },
-    { 
-      id: '3', 
-      title: 'Atelier cuisine enfants', 
-      date: '2026-02-20', 
-      time: '14:00',
-      description: 'Atelier pâtisserie pour les enfants de 6 à 12 ans avec nos chefs'
-    }
-  ]);
+  upcomingEvents = signal<Event[]>([]);
+
+  constructor(private eventService: EventService) {}
+
+  ngOnInit(): void {
+    this.eventService.getEvents({ published: true }).subscribe({
+      next: (entities) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const mapped = (entities || [])
+          .filter((e) => e?.published)
+          .filter((e) => {
+            const startDate = new Date(e.started_date);
+            startDate.setHours(0, 0, 0, 0);
+            return startDate >= today;
+          })
+          .sort((a, b) => new Date(a.started_date).getTime() - new Date(b.started_date).getTime())
+          .slice(0, 3)
+          .map((e) => this.mapEntityToHomeEvent(e));
+
+        this.upcomingEvents.set(mapped);
+      },
+      error: (err) => {
+        console.error('Erreur chargement événements accueil:', err);
+        this.upcomingEvents.set([]);
+      }
+    });
+  }
 
   services = [
     { icon: 'local_parking', title: 'Parking gratuit', description: '2000 places avec 2h gratuites' },
@@ -94,5 +103,27 @@ export class AccueilComponent {
       month: 'long',
       year: 'numeric'
     }).format(date);
+  }
+
+  getCategoryIcon(categoryValue?: string | null): string {
+    const value = (categoryValue || '').toLowerCase();
+    if (value === 'promo' || value === 'promotion' || value === 'promotions') return 'local_offer';
+    if (value === 'atelier' || value === 'ateliers') return 'workshop';
+    return 'celebration';
+  }
+
+  private mapEntityToHomeEvent(entity: EventEntity): Event {
+    const categoryValue = (entity.category?.value || 'event').toString();
+    const time = entity.all_day ? 'Journée entière' : ((entity.start_time || '').toString());
+
+    return {
+      id: entity._id,
+      title: entity.title,
+      description: (entity.description || '').toString(),
+      date: entity.started_date,
+      time,
+      categoryValue,
+      image: entity.image_url || undefined
+    };
   }
 }

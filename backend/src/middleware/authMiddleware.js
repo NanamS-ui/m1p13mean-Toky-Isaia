@@ -22,6 +22,27 @@ const requireAuth = (req, res, next) => {
   }
 };
 
+const optionalAuth = (req, res, next) => {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      id: payload.sub,
+      role: payload.role
+    };
+  } catch (_error) {
+    // ignore
+  }
+
+  return next();
+};
+
 const requireRole = (...roles) => (req, res, next) => {
   const userRole = req.user?.role;
   if (!userRole) {
@@ -35,5 +56,6 @@ const requireRole = (...roles) => (req, res, next) => {
 
 module.exports = {
   requireAuth,
-  requireRole
+  requireRole,
+  optionalAuth
 };

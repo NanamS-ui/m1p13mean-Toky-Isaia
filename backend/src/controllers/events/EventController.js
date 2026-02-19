@@ -16,6 +16,11 @@ exports.getEvents = async (req, res) => {
     if (published === "true") options.published = true;
     if (published === "false") options.published = false;
 
+    // Si l'utilisateur n'est pas authentifié, on ne retourne que les événements publiés.
+    if (!req.user) {
+      options.published = true;
+    }
+
     const events = await EventService.getEvents(options);
     res.json(events);
   } catch (error) {
@@ -26,6 +31,12 @@ exports.getEvents = async (req, res) => {
 exports.getEventById = async (req, res) => {
   try {
     const event = await EventService.getEventById(req.params.id);
+
+    // Public: ne pas exposer un brouillon.
+    if (!req.user && !event?.published) {
+      return res.status(404).json({ message: "Événement introuvable" });
+    }
+
     res.json(event);
   } catch (error) {
     res.status(error.status || 404).json({ message: error.message });

@@ -1,15 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const ctrl = require("../../controllers/events/EventCategoryController");
-const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
+const { requireAuth, requireRole, optionalAuth } = require("../../middleware/authMiddleware");
 
-router.use(requireAuth);
+// Public: lecture
+router.get("/", optionalAuth, ctrl.getEventCategories);
+router.get("/:id", optionalAuth, ctrl.getEventCategoryById);
 
-router.get("/", ctrl.getEventCategories);
-router.get("/:id", ctrl.getEventCategoryById);
-
-router.post("/", requireRole("ADMIN"), ctrl.createEventCategory);
-router.put("/:id", requireRole("ADMIN"), ctrl.updateEventCategory);
-router.delete("/:id", requireRole("ADMIN"), ctrl.deleteEventCategory);
+// Admin: écriture
+router.post("/", requireAuth, requireRole("ADMIN"), ctrl.createEventCategory);
+router.put("/:id", requireAuth, requireRole("ADMIN"), ctrl.updateEventCategory);
+router.delete("/:id", requireAuth, requireRole("ADMIN"), ctrl.deleteEventCategory);
 
 module.exports = router;
