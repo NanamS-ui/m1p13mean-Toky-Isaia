@@ -8,6 +8,78 @@ const buildError = (message, status = 400) => {
   return err;
 };
 
+const getTop5ProductByOwner = async(ownerId, limite =5, startDate)=>{
+  let start = new Date();
+  if(!startDate) start = new Date(`${startDate}T00:00:00.000Z`);
+  return OrderItem.aggregate([
+    {$match: {deleted_at : null}},
+    {$lookup: {from: "stocks", let : {stockId:"$stock"},
+      pipeline:[{$match: {$expr : {$eq : ["$_id", "$$stockId"]}}},
+        {$project: {_id :1, product:1, shop:1}}],as: "stock"}},
+    {$unwind: "$stock"},
+    {$lookup: {from: "shops", let : {shopId:"$stock.shop"},
+      pipeline:[{$match: {$expr : {$eq : ["$_id", "$$shopId"]}}},
+        {$project: {_id :1, owner:1}}],as: "shop"}},
+    {$unwind: "$shop"},
+    {$match :{"shop.owner": new mongoose.Types.ObjectId(ownerId)}},
+    {$lookup: {from: "products", let : {productId:"$stock.product"},
+      pipeline:[{$match: {$expr : {$eq : ["$_id", "$$productId"]}}},
+        {$project: {_id :1, name:1}}],as: "product"}},
+    {$unwind: "$product"},
+    {$addFields:{
+        revenue : {$multiply :["$quantity", "$unit_price",{$subtract:[1,{$divide: [{ $ifNull: ["$promotion_percentage", 0] },100]}]}]}
+    }},
+    {$facet: {
+      topProduct: [ {$group: {
+        _id: "$product._id",
+        productName : {$first : "$product.name"},
+        totalQuantity:{$sum : "$quantity"},
+        totalRevenue : {$sum : "$revenue"}
+        }},
+        {$sort: {totalRevenue: -1}},
+        {$limit: limite} ],
+       
+      weeklyRevenue : [{$match:{created_at : {
+              $gte : {$dateSubtract:{startDate:start, unit : "day", amount : 7}},
+              $lte : start}}},
+          {$group:{
+              _id : {$dateToString : {format : "%Y-%m-%d",date: "$created_at"}},
+              revenue : {$sum : "$revenue"}
+          }}]
+    }},
+  ]);
+};
+
+const getLastOrderByOwner = async(ownerId, nombre = 5)=>{
+    return Order.aggregate([
+      { $match: {deleted_at: null}},
+      {$lookup: {from: "order_categories", localField: "orderCategory", foreignField: "_id", as: "orderCategory"}},
+      {$unwind: "$orderCategory"},
+      {$lookup: { from: "users", let : {idUser : "$buyer" },pipeline:[{$match: {$expr : {$eq: ["$_id","$$idUser"]}}}, 
+        {$project:{_id:1, name:1}}],as: "buyer"}},
+      {$unwind : "$buyer"},
+      {$lookup: { from: "order_items", let : {orderId : "$_id"},pipeline :[{$match: {$expr : {$eq : ["$order", "$$orderId"]}}},
+        {$project: {_id :1,stock : 1,deleted_at : 1}}],as: "orderItems"}},
+      {$unwind: "$orderItems"},
+      {$match: {"orderItems.deleted_at": null}},
+      { $lookup: {from: "stocks", let : {stockId :"$orderItems.stock" },pipeline:[{$match:{$expr:{$eq : ["$_id","$$stockId" ]}}},
+        {$project:{_id : 1,product : 1,shop : 1}}],as: "stock"}},
+      { $unwind: "$stock" },
+      {$lookup: {from: "products",let : { productId : "$stock.product"},pipeline : [{ $match: {$expr : {$eq : ["$_id", "$$productId"]}}},
+        {$project: {_id : 1,name : 1}}],as : "product"}},
+      { $unwind: "$product" },
+      {$lookup: {from: "shops",let: { shopId: "$stock.shop" },pipeline: [{$match: {$expr: { $eq: ["$_id", "$$shopId"] }}},
+        {$project: {_id: 1,owner: 1}}],as: "shop"}},
+      { $unwind: "$shop" },
+      {$match:{"shop.owner": new mongoose.Types.ObjectId(ownerId),}}
+      ,{$group: {_id: "$_id", order: { $first: "$$ROOT" }}},
+      {$replaceRoot: { newRoot: "$order" }},
+      {$sort: { created_at: -1 }},
+      {$limit: nombre},
+      {$project: {_id: 1, total : 1, category: "$orderCategory.value",buyerName: "$buyer.name",}}
+  ]);
+}
+
 const getOrderItemsAnalytics = async (
   shopOwnerId,
   startDate,
@@ -197,5 +269,6 @@ const kpiOrderStat =async (start, end, userId)=>{
     return global;
 }
 module.exports ={
-    getOrderItemsAnalytics
+    getOrderItemsAnalytics,
+    getTop5ProductByOwner
 }
