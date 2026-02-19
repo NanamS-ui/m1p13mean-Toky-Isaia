@@ -7,10 +7,30 @@ const buildError = (message, status = 400) => {
   err.status = status;
   return err;
 };
+const getDashboard = async (ownerId, limite = 5, startDate, nombre = 5) => {
+
+  const topData = await getTop5ProductByOwner(ownerId, limite, startDate);
+  const orderData = await getLastOrderByOwner(ownerId, nombre);
+
+  return {
+    products: topData[0] || {},
+    orders: orderData[0] || {}
+  };
+};
 
 const getTop5ProductByOwner = async(ownerId, limite =5, startDate)=>{
-  let start = new Date();
-  if(!startDate) start = new Date(`${startDate}T00:00:00.000Z`);
+  const start = startDate ? new Date(startDate) : new Date();
+  start.setUTCHours(23, 59, 59, 999);
+
+  const sevenDaysAgo = new Date(start);
+  sevenDaysAgo.setUTCDate(start.getUTCDate() - 7);
+  
+  const startOfDay = new Date(start);
+  startOfDay.setUTCHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date(start);
+  startOfMonth.setUTCDate(1);
+  startOfMonth.setUTCHours(0, 0, 0, 0);
   return OrderItem.aggregate([
     {$match: {deleted_at : null}},
     {$lookup: {from: "stocks", let : {stockId:"$stock"},
@@ -40,12 +60,20 @@ const getTop5ProductByOwner = async(ownerId, limite =5, startDate)=>{
         {$limit: limite} ],
        
       weeklyRevenue : [{$match:{created_at : {
-              $gte : {$dateSubtract:{startDate:start, unit : "day", amount : 7}},
+              $gte : sevenDaysAgo,
               $lte : start}}},
           {$group:{
               _id : {$dateToString : {format : "%Y-%m-%d",date: "$created_at"}},
               revenue : {$sum : "$revenue"}
-          }}]
+          }}],
+      dailyRevenue : [
+        {$match:{created_at : {$gte : startOfDay, $lte : start}}},
+        {$group :{ _id : null, revenue : {$sum : "$revenue"}}}
+      ],
+      monthlyRevenue : [
+        {$match:{created_at : {$gte : startOfMonth, $lte : start }}},
+        {$group :{ _id : null, revenue : {$sum : "$revenue"}}}
+      ]
     }},
   ]);
 };
@@ -74,9 +102,29 @@ const getLastOrderByOwner = async(ownerId, nombre = 5)=>{
       {$match:{"shop.owner": new mongoose.Types.ObjectId(ownerId),}}
       ,{$group: {_id: "$_id", order: { $first: "$$ROOT" }}},
       {$replaceRoot: { newRoot: "$order" }},
-      {$sort: { created_at: -1 }},
+      {$facet :{
+        lastOrder : [{$sort: { created_at: -1 }},
       {$limit: nombre},
-      {$project: {_id: 1, total : 1, category: "$orderCategory.value",buyerName: "$buyer.name",}}
+      {$project: {_id: 1, total : 1, category: "$orderCategory.value",buyerName: "$buyer.name",}}],
+          stat: [
+              {$group:{
+                 _id: null, totalOrders: { $sum: 1 }, totalRevenue: { $sum: "$total" },
+                 pending: {$sum: {$cond: [{ $eq: ["$status", "En attente"] }, 1, 0]}},
+                 confirmed: {$sum: {$cond: [{ $eq: ["$status", "Confirmée"] }, 1, 0]}},
+                preparing: {$sum: {$cond: [{ $eq: ["$status", "En préparation"] }, 1, 0]}},
+                delivered: {$sum: {$cond: [{ $eq: ["$status", "Livrée"] }, 1, 0]}},
+                cancelled: {$sum: {$cond: [{ $eq: ["$status", "Annulée"] }, 1, 0]}}
+              }},
+              {$addFields:{
+                averageBasket: {$cond: [{ $eq: ["$totalOrders", 0] },0,{ $divide: ["$totalRevenue", "$totalOrders"] }]},
+                confirmedPercent: {$multiply: [{ $divide: ["$confirmed", "$totalOrders"] },100]},
+                preparingPercent: {$multiply: [{ $divide: ["$preparing", "$totalOrders"] },100]},
+                deliveredPercent: {$multiply: [{ $divide: ["$delivered", "$totalOrders"] },100]},
+                cancelledPercent: {$multiply: [{ $divide: ["$cancelled", "$totalOrders"] },100]}
+              }}
+          ],
+      }}
+      
   ]);
 }
 
@@ -270,5 +318,6 @@ const kpiOrderStat =async (start, end, userId)=>{
 }
 module.exports ={
     getOrderItemsAnalytics,
-    getTop5ProductByOwner
+    getTop5ProductByOwner,
+    getDashboard
 }

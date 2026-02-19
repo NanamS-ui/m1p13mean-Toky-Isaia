@@ -4,7 +4,7 @@ exports.getDashBoard = async (req, res) => {
     let { shopOwnerId, date } = req.query;
     if(!shopOwnerId) shopOwnerId = req.user.id;
     
-    const stats = await OrderAnalyticsService.getTop5ProductByOwner(shopOwnerId,5,date);
+    const stats = await OrderAnalyticsService.getDashboard(shopOwnerId,5,date);
 
     return res.status(200).json({stats});
 
