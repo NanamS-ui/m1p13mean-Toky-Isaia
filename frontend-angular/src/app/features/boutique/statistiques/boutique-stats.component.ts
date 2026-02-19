@@ -1,5 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { OrderStatisticService } from '../../../core/services/statistic/orderStatistic.service';
+import { forkJoin } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 
 interface SalesData {
   period: string;
@@ -25,13 +28,31 @@ interface LowPerformer {
 @Component({
   selector: 'app-boutique-stats',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule,FormsModule],
   templateUrl: './boutique-stats.component.html',
   styleUrl: './boutique-stats.component.css'
 })
 export class BoutiqueStatsComponent {
   activePeriod = signal<'day' | 'week' | 'month' | 'year'>('month');
-
+  statistiques : any;
+  startDate!: string;
+  endDate!: string;
+  constructor(private orderStatService:OrderStatisticService, private cdr :ChangeDetectorRef){}
+  ngOnInit(): void {
+    this.startDate = "";
+    this.endDate = "";
+    this.applyPeriod();
+    
+  }
+  applyPeriod(): void {
+    forkJoin({
+      statistiques : this.orderStatService.getBoutiqueStatistique(this.startDate,this.endDate)
+    }).subscribe(({statistiques})=>{
+      this.statistiques = statistiques;
+      console.log(statistiques);
+      this.cdr.detectChanges();
+    })
+  }
   // KPIs
   kpis = signal({
     totalRevenue: 3850000,

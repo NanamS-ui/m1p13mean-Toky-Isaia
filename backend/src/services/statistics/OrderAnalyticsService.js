@@ -9,12 +9,21 @@ const buildError = (message, status = 400) => {
 };
 const getDashboard = async (ownerId, limite = 5, startDate, nombre = 5) => {
 
-  const topData = await getTop5ProductByOwner(ownerId, limite, startDate);
-  const orderData = await getLastOrderByOwner(ownerId, nombre);
+  const [topData, orderData] = await Promise.all([
+    getTop5ProductByOwner(ownerId, limite, startDate),
+    getLastOrderByOwner(ownerId, nombre)
+  ]);
+
+  const products = topData[0] || {};
+  const orders = orderData[0] || {};
 
   return {
-    products: topData[0] || {},
-    orders: orderData[0] || {}
+    topProducts: products.topProduct || [],
+    weeklyRevenue: products.weeklyRevenue || [],
+    dailyRevenue: products.dailyRevenue?.[0]?.revenue ?? 0,
+    monthlyRevenue: products.monthlyRevenue?.[0]?.revenue ?? 0,
+    lastOrders: orders.lastOrder || [],
+    orderStats: orders.stat?.[0] || {}
   };
 };
 
@@ -128,18 +137,23 @@ const getLastOrderByOwner = async(ownerId, nombre = 5)=>{
   ]);
 }
 
-const getOrderItemsAnalytics = async (
-  shopOwnerId,
-  startDate,
-  endDate
-) => {
+const getOrderItemsAnalytics = async (shopOwnerId,startDate,endDate) => {
 
-    const start = new Date(`${startDate}T00:00:00.000Z`);
-    const end = new Date(`${endDate}T23:59:59.999Z`);
+  const match = { deleted_at: null };
+
+  if (startDate || endDate) {
+    match.created_at = {};
+    if (startDate) {
+      match.created_at.$gte = new Date(`${startDate}T00:00:00.000Z`);
+    }
+    if (endDate) {
+      match.created_at.$lte = new Date(`${endDate}T23:59:59.999Z`);
+    }
+  }
 
   return await OrderItem.aggregate([
 
-    {$match: {deleted_at: null, created_at: { $gte: start, $lte: end }}},
+    { $match: match },
 
     { $lookup: {from: "stocks", localField: "stock", foreignField: "_id", as: "stock"}},
     { $unwind: "$stock" },
@@ -157,90 +171,30 @@ const getOrderItemsAnalytics = async (
     { $lookup: { from: "order_categories", localField: "order.orderCategory", foreignField: "_id",as: "order.orderCategory"}},
     { $unwind: { path: "$order.orderCategory", preserveNullAndEmptyArrays: true } },
 
-    
-    {
-      $facet: {
-        globalStats: [{
-            $group: {_id: null,
-                CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}},
-                totalOrders: {$addToSet: "$order._id"},
-                panierMoyen: { $avg: "$order.total" },
-                delivered: {$sum: {
-                    $cond: [
-                        { $eq: ["$order.orderCategory.value", "Livré"] },
-                        1,
-                        0
-                    ]}},
+    {$facet: {globalStats: 
+              [{$group: {_id: null,CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}},totalOrders: {$addToSet: "$order._id"},
+                panierMoyen: { $avg: "$order.total" },delivered: {$sum: {$cond: [{ $eq: ["$order.orderCategory.value", "Livré"] },1,0]}},
+                cancelled: {$sum: {$cond: [{ $eq: ["$order.orderCategory.value", "Annulé"] },1,0]}},
+                pending: {$sum: {$cond: [{ $eq: ["$order.orderCategory.value", "En attente"] },1,0]}},
+                totalReduction: {$sum: {$multiply: ["$unit_price","$quantity",{ $divide: ["$promotion_percentage", 100] }]}},
+              avgReduction: { $avg: "$promotion_percentage" },ordersWithPromo: {$addToSet: {$cond: [{ $gt: ["$promotion_percentage", 0] },"$order._id",null]}}}},
+          {$project: {CA: 1,panierMoyen: 1,totalReduction: 1,avgReduction: 1,totalOrders: { $size: "$totalOrders" },
+              ordersWithPromo: {$size: {$filter: {input: "$ordersWithPromo",as: "o",cond: { $ne: ["$$o", null] }}}},
+              delivered: 1,cancelled: 1,pending: 1
+            }}],
 
-              cancelled: {$sum: {
-                  $cond: [
-                        { $eq: ["$order.orderCategory.value", "Annulé"] },
-                        1,
-                        0]}},
-
-              totalReduction: {$sum: {
-                  $multiply: ["$unit_price","$quantity",{ $divide: ["$promotion_percentage", 100] }]
-                }},
-              avgReduction: { $avg: "$promotion_percentage" },
-              ordersWithPromo: {$addToSet: {
-                  $cond: [
-                    { $gt: ["$promotion_percentage", 0] },
-                    "$order._id",
-                    null
-                  ]
-                }}
-            }
-          },
-          {
-            $project: {
-              CA: 1,
-              panierMoyen: 1,
-              totalReduction: 1,
-              avgReduction: 1,
-              totalOrders: { $size: "$totalOrders" },
-              ordersWithPromo: {
-                $size: {$filter: {input: "$ordersWithPromo",as: "o",cond: { $ne: ["$$o", null] }}}
-              },
-              delivered: 1,
-              cancelled: 1
-            }
-          }
-        ],
-
-        /* ===== CA PAR MOIS ===== */
         caParMois: [
-          {$group: {
-              _id: { $month: "$order.created_at" },
-              CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}}
-            }
-          },{ $sort: { "_id": 1 } }
+          {$group: {_id: { $month: "$order.created_at" },CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}}}},{ $sort: { "_id": 1 } }
         ],
 
-        
         productsSorted: [
-        {$group: {
-            _id: "$stock.product",
-            totalSold: { $sum: "$quantity" },
-            CA: { $sum: { $multiply: ["$unit_price", "$quantity"] } },
-            stock: { $first: "$stock.reste" }
-            }},{ $sort: { totalSold: -1 } }
-        ]
-    }
+        {$group: {_id: "$stock.product",totalSold: { $sum: "$quantity" },CA: { $sum: { $multiply: ["$unit_price", "$quantity"] } },
+            stock: { $first: "$stock.reste" }}},{ $sort: { totalSold: -1 } }
+        ]}
     },
-    {
-        $project: {
-            
-            top5Produits: { $slice: ["$productsSorted", 5] },
-
-            top3ProduitsFaibles: {$cond: [
-                    { $gt: [{ $size: "$productsSorted" }, 5] },
-                    { $slice: ["$productsSorted", 5, { $subtract: [{ $size: "$productsSorted" }, 5] }] },
-                    [] 
-                ]
-            },
-            globalStats: 1,
-            caParMois: 1
-        }
+    {$project: {top5Produits: { $slice: ["$productsSorted", 5] },
+            top3ProduitsFaibles: {$cond: [{ $gt: [{ $size: "$productsSorted" }, 5] },{ $slice: ["$productsSorted", 5, { $subtract: [{ $size: "$productsSorted" }, 5] }] },[] ]
+            },globalStats: 1,caParMois: 1}
     }
 
   ]);
