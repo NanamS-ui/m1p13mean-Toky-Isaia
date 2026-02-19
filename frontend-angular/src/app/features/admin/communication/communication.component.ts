@@ -1,8 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CalendarComponent, type CalendarEvent } from './calendar/calendar.component';
+import { EventService } from '../../../core/services/events/event.service';
+import { EventCategoryService } from '../../../core/services/events/event-category.service';
+import { EventEntity } from '../../../core/models/events/event.model';
+import { finalize, timeout } from 'rxjs';
 
 @Component({
   selector: 'app-communication',
@@ -11,68 +15,31 @@ import { CalendarComponent, type CalendarEvent } from './calendar/calendar.compo
   templateUrl: './communication.component.html',
   styleUrl: './communication.component.css'
 })
-export class CommunicationComponent {
+export class CommunicationComponent implements OnInit {
   form: FormGroup;
-  
-  categories = [
-    { value: 'event', label: 'Événement', color: '#8b5cf6' },
-    { value: 'promo', label: 'Promotion', color: '#f59e0b' },
-    { value: 'meeting', label: 'Réunion', color: '#3b82f6' },
-    { value: 'reminder', label: 'Rappel', color: '#10b981' }
-  ];
+  selectedFile: File | null = null;
+  imagePreview: string | null = null;
+  isDragOver = false;
+  isSubmitting = false;
+  isLoadingEvents = false;
+  eventsLoadError = '';
 
-  events: CalendarEvent[] = [
-    { 
-      id: '1', 
-      title: 'Soldes d\'été KORUS', 
-      date: '2026-02-01', 
-      endDate: '2026-02-15', 
-      published: true,
-      category: 'promo',
-      description: 'Grandes soldes sur toutes les collections'
-    },
-    { 
-      id: '2', 
-      title: 'Soirée Mode & Musique', 
-      date: '2026-02-20', 
-      endDate: '2026-02-20', 
-      published: false,
-      category: 'event',
-      time: '19:00',
-      endTime: '23:00',
-      description: 'Défilé de mode avec DJ set'
-    },
-    { 
-      id: '3', 
-      title: 'Animation du weekend', 
-      date: '2026-01-31', 
-      endDate: '2026-02-01', 
-      published: true,
-      category: 'event',
-      time: '14:00'
-    },
-    { 
-      id: '4', 
-      title: 'Réunion équipe marketing', 
-      date: '2026-01-29', 
-      published: true,
-      category: 'meeting',
-      time: '10:00',
-      endTime: '11:30',
-      description: 'Point mensuel sur les campagnes'
-    },
-    { 
-      id: '5', 
-      title: 'Lancement nouvelle collection', 
-      date: '2026-02-10', 
-      published: false,
-      category: 'event',
-      time: '18:00',
-      description: 'Présentation de la collection printemps'
-    }
-  ];
+  private readonly categoryColors: Record<string, string> = {
+    event: '#8b5cf6',
+    promo: '#f59e0b',
+    meeting: '#3b82f6',
+    reminder: '#10b981'
+  };
 
-  constructor(private fb: FormBuilder) {
+  categories: { value: string; label: string; color: string }[] = [];
+
+  events: CalendarEvent[] = [];
+
+  constructor(
+    private fb: FormBuilder,
+    private eventService: EventService,
+    private eventCategoryService: EventCategoryService
+  ) {
     this.form = this.fb.nonNullable.group({
       title: ['', Validators.required],
       description: [''],
@@ -80,30 +47,193 @@ export class CommunicationComponent {
       endDate: [''],
       startTime: [''],
       endTime: [''],
-      category: ['event'],
+      category: [''],
       allDay: [true]
+    });
+  }
+
+  ngOnInit(): void {
+    this.eventCategoryService.getEventCategories().subscribe({
+      next: (cats) => {
+        if (!cats || cats.length === 0) return;
+        this.categories = cats.map((c) => ({
+          // on accepte à la fois { value, label } et { name, color, icon }
+          value: (c.value || c.name || '').toString(),
+          label: (c.label ?? c.name ?? c.value ?? '').toString(),
+          color:
+            c.color ||
+            this.categoryColors[c.value || c.name || 'event'] ||
+            this.categoryColors['event']
+        }));
+
+        if (this.categories.length > 0) {
+          this.form.patchValue({ category: this.categories[0].value });
+        }
+      },
+      error: () => {
+        // en cas d'erreur, on laisse la liste vide
+      }
+    });
+
+    this.refreshEvents();
+  }
+
+  private refreshEvents(): void {
+    this.eventsLoadError = '';
+
+    // Loader "intelligent": n'apparaît que si l'API dépasse un petit délai.
+    const loaderHandle = setTimeout(() => {
+      this.isLoadingEvents = true;
+    }, 150);
+
+    this.eventService.getEvents().pipe(
+      timeout(8000),
+      finalize(() => {
+        clearTimeout(loaderHandle);
+        this.isLoadingEvents = false;
+      })
+    ).subscribe({
+      next: (events) => {
+        this.events = (events || []).map((e) => this.mapEntityToCalendarEvent(e));
+      },
+      error: (err) => {
+        // On ne vide pas la liste si on avait déjà des données: meilleure UX lors du changement de section.
+        if (err?.name === 'TimeoutError') {
+          this.eventsLoadError = "Chargement trop long (timeout). Vérifie que le backend est démarré.";
+        } else {
+          this.eventsLoadError = "Impossible de charger les événements.";
+        }
+        console.error('Erreur chargement événements:', err);
+      }
+    });
+  }
+
+  private toYmd(isoDate: string | null | undefined): string {
+    if (!isoDate) return '';
+    // isoDate vient de Mongo/Express -> ISO string. On garde uniquement YYYY-MM-DD.
+    return isoDate.length >= 10 ? isoDate.slice(0, 10) : isoDate;
+  }
+
+  private mapEntityToCalendarEvent(entity: EventEntity): CalendarEvent {
+    const rawCategoryValue = entity.category?.value ?? 'event';
+    const allowedCategories = ['event', 'promo', 'meeting', 'reminder'] as const;
+    const categoryValue = allowedCategories.includes(rawCategoryValue as any)
+      ? (rawCategoryValue as (typeof allowedCategories)[number])
+      : 'event';
+    const date = this.toYmd(entity.started_date);
+    const endDate = this.toYmd(entity.end_date ?? entity.started_date);
+
+    return {
+      id: entity._id,
+      title: entity.title,
+      date,
+      endDate,
+      published: Boolean(entity.published),
+      category: categoryValue,
+      description: entity.description ?? undefined,
+      time: entity.all_day ? undefined : (entity.start_time ?? undefined),
+      endTime: entity.all_day ? undefined : (entity.end_time ?? undefined)
+    };
+  }
+
+  publishEvent(event: CalendarEvent): void {
+    if (!event?.id) return;
+
+    const newStatus = true;
+
+    this.eventService.updateEvent(event.id, { published: newStatus }).subscribe({
+      next: (updated) => {
+        const mapped = this.mapEntityToCalendarEvent(updated);
+        this.events = this.events.map(ev => (ev.id === mapped.id ? mapped : ev));
+      },
+      error: (err) => {
+        console.error("Erreur mise à jour de l'état publié:", err);
+      }
     });
   }
 
   onSubmit(): void {
     if (this.form.invalid) return;
-    
+
     const formValue = this.form.getRawValue();
-    const newEvent: CalendarEvent = {
-      id: Date.now().toString(),
+
+    this.isSubmitting = true;
+
+    this.eventService.createEvent({
       title: formValue.title,
-      date: formValue.startDate,
-      endDate: formValue.endDate || formValue.startDate,
-      published: false,
-      category: formValue.category,
       description: formValue.description,
-      time: formValue.allDay ? undefined : formValue.startTime,
-      endTime: formValue.allDay ? undefined : formValue.endTime
+      startDate: formValue.startDate,
+      endDate: formValue.endDate || undefined,
+      allDay: formValue.allDay,
+      startTime: formValue.allDay ? undefined : (formValue.startTime || undefined),
+      endTime: formValue.allDay ? undefined : (formValue.endTime || undefined),
+      category: formValue.category,
+      image: this.imagePreview || undefined
+    }).subscribe({
+      next: (created) => {
+        const ev = this.mapEntityToCalendarEvent(created);
+        this.events = [ev, ...this.events];
+        this.form.reset({ category: 'event', allDay: true });
+        this.selectedFile = null;
+        this.imagePreview = null;
+        this.isSubmitting = false;
+      },
+      error: (err) => {
+        console.error('Erreur création événement:', err);
+        this.isSubmitting = false;
+      }
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.handleFile(input.files[0]);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = false;
+    if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
+      this.handleFile(event.dataTransfer.files[0]);
+    }
+  }
+
+  private handleFile(file: File): void {
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 5 * 1024 * 1024) return; // 5 Mo max
+    this.selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imagePreview = reader.result as string;
     };
-    
-    this.events = [...this.events, newEvent];
-    this.form.reset({ category: 'event', allDay: true });
-    console.log('Annonce/événement créé:', newEvent);
+    reader.readAsDataURL(file);
+  }
+
+  removeFile(event: Event): void {
+    event.stopPropagation();
+    this.selectedFile = null;
+    this.imagePreview = null;
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
   }
 
   getCategoryColor(category?: string): string {

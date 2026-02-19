@@ -31,6 +31,8 @@ app.use("/api/orderItems", require("./routes/order/OrderItemRoute"));
 app.use("/api/stats", require("./routes/statistic/OrderStatisticRouter"));
 app.use("/api/messenger", require("./routes/messenger/MessengerRoute"));
 app.use("/api/shopReviews", require("./routes/shop/ShopReviewRoute"));
+app.use("/api/eventCategories", require("./routes/events/EventCategoryRoute"));
+app.use("/api/events", require("./routes/events/EventRoute"));
 
 
 module.exports = app;
