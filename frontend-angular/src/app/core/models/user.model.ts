@@ -15,11 +15,13 @@ export class User {
   createdAt: Date;
   lastLoginAt?: Date;
   boutiqueId?: string;
+  name? : string;
 
   constructor(init?: Partial<User>) {
     this.id = init?.id || '';
     this.email = init?.email || '';
     this.firstName = init?.firstName || '';
+    this.name = init?.name || '';
     this.lastName = init?.lastName || '';
     this.role = init?.role || 'ACHETEUR'; 
     this.status = init?.status || 'ACTIVE';

@@ -1,7 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Order } from '../../../core/models/order/order.model';
+import { OrderCategory } from '../../../core/models/order/order-category.model';
+import { OrdersService } from '../../../core/services/order/order.service';
+import { OrderCategoryService } from '../../../core/services/order/orderCategory.service';
+import { forkJoin } from 'rxjs';
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'delivered' | 'cancelled';
 
 interface OrderItem {
@@ -44,6 +48,68 @@ interface OrderDetail {
   styleUrl: './commande-detail.component.css'
 })
 export class CommandeDetailComponent {
+  orderId: string | null = null;
+  orderApi : any;
+  orderCategories : OrderCategory[]=[]; 
+  constructor(private orderService : OrdersService, private  orderCategoryService : OrderCategoryService,
+    private cdr : ChangeDetectorRef, private route : ActivatedRoute, private router : Router
+  ){}
+  ngOnInit(): void {
+    this.orderId = this.route.snapshot.paramMap.get('id');
+    if(this.orderId) this.loadData(this.orderId);
+    
+  }
+  loadData(orderId :string):void{
+    forkJoin({
+      orderApi: this.orderService.getOrderByIdAny(orderId),
+      orderCategory : this.orderCategoryService.getOrderCategorys()
+    }).subscribe(({orderApi, orderCategory})=>{
+      this.orderApi = orderApi;
+      this.orderCategories = orderCategory;
+      this.cdr.detectChanges();
+    })
+  }
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      'En attente': 'pending',
+      'Confirmée': 'confirmed',
+      'En préparation': 'preparing',
+      'Livrée': 'delivered',
+      'Annulée': 'cancelled'
+    };
+    const label = labels[status] || status;
+    return label
+  }
+  statuses2: { value: string; label: string; icon: string }[] = [
+    { value: 'En attente', label: 'En attente', icon: 'hourglass_empty' },
+    { value: 'Confirmée', label: 'Confirmée', icon: 'check_circle' },
+    { value: 'En préparation', label: 'En préparation', icon: 'inventory_2' },
+    { value: 'Livrée', label: 'Livrée', icon: 'local_shipping' },
+    { value: 'Annulée', label: 'Annulée', icon: 'cancel' }
+  ];
+  getStatusInfo2(status: string) {
+    return this.statuses2.find(s => s.value === status) || this.statuses2[0];
+  }
+  getStatusIndex2(status: string): number {
+    const flow: string[] = ['En attente', 'Confirmée', 'En préparation', 'Livrée'];
+    return flow.indexOf(status);
+  }
+  updateStatus2(newStatus: string): void {
+    const category = this.orderCategories.find(o => o.value === newStatus);
+    if (!category || !this.orderId) return;
+    if(this.orderId){
+      const request$ = this.orderService.updateOrder(this.orderId, {orderCategory : category._id});
+      request$.subscribe({
+        next: () => {
+          this.orderApi.orderCategory = category;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Erreur lors de la sauvegarde', err);
+        }
+      })
+    }
+  }
   order = signal<OrderDetail>({
     id: '1',
     orderNumber: 'CMD-2026-001',
@@ -86,7 +152,20 @@ export class CommandeDetailComponent {
     const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
     return `${dotted} MGA`;
   }
-
+  formatDate2(date?: string | Date): string {
+    if (!date) return '-';
+    
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '-'; // sécurité
+    
+    return new Intl.DateTimeFormat('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(d);
+  }
   formatDate(dateStr: string): string {
     return new Intl.DateTimeFormat('fr-FR', { 
       day: '2-digit', 

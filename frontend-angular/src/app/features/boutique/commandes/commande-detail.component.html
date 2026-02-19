@@ -7,12 +7,12 @@
     </a>
     <div class="header__main">
       <div class="header__info">
-        <h2>{{ order().orderNumber }}</h2>
-        <span class="order-date">Créée le {{ formatDate(order().createdAt) }}</span>
+        <h2>{{ orderApi?._id }}</h2>
+        <span class="order-date">Créée le {{ formatDate2(orderApi?.created_at) }}</span>
       </div>
-      <span class="status-badge" [class]="'status-badge--' + order().status">
-        <span class="material-symbols-outlined">{{ getStatusInfo(order().status).icon }}</span>
-        {{ getStatusInfo(order().status).label }}
+      <span class="status-badge" [class]="'status-badge--' + getStatusLabel(orderApi?.orderCategory?.value?? '')">
+        <span class="material-symbols-outlined">{{ getStatusInfo2(orderApi?.orderCategory?.value?? '').icon }}</span>
+        {{ getStatusInfo2(orderApi?.orderCategory?.value?? '').value }}
       </span>
     </div>
     <div class="header__actions">
@@ -35,42 +35,42 @@
   <div class="status-timeline card">
     <h4>Suivi de la commande</h4>
     <div class="timeline">
-      @for (status of statuses.slice(0, 4); track status.value; let i = $index) {
+      @for (status of statuses2.slice(0, 4); track status.value; let i = $index) {
         <div class="timeline__step" 
-             [class.timeline__step--active]="i <= getStatusIndex(order().status)"
-             [class.timeline__step--current]="status.value === order().status">
+             [class.timeline__step--active]="i <= getStatusIndex2(orderApi?.orderCategory?.value ?? '')"
+             [class.timeline__step--current]="status.value === orderApi?.orderCategory?.value">
           <div class="timeline__icon">
             <span class="material-symbols-outlined">{{ status.icon }}</span>
           </div>
-          <span class="timeline__label">{{ status.label }}</span>
+          <span class="timeline__label">{{ status.value }}</span>
         </div>
         @if (i < 3) {
-          <div class="timeline__connector" [class.timeline__connector--active]="i < getStatusIndex(order().status)"></div>
+          <div class="timeline__connector" [class.timeline__connector--active]="i < getStatusIndex2(orderApi?.orderCategory?.value ?? '')"></div>
         }
       }
     </div>
 
-    @if (order().status !== 'delivered' && order().status !== 'cancelled') {
+    @if (orderApi?.orderCategory?.value !== 'Livrée' && orderApi?.orderCategory?.value !== 'Annulée') {
       <div class="status-actions">
         <span class="status-actions__label">Changer le statut :</span>
-        @if (order().status === 'pending') {
-          <button class="btn btn--sm btn--primary" (click)="updateStatus('confirmed')">
+        @if (orderApi?.orderCategory?.value === 'En attente') {
+          <button class="btn btn--sm btn--primary" (click)="updateStatus2('Confirmée')">
             <span class="material-symbols-outlined">check_circle</span>
             Confirmer
           </button>
-          <button class="btn btn--sm btn--danger" (click)="updateStatus('cancelled')">
+          <button class="btn btn--sm btn--danger" (click)="updateStatus2('Annulée')">
             <span class="material-symbols-outlined">cancel</span>
             Annuler
           </button>
         }
-        @if (order().status === 'confirmed') {
-          <button class="btn btn--sm btn--primary" (click)="updateStatus('preparing')">
+        @if (orderApi?.orderCategory?.value === 'Confirmée') {
+          <button class="btn btn--sm btn--primary" (click)="updateStatus2('En préparation')">
             <span class="material-symbols-outlined">inventory_2</span>
             En préparation
           </button>
         }
-        @if (order().status === 'preparing') {
-          <button class="btn btn--sm btn--primary" (click)="updateStatus('delivered')">
+        @if (orderApi?.orderCategory?.value === 'En préparation') {
+          <button class="btn btn--sm btn--primary" (click)="updateStatus2('Livrée')">
             <span class="material-symbols-outlined">local_shipping</span>
             Marquer livrée
           </button>
@@ -89,11 +89,12 @@
             <th>Produit</th>
             <th>Prix unitaire</th>
             <th>Quantité</th>
+            <th>Promotion</th>
             <th>Total</th>
           </tr>
         </thead>
         <tbody>
-          @for (item of order().items; track item.productId) {
+          @for (item of orderApi?.orderItems; track item._id) {
             <tr>
               <td>
                 <div class="product-cell">
@@ -101,37 +102,38 @@
                     <span class="material-symbols-outlined">image</span>
                   </div>
                   <div class="product-info">
-                    <span class="product-name">{{ item.productName }}</span>
-                    <span class="product-sku">{{ item.productSku }}</span>
+                    <span class="product-name">{{ item.stock.product.name }}</span>
+                    <span class="product-sku">{{ item.stock.product.reference }}</span>
                   </div>
                 </div>
               </td>
-              <td>{{ formatCurrency(item.unitPrice) }}</td>
+              <td>{{ formatCurrency(item.unit_price) }}</td>
               <td>{{ item.quantity }}</td>
-              <td class="td-total">{{ formatCurrency(item.total) }}</td>
+              <td>{{ item.promotion_percentage }}%</td>
+              <td class="td-total">{{ formatCurrency((item.unit_price * item.quantity)*(1-(item.promotion_percentage/100))) }}</td>
             </tr>
           }
         </tbody>
       </table>
 
       <div class="order-totals">
-        <div class="total-row">
+        <!-- <div class="total-row">
           <span>Sous-total</span>
           <span>{{ formatCurrency(order().subtotal) }}</span>
         </div>
         <div class="total-row">
           <span>Livraison</span>
           <span>{{ formatCurrency(order().shipping) }}</span>
-        </div>
-        @if (order().discount > 0) {
+        </div> -->
+        <!-- @if (order().discount > 0) {
           <div class="total-row total-row--discount">
             <span>Réduction</span>
             <span>-{{ formatCurrency(order().discount) }}</span>
           </div>
-        }
+        } -->
         <div class="total-row total-row--final">
           <span>Total</span>
-          <span>{{ formatCurrency(order().total) }}</span>
+          <span>{{ formatCurrency(orderApi?.total) }}</span>
         </div>
       </div>
     </section>
@@ -145,18 +147,18 @@
           Client
         </h4>
         <div class="info-block">
-          <strong>{{ order().customer.name }}</strong>
-          <a [href]="'mailto:' + order().customer.email" class="info-link">{{ order().customer.email }}</a>
-          <a [href]="'tel:' + order().customer.phone" class="info-link">{{ order().customer.phone }}</a>
+          <strong>{{ orderApi?.buyer.name }}</strong>
+          <a [href]="'mailto:' + orderApi?.buyer.email" class="info-link">{{ orderApi?.buyer.email }}</a>
+          <a [href]="'tel:' + orderApi?.buyer.phone" class="info-link">{{ orderApi?.buyer.phone }}</a>
         </div>
         <div class="info-block">
           <span class="info-label">Adresse de livraison</span>
-          <p class="info-address">{{ order().customer.address }}</p>
+          <p class="info-address">{{ orderApi?.buyer.adresse }}</p>
         </div>
       </section>
 
       <!-- Payment Info -->
-      <section class="card">
+      <!-- <section class="card">
         <h4>
           <span class="material-symbols-outlined">credit_card</span>
           Paiement
@@ -181,10 +183,10 @@
             <span>{{ formatCurrency(order().total) }}</span>
           </div>
         </div>
-      </section>
+      </section> -->
 
       <!-- Notes -->
-      @if (order().notes) {
+      <!-- @if (order().notes) {
         <section class="card">
           <h4>
             <span class="material-symbols-outlined">note</span>
@@ -192,10 +194,10 @@
           </h4>
           <p class="order-notes">{{ order().notes }}</p>
         </section>
-      }
+      } -->
 
       <!-- History -->
-      <section class="card">
+      <!-- <section class="card">
         <h4>
           <span class="material-symbols-outlined">history</span>
           Historique
@@ -216,7 +218,7 @@
             </div>
           }
         </div>
-      </section>
+      </section> -->
     </div>
   </div>
 </div>

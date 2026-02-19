@@ -102,6 +102,38 @@ const getOrderById = async (id) => {
   return order;
 };
 
+const getOrderByOwnerId = async (owner) => {
+  const orders = await Order.aggregate([
+      { $match: {deleted_at: null}},
+          {$lookup: {from: "order_categories", let : {idCategory : "$orderCategory" },pipeline:[{$match: {$expr : {$eq: ["$_id","$$idCategory"]}}}, 
+            {$project:{_id:1, value:1}}], as: "orderCategory"}},
+          {$unwind: "$orderCategory"},
+          {$lookup: { from: "users", let : {idUser : "$buyer" },pipeline:[{$match: {$expr : {$eq: ["$_id","$$idUser"]}}}, 
+            {$project:{_id:1, name:1,email:1}}],as: "buyer"}},
+          {$unwind : "$buyer"},
+          {$lookup: { from: "order_items", let : {orderId : "$_id"},pipeline :[{$match: {$expr : {$eq : ["$order", "$$orderId"]}}},
+            {$project: {_id :1,stock : 1,deleted_at : 1}}],as: "orderItems"}},
+          {$unwind: "$orderItems"},
+          {$match: {"orderItems.deleted_at": null}},
+          { $lookup: {from: "stocks", let : {stockId :"$orderItems.stock" },pipeline:[{$match:{$expr:{$eq : ["$_id","$$stockId" ]}}},
+            {$project:{_id : 1,product : 1,shop : 1}}],as: "stock"}},
+          { $unwind: "$stock" },
+          {$lookup: {from: "products",let : { productId : "$stock.product"},pipeline : [{ $match: {$expr : {$eq : ["$_id", "$$productId"]}}},
+            {$project: {_id : 1,name : 1}}],as : "product"}},
+          { $unwind: "$product" },
+          {$lookup: {from: "shops",let: { shopId: "$stock.shop" },pipeline: [{$match: {$expr: { $eq: ["$_id", "$$shopId"] }}},
+            {$project: {_id: 1,owner: 1}}],as: "shop"}},
+          { $unwind: "$shop" },
+          {$match:{"shop.owner": new mongoose.Types.ObjectId("698feee872bf4c1098012a51")}}
+          ,{$group: {_id: "$_id", order: { $first: "$$ROOT" }}},
+          {$replaceRoot: { newRoot: "$order" }},
+          {$project: {
+            _id:1,orderCategory:1,total:1,buyer:1,created_at:1
+          }}
+    ]);
+  return orders;
+};
+
 
 
 const updateOrder = async (id, payload) => {
@@ -131,5 +163,6 @@ module.exports = {
   getOrderById,
   updateOrder,
   deleteOrder,
-  createOrderWithItems
+  createOrderWithItems,
+  getOrderByOwnerId
 };

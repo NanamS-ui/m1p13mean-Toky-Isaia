@@ -7,19 +7,153 @@ const buildError = (message, status = 400) => {
   err.status = status;
   return err;
 };
+const getDashboard = async (ownerId, limite = 5, startDate, nombre = 5) => {
 
-const getOrderItemsAnalytics = async (
-  shopOwnerId,
-  startDate,
-  endDate
-) => {
+  const [topData, orderData] = await Promise.all([
+    getTop5ProductByOwner(ownerId, limite, startDate),
+    getLastOrderByOwner(ownerId, nombre)
+  ]);
 
-    const start = new Date(`${startDate}T00:00:00.000Z`);
-    const end = new Date(`${endDate}T23:59:59.999Z`);
+  const products = topData[0] || {};
+  const orders = orderData[0] || {};
+
+  return {
+    topProducts: products.topProduct || [],
+    weeklyRevenue: products.weeklyRevenue || [],
+    dailyRevenue: products.dailyRevenue?.[0]?.revenue ?? 0,
+    monthlyRevenue: products.monthlyRevenue?.[0]?.revenue ?? 0,
+    lastOrders: orders.lastOrder || [],
+    orderStats: orders.stat?.[0] || {}
+  };
+};
+
+const getTop5ProductByOwner = async(ownerId, limite =5, startDate)=>{
+  const start = startDate ? new Date(startDate) : new Date();
+  start.setUTCHours(23, 59, 59, 999);
+
+  const sevenDaysAgo = new Date(start);
+  sevenDaysAgo.setUTCDate(start.getUTCDate() - 7);
+  
+  const startOfDay = new Date(start);
+  startOfDay.setUTCHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date(start);
+  startOfMonth.setUTCDate(1);
+  startOfMonth.setUTCHours(0, 0, 0, 0);
+  return OrderItem.aggregate([
+    {$match: {deleted_at : null}},
+    {$lookup: {from: "stocks", let : {stockId:"$stock"},
+      pipeline:[{$match: {$expr : {$eq : ["$_id", "$$stockId"]}}},
+        {$project: {_id :1, product:1, shop:1}}],as: "stock"}},
+    {$unwind: "$stock"},
+    {$lookup: {from: "shops", let : {shopId:"$stock.shop"},
+      pipeline:[{$match: {$expr : {$eq : ["$_id", "$$shopId"]}}},
+        {$project: {_id :1, owner:1}}],as: "shop"}},
+    {$unwind: "$shop"},
+    {$match :{"shop.owner": new mongoose.Types.ObjectId(ownerId)}},
+    {$lookup: {from: "products", let : {productId:"$stock.product"},
+      pipeline:[{$match: {$expr : {$eq : ["$_id", "$$productId"]}}},
+        {$project: {_id :1, name:1}}],as: "product"}},
+    {$unwind: "$product"},
+    {$addFields:{
+        revenue : {$multiply :["$quantity", "$unit_price",{$subtract:[1,{$divide: [{ $ifNull: ["$promotion_percentage", 0] },100]}]}]}
+    }},
+    {$facet: {
+      topProduct: [ {$group: {
+        _id: "$product._id",
+        productName : {$first : "$product.name"},
+        totalQuantity:{$sum : "$quantity"},
+        totalRevenue : {$sum : "$revenue"}
+        }},
+        {$sort: {totalRevenue: -1}},
+        {$limit: limite} ],
+       
+      weeklyRevenue : [{$match:{created_at : {
+              $gte : sevenDaysAgo,
+              $lte : start}}},
+          {$group:{
+              _id : {$dateToString : {format : "%Y-%m-%d",date: "$created_at"}},
+              revenue : {$sum : "$revenue"}
+          }}],
+      dailyRevenue : [
+        {$match:{created_at : {$gte : startOfDay, $lte : start}}},
+        {$group :{ _id : null, revenue : {$sum : "$revenue"}}}
+      ],
+      monthlyRevenue : [
+        {$match:{created_at : {$gte : startOfMonth, $lte : start }}},
+        {$group :{ _id : null, revenue : {$sum : "$revenue"}}}
+      ]
+    }},
+  ]);
+};
+
+const getLastOrderByOwner = async(ownerId, nombre = 5)=>{
+    return Order.aggregate([
+      { $match: {deleted_at: null}},
+      {$lookup: {from: "order_categories", localField: "orderCategory", foreignField: "_id", as: "orderCategory"}},
+      {$unwind: "$orderCategory"},
+      {$lookup: { from: "users", let : {idUser : "$buyer" },pipeline:[{$match: {$expr : {$eq: ["$_id","$$idUser"]}}}, 
+        {$project:{_id:1, name:1}}],as: "buyer"}},
+      {$unwind : "$buyer"},
+      {$lookup: { from: "order_items", let : {orderId : "$_id"},pipeline :[{$match: {$expr : {$eq : ["$order", "$$orderId"]}}},
+        {$project: {_id :1,stock : 1,deleted_at : 1}}],as: "orderItems"}},
+      {$unwind: "$orderItems"},
+      {$match: {"orderItems.deleted_at": null}},
+      { $lookup: {from: "stocks", let : {stockId :"$orderItems.stock" },pipeline:[{$match:{$expr:{$eq : ["$_id","$$stockId" ]}}},
+        {$project:{_id : 1,product : 1,shop : 1}}],as: "stock"}},
+      { $unwind: "$stock" },
+      {$lookup: {from: "products",let : { productId : "$stock.product"},pipeline : [{ $match: {$expr : {$eq : ["$_id", "$$productId"]}}},
+        {$project: {_id : 1,name : 1}}],as : "product"}},
+      { $unwind: "$product" },
+      {$lookup: {from: "shops",let: { shopId: "$stock.shop" },pipeline: [{$match: {$expr: { $eq: ["$_id", "$$shopId"] }}},
+        {$project: {_id: 1,owner: 1}}],as: "shop"}},
+      { $unwind: "$shop" },
+      {$match:{"shop.owner": new mongoose.Types.ObjectId(ownerId),}}
+      ,{$group: {_id: "$_id", order: { $first: "$$ROOT" }}},
+      {$replaceRoot: { newRoot: "$order" }},
+      {$facet :{
+        lastOrder : [{$sort: { created_at: -1 }},
+      {$limit: nombre},
+      {$project: {_id: 1, total : 1, category: "$orderCategory.value",buyerName: "$buyer.name",}}],
+          stat: [
+              {$group:{
+                 _id: null, totalOrders: { $sum: 1 }, totalRevenue: { $sum: "$total" },
+                 pending: {$sum: {$cond: [{ $eq: ["$status", "En attente"] }, 1, 0]}},
+                 confirmed: {$sum: {$cond: [{ $eq: ["$status", "Confirmée"] }, 1, 0]}},
+                preparing: {$sum: {$cond: [{ $eq: ["$status", "En préparation"] }, 1, 0]}},
+                delivered: {$sum: {$cond: [{ $eq: ["$status", "Livrée"] }, 1, 0]}},
+                cancelled: {$sum: {$cond: [{ $eq: ["$status", "Annulée"] }, 1, 0]}}
+              }},
+              {$addFields:{
+                averageBasket: {$cond: [{ $eq: ["$totalOrders", 0] },0,{ $divide: ["$totalRevenue", "$totalOrders"] }]},
+                confirmedPercent: {$multiply: [{ $divide: ["$confirmed", "$totalOrders"] },100]},
+                preparingPercent: {$multiply: [{ $divide: ["$preparing", "$totalOrders"] },100]},
+                deliveredPercent: {$multiply: [{ $divide: ["$delivered", "$totalOrders"] },100]},
+                cancelledPercent: {$multiply: [{ $divide: ["$cancelled", "$totalOrders"] },100]}
+              }}
+          ],
+      }}
+      
+  ]);
+}
+
+const getOrderItemsAnalytics = async (shopOwnerId,startDate,endDate) => {
+
+  const match = { deleted_at: null };
+
+  if (startDate || endDate) {
+    match.created_at = {};
+    if (startDate) {
+      match.created_at.$gte = new Date(`${startDate}T00:00:00.000Z`);
+    }
+    if (endDate) {
+      match.created_at.$lte = new Date(`${endDate}T23:59:59.999Z`);
+    }
+  }
 
   return await OrderItem.aggregate([
 
-    {$match: {deleted_at: null, created_at: { $gte: start, $lte: end }}},
+    { $match: match },
 
     { $lookup: {from: "stocks", localField: "stock", foreignField: "_id", as: "stock"}},
     { $unwind: "$stock" },
@@ -37,90 +171,30 @@ const getOrderItemsAnalytics = async (
     { $lookup: { from: "order_categories", localField: "order.orderCategory", foreignField: "_id",as: "order.orderCategory"}},
     { $unwind: { path: "$order.orderCategory", preserveNullAndEmptyArrays: true } },
 
-    
-    {
-      $facet: {
-        globalStats: [{
-            $group: {_id: null,
-                CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}},
-                totalOrders: {$addToSet: "$order._id"},
-                panierMoyen: { $avg: "$order.total" },
-                delivered: {$sum: {
-                    $cond: [
-                        { $eq: ["$order.orderCategory.value", "Livré"] },
-                        1,
-                        0
-                    ]}},
+    {$facet: {globalStats: 
+              [{$group: {_id: null,CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}},totalOrders: {$addToSet: "$order._id"},
+                panierMoyen: { $avg: "$order.total" },delivered: {$sum: {$cond: [{ $eq: ["$order.orderCategory.value", "Livré"] },1,0]}},
+                cancelled: {$sum: {$cond: [{ $eq: ["$order.orderCategory.value", "Annulé"] },1,0]}},
+                pending: {$sum: {$cond: [{ $eq: ["$order.orderCategory.value", "En attente"] },1,0]}},
+                totalReduction: {$sum: {$multiply: ["$unit_price","$quantity",{ $divide: ["$promotion_percentage", 100] }]}},
+              avgReduction: { $avg: "$promotion_percentage" },ordersWithPromo: {$addToSet: {$cond: [{ $gt: ["$promotion_percentage", 0] },"$order._id",null]}}}},
+          {$project: {CA: 1,panierMoyen: 1,totalReduction: 1,avgReduction: 1,totalOrders: { $size: "$totalOrders" },
+              ordersWithPromo: {$size: {$filter: {input: "$ordersWithPromo",as: "o",cond: { $ne: ["$$o", null] }}}},
+              delivered: 1,cancelled: 1,pending: 1
+            }}],
 
-              cancelled: {$sum: {
-                  $cond: [
-                        { $eq: ["$order.orderCategory.value", "Annulé"] },
-                        1,
-                        0]}},
-
-              totalReduction: {$sum: {
-                  $multiply: ["$unit_price","$quantity",{ $divide: ["$promotion_percentage", 100] }]
-                }},
-              avgReduction: { $avg: "$promotion_percentage" },
-              ordersWithPromo: {$addToSet: {
-                  $cond: [
-                    { $gt: ["$promotion_percentage", 0] },
-                    "$order._id",
-                    null
-                  ]
-                }}
-            }
-          },
-          {
-            $project: {
-              CA: 1,
-              panierMoyen: 1,
-              totalReduction: 1,
-              avgReduction: 1,
-              totalOrders: { $size: "$totalOrders" },
-              ordersWithPromo: {
-                $size: {$filter: {input: "$ordersWithPromo",as: "o",cond: { $ne: ["$$o", null] }}}
-              },
-              delivered: 1,
-              cancelled: 1
-            }
-          }
-        ],
-
-        /* ===== CA PAR MOIS ===== */
         caParMois: [
-          {$group: {
-              _id: { $month: "$order.created_at" },
-              CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}}
-            }
-          },{ $sort: { "_id": 1 } }
+          {$group: {_id: { $month: "$order.created_at" },CA: {$sum: {$multiply: ["$unit_price", "$quantity"]}}}},{ $sort: { "_id": 1 } }
         ],
 
-        
         productsSorted: [
-        {$group: {
-            _id: "$stock.product",
-            totalSold: { $sum: "$quantity" },
-            CA: { $sum: { $multiply: ["$unit_price", "$quantity"] } },
-            stock: { $first: "$stock.reste" }
-            }},{ $sort: { totalSold: -1 } }
-        ]
-    }
+        {$group: {_id: "$stock.product",totalSold: { $sum: "$quantity" },CA: { $sum: { $multiply: ["$unit_price", "$quantity"] } },
+            stock: { $first: "$stock.reste" }}},{ $sort: { totalSold: -1 } }
+        ]}
     },
-    {
-        $project: {
-            
-            top5Produits: { $slice: ["$productsSorted", 5] },
-
-            top3ProduitsFaibles: {$cond: [
-                    { $gt: [{ $size: "$productsSorted" }, 5] },
-                    { $slice: ["$productsSorted", 5, { $subtract: [{ $size: "$productsSorted" }, 5] }] },
-                    [] 
-                ]
-            },
-            globalStats: 1,
-            caParMois: 1
-        }
+    {$project: {top5Produits: { $slice: ["$productsSorted", 5] },
+            top3ProduitsFaibles: {$cond: [{ $gt: [{ $size: "$productsSorted" }, 5] },{ $slice: ["$productsSorted", 5, { $subtract: [{ $size: "$productsSorted" }, 5] }] },[] ]
+            },globalStats: 1,caParMois: 1}
     }
 
   ]);
@@ -197,5 +271,7 @@ const kpiOrderStat =async (start, end, userId)=>{
     return global;
 }
 module.exports ={
-    getOrderItemsAnalytics
+    getOrderItemsAnalytics,
+    getTop5ProductByOwner,
+    getDashboard
 }

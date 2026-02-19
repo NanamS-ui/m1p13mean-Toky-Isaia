@@ -7,6 +7,7 @@ router.use(requireAuth);
 
 router.get("/", ctrl.getOrders);
 router.get("/:id", ctrl.getOrderById);
+router.get("/owner/shop", ctrl.getOrderByOwnerId);
 
 router.post("/",  ctrl.createOrder);
 router.post("/items", ctrl.createOrderWithItems);

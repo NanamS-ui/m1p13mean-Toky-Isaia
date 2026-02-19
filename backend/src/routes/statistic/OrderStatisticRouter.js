@@ -8,5 +8,6 @@ router.use(requireAuth);
 
 
 router.get("/orders/boutique", OrderStatisticsController.getOrderItemsAnalytics);
+router.get("/orders/boutique/dashboard", OrderStatisticsController.getDashBoard);
 
 module.exports = router;

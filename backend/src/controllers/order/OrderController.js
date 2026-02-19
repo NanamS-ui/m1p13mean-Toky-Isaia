@@ -36,6 +36,18 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
+exports.getOrderByOwnerId = async (req, res) => {
+  try {
+    let { shopOwnerId} = req.query;
+    if(!shopOwnerId) shopOwnerId = req.user.id;
+    const orders = await OrderService.getOrderByOwnerId(shopOwnerId);
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 404).json({ message: error.message });
+  }
+};
+
 exports.updateOrder = async (req, res) => {
   try {
     const order = await OrderService.updateOrder(req.params.id, req.body);

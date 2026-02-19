@@ -18,30 +18,48 @@
   </div>
 
   <!-- Period Selector -->
-  <div class="period-selector">
-    <button [class.active]="activePeriod() === 'day'" (click)="setPeriod('day')">Aujourd'hui</button>
-    <button [class.active]="activePeriod() === 'week'" (click)="setPeriod('week')">Cette semaine</button>
-    <button [class.active]="activePeriod() === 'month'" (click)="setPeriod('month')">Ce mois</button>
-    <button [class.active]="activePeriod() === 'year'" (click)="setPeriod('year')">Cette année</button>
+  <div class="card filters-card">
+    <h3>Filtres</h3>
+    <div class="filters">
+
+      <!-- Date de début -->
+      <div class="form-group">
+        <label>Date de début</label>
+        <input type="date" [(ngModel)]="startDate" />
+      </div>
+
+      <!-- Date de fin -->
+      <div class="form-group">
+        <label>Date de fin</label>
+        <input type="date" [(ngModel)]="endDate" />
+      </div>
+
+      <!-- Bouton appliquer -->
+      <div class="form-group">
+        <br>
+        <button class="apply-btn" (click)="applyPeriod()">Appliquer</button>
+      </div>
   </div>
+</div>
+
 
   <!-- Main KPIs -->
   <div class="kpi-grid">
     <div class="kpi-card kpi-card--primary">
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">payments</span>
-        <span class="kpi-card__trend kpi-card__trend--up">+12.5%</span>
+        <!-- <span class="kpi-card__trend kpi-card__trend--up">+12.5%</span> -->
       </div>
-      <div class="kpi-card__value">{{ formatCurrency(kpis().totalRevenue) }}</div>
+      <div class="kpi-card__value">{{ formatCurrency(statistiques?.stats[0].globalStats[0].CA) }}</div>
       <div class="kpi-card__label">Chiffre d'affaires</div>
     </div>
 
     <div class="kpi-card">
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">shopping_bag</span>
-        <span class="kpi-card__trend kpi-card__trend--up">+8.3%</span>
+        <!-- <span class="kpi-card__trend kpi-card__trend--up">+8.3%</span> -->
       </div>
-      <div class="kpi-card__value">{{ kpis().totalOrders }}</div>
+      <div class="kpi-card__value">{{ statistiques?.stats[0].globalStats[0].totalOrders }}</div>
       <div class="kpi-card__label">Commandes</div>
     </div>
 
@@ -49,7 +67,7 @@
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">shopping_cart</span>
       </div>
-      <div class="kpi-card__value">{{ formatCurrency(kpis().avgOrderValue) }}</div>
+      <div class="kpi-card__value">{{ formatCurrency(statistiques?.stats[0].globalStats[0].panierMoyen) }}</div>
       <div class="kpi-card__label">Panier moyen</div>
     </div>
 
@@ -57,17 +75,17 @@
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">conversion_path</span>
       </div>
-      <div class="kpi-card__value">{{ kpis().conversionRate }}%</div>
-      <div class="kpi-card__label">Taux de conversion</div>
+      <div class="kpi-card__value">{{ statistiques?.stats[0].globalStats[0].delivered }}</div>
+      <div class="kpi-card__label">Commandes livrées</div>
     </div>
 
     <div class="kpi-card kpi-card--warning">
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">remove_shopping_cart</span>
-        <span class="kpi-card__trend kpi-card__trend--down">-2.1%</span>
+        <!-- <span class="kpi-card__trend kpi-card__trend--down">-2.1%</span> -->
       </div>
-      <div class="kpi-card__value">{{ kpis().cartAbandonRate }}%</div>
-      <div class="kpi-card__label">Abandon panier</div>
+      <div class="kpi-card__value">{{ statistiques?.stats[0].globalStats[0].cancelled }}</div>
+      <div class="kpi-card__label">Commandes annulées</div>
     </div>
 
     <div class="kpi-card">
