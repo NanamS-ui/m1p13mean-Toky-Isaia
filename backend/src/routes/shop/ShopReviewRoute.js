@@ -12,4 +12,5 @@ router.post("/", ctrl.createShopReview);
 router.put("/:id", ctrl.updateShopReview);
 router.delete("/:id", ctrl.deleteShopReview);
 router.get("/boutique/by-owner", ctrl.getShopReviewsByOwner);
+router.get("/boutique/by-shop", ctrl.getShopReviewsByShop);
 module.exports = router;

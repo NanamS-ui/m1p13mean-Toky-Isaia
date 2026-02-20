@@ -79,7 +79,50 @@ const getShopReviewsByOwner = async (ownerId) => {
 
   return reviews;
 };
-module.exports = {
+const getShopReviewsByShop = async (shopId) => {
+  if (!mongoose.Types.ObjectId.isValid(shopId)) {
+    throw buildError("shopId invalide", 400);
+  }
+
+  const shopObjectId = new mongoose.Types.ObjectId(shopId);
+
+  const reviews = await ShopReview.aggregate([
+    {
+      $lookup: {
+        from: "shops",
+        localField: "shop",
+        foreignField: "_id",
+        as: "shop"
+      }
+    },
+    { $unwind: "$shop" },
+    { $match: { "shop._id": shopObjectId } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    { $unwind: "$user" },
+    {
+      $project: {
+        _id: 1,
+        rating: 1,
+        comment: 1,
+        response: 1,
+        created_at: 1,
+        updated_at: 1,
+        user: { _id: 1, name: 1, email: 1 },
+        shop: { _id: 1, name: 1 }
+      }
+    }
+  ]);
+
+  return reviews;
+};
+module.exports = {getShopReviewsByShop,
   createShopReview,
   getShopReviews,
   getShopReviewById,

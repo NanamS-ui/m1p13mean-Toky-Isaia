@@ -60,3 +60,16 @@ exports.getShopReviewsByOwner = async (req, res) => {
     res.status(error.status || 500).json({ message: error.message });
   }
 };
+exports.getShopReviewsByShop = async (req, res) => {
+  try {
+    let { shopId } = req.query;
+    if (!shopId) {
+      res.status(400).json({ message: "Shop id is required" });
+    }
+
+    const reviews = await ShopReviewService.getShopReviewsByShop(shopId);
+    res.json(reviews);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
