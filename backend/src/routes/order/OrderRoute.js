@@ -6,8 +6,9 @@ const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 router.use(requireAuth);
 
 router.get("/", ctrl.getOrders);
-router.get("/:id", ctrl.getOrderById);
+router.get("/buyer", ctrl.getOrdersByBuyer);
 router.get("/owner/shop", ctrl.getOrderByOwnerId);
+router.get("/:id", ctrl.getOrderById);
 
 router.post("/",  ctrl.createOrder);
 router.post("/items", ctrl.createOrderWithItems);

@@ -1,7 +1,10 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
+import { OrdersService } from '../../../core/services/order/order.service';
+import { PaymentService } from '../../../core/services/payment/payment.service';
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -24,72 +27,101 @@ export interface Order {
   styleUrl: './mes-commandes.component.css'
 })
 export class MesCommandesComponent {
-  // Mock orders data
-  private allOrders = signal<Order[]>([
-    {
-      id: '1',
-      orderNumber: 'CMD-2025-001',
-      date: new Date('2025-01-15'),
-      total: 234000,
-      status: 'delivered',
-      itemsCount: 3,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1'
-    },
-    {
-      id: '2',
-      orderNumber: 'CMD-2025-002',
-      date: new Date('2025-01-20'),
-      total: 185000,
-      status: 'shipped',
-      itemsCount: 1,
-      boutiqueName: 'TechZone',
-      boutiqueId: '2'
-    },
-    {
-      id: '3',
-      orderNumber: 'CMD-2025-003',
-      date: new Date('2025-01-25'),
-      total: 590000,
-      status: 'preparing',
-      itemsCount: 4,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1'
-    },
-    {
-      id: '4',
-      orderNumber: 'CMD-2025-004',
-      date: new Date('2025-01-28'),
-      total: 199000,
-      status: 'confirmed',
-      itemsCount: 1,
-      boutiqueName: 'TechZone',
-      boutiqueId: '2'
-    },
-    {
-      id: '5',
-      orderNumber: 'CMD-2025-005',
-      date: new Date('2025-01-30'),
-      total: 140000,
-      status: 'pending',
-      itemsCount: 2,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1'
-    },
-    {
-      id: '6',
-      orderNumber: 'CMD-2024-098',
-      date: new Date('2024-12-10'),
-      total: 320000,
-      status: 'cancelled',
-      itemsCount: 2,
-      boutiqueName: 'TechZone',
-      boutiqueId: '2'
-    }
-  ]);
+  private ordersService = inject(OrdersService);
+  private paymentService = inject(PaymentService);
+  private router = inject(Router);
+
+  private allOrders = signal<Order[]>([]);
+  private paymentsByOrderId = signal<Record<string, any | null>>({});
 
   selectedStatus = signal<OrderStatus | 'all'>('all');
   searchQuery = signal<string>('');
+
+  constructor() {
+    this.loadOrders();
+  }
+
+  private mapCategoryToStatus(value: string | undefined | null): OrderStatus {
+    const v = String(value || '').toLowerCase();
+    if (v.includes('attente')) return 'pending';
+    if (v.includes('confirm')) return 'confirmed';
+    if (v.includes('prépar') || v.includes('prepar')) return 'preparing';
+    if (v.includes('expédi') || v.includes('expedi') || v.includes('shipp')) return 'shipped';
+    if (v.includes('livr')) return 'delivered';
+    if (v.includes('annul')) return 'cancelled';
+    return 'pending';
+  }
+
+  private buildBoutiqueInfo(rawOrder: any): { boutiqueName: string; boutiqueId: string } {
+    const items = rawOrder?.orderItems;
+    const shops: Array<{ id: string; name: string }> = [];
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        const shop = item?.stock?.shop;
+        if (shop?._id && shop?.name) {
+          shops.push({ id: String(shop._id), name: String(shop.name) });
+        }
+      }
+    }
+    const unique = new Map<string, string>();
+    for (const s of shops) unique.set(s.id, s.name);
+    const arr = Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
+    if (arr.length === 0) return { boutiqueName: '-', boutiqueId: '' };
+    if (arr.length === 1) return { boutiqueName: arr[0].name, boutiqueId: arr[0].id };
+    return { boutiqueName: `${arr.length} boutiques`, boutiqueId: arr[0].id };
+  }
+
+  private toOrderVM(raw: any): Order {
+    const id = String(raw?._id || raw?.id || '');
+    const createdAt = raw?.created_at ? new Date(raw.created_at) : new Date();
+    const categoryValue = raw?.orderCategory?.value;
+    const boutique = this.buildBoutiqueInfo(raw);
+    const itemsCount = Array.isArray(raw?.orderItems) ? raw.orderItems.length : 0;
+    return {
+      id,
+      orderNumber: id,
+      date: createdAt,
+      total: Number(raw?.total || 0),
+      status: this.mapCategoryToStatus(categoryValue),
+      itemsCount,
+      boutiqueName: boutique.boutiqueName,
+      boutiqueId: boutique.boutiqueId
+    };
+  }
+
+  private loadOrders(): void {
+    this.ordersService.getMyOrders().subscribe({
+      next: (rawOrders) => {
+        const orders = (rawOrders || []).map((o: any) => this.toOrderVM(o));
+        this.allOrders.set(orders);
+
+        if (!orders.length) {
+          this.paymentsByOrderId.set({});
+          return;
+        }
+
+        forkJoin(
+          orders.map((o) =>
+            this.paymentService.getLatestPaymentForOrder(o.id).pipe(
+              catchError(() => of(null))
+            )
+          )
+        ).subscribe({
+          next: (payments) => {
+            const map: Record<string, any | null> = {};
+            for (let i = 0; i < orders.length; i++) {
+              map[orders[i].id] = payments[i];
+            }
+            this.paymentsByOrderId.set(map);
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Erreur chargement commandes', err);
+        this.allOrders.set([]);
+      }
+    });
+  }
 
   // Filtered orders
   filteredOrders = computed(() => {
@@ -173,5 +205,16 @@ export class MesCommandesComponent {
   downloadInvoice(orderId: string): void {
     // TODO: Implement invoice download
     console.log('Download invoice for order:', orderId);
+  }
+
+  isPaymentNull(orderId: string): boolean {
+    const map = this.paymentsByOrderId();
+    return Object.prototype.hasOwnProperty.call(map, orderId) && map[orderId] === null;
+  }
+
+  payOrder(orderId: string): void {
+    this.router.navigate(['/acheteur/checkout'], {
+      queryParams: { orderId }
+    });
   }
 }

@@ -46,6 +46,32 @@ const OpeningHourSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const BankAccountSchema = new mongoose.Schema(
+  {
+    bank_name: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    account_holder: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    account_number: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    note: {
+      type: String,
+      trim: true,
+      default: null
+    }
+  },
+  { _id: false }
+);
+
 
 const ShopSchema = new mongoose.Schema(
   {
@@ -73,6 +99,11 @@ const ShopSchema = new mongoose.Schema(
       type: String,
       lowercase: true,
       trim: true
+    },
+
+    bank_account: {
+      type: BankAccountSchema,
+      default: null
     },
     suspensions: {
       type: [SuspensionSchema],

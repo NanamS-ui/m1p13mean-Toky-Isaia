@@ -128,6 +128,17 @@
               <span class="material-symbols-outlined">visibility</span>
               Voir le détail
             </a>
+
+            @if (isPaymentNull(order.id)) {
+              <button
+                class="btn-view"
+                (click)="payOrder(order.id)"
+                title="Effectuer le paiement"
+              >
+                <span class="material-symbols-outlined">payments</span>
+                Effectuer le paiement
+              </button>
+            }
             @if (order.status === 'delivered' || order.status === 'cancelled') {
               <button
                 class="btn-download"
