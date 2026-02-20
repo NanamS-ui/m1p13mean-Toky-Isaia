@@ -31,6 +31,7 @@ interface Conversation {
   styleUrl: './messagerie.component.css'
 })
 export class MessagerieComponent {
+  recherche :string = "";
   lastMessages:any;
   selectedMesssage : any;
   private authService = inject(AuthService);
@@ -45,11 +46,19 @@ export class MessagerieComponent {
       this.cdr.detectChanges();
     })
   }
+  get FilterLastMessage(){
+    let lastMessagesFiltered = this.lastMessages;
+    if(this.recherche !==''){
+      lastMessagesFiltered = lastMessagesFiltered.filter((r:any) => r.name.toLowerCase().includes(this.recherche.toLowerCase()));
+    }
+
+    return lastMessagesFiltered;
+  }
   formatDate(date?: string | Date): string {
     if (!date) return '-';
     
     const d = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(d.getTime())) return '-'; // sécurité
+    if (isNaN(d.getTime())) return '-'; 
     
     return new Intl.DateTimeFormat('fr-FR', {
       year: 'numeric',
@@ -61,7 +70,7 @@ export class MessagerieComponent {
   }
   selectConversation2(conv: any): void {
     forkJoin({
-      selectedMessage: this.messengerService.getConversation(conv?.lastMessage?.otherUser?._id)
+      selectedMessage: this.messengerService.getConversation(conv?._id)
     }).subscribe(({selectedMessage})=>{
       console.log(selectedMessage);
       this.selectedMesssage = {conv : conv,selectedMessage:selectedMessage};
@@ -78,7 +87,7 @@ export class MessagerieComponent {
     const conv = this.selectedMesssage!;
     const messagePayload = {
       sender: currentUser.id,
-      recipient: this.selectedMesssage.conv.lastMessage.otherUser._id,
+      recipient: this.selectedMesssage.conv._id,
       message: this.newMessage,
       created_date : new Date()
     };
@@ -92,18 +101,28 @@ export class MessagerieComponent {
           
         ]
       };
-      this.lastMessages = this.lastMessages.map((c: any) =>
-        c._id === this.selectedMesssage.conv._id
-          ? {
-              ...c,
-              lastMessage: {
-                ...c.lastMessage,
-                message: this.newMessage,
-                created_date: new Date()
-              }
-            }
-          : c
+      
+      const updatedConv = this.lastMessages.find(
+        (c: any) => c._id === this.selectedMesssage.conv._id
       );
+
+      if (!updatedConv) return;
+
+      const updated = {
+        ...updatedConv,
+        lastMessage: [
+          {
+            ...updatedConv.lastMessage?.[0],
+            message: this.newMessage,
+            created_date: new Date()
+          }
+        ]
+      };
+      this.lastMessages = this.lastMessages.filter(
+        (c: any) => c._id !== updatedConv._id
+      );
+
+      this.lastMessages.unshift(updated);
       this.newMessage = '';
       this.cdr.detectChanges();
     });

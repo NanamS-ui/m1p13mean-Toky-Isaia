@@ -10,12 +10,12 @@
     <!-- Conversations List -->
     <div class="conversations-list">
       <div class="conversations-header">
-        <input type="text" placeholder="Rechercher une conversation..." class="search-input" />
+        <input [(ngModel)]="recherche" type="text" placeholder="Rechercher un utilisateur..." class="search-input" />
       </div>
       <div class="conversations">
-        @for (conv of lastMessages; track conv?._id) {
+        @for (conv of FilterLastMessage; track conv?._id) {
           <div class="conversation-item" 
-               [class.conversation-item--active]="selectedMesssage?.conv?.lastMessage?._id === conv?.lastMessage?._id"
+               [class.conversation-item--active]="selectedMesssage?.conv?.lastMessage[0]?._id === conv?.lastMessage[0]?._id"
                [class.conversation-item--unread]="conv.unread > 0"
                (click)="selectConversation2(conv)">
             <div class="conversation-avatar">
@@ -25,10 +25,10 @@
             </div>
             <div class="conversation-content">
               <div class="conversation-header">
-                <span class="conversation-name">{{ conv?.lastMessage?.otherUser?.name }}</span>
-                <span class="conversation-time">{{formatDate(conv?.lastMessage?.created_date)  }}</span>
+                <span class="conversation-name">{{ conv?.name }}</span>
+                <span class="conversation-time">{{formatDate(conv?.lastMessage[0]?.created_date)  }}</span>
               </div>
-              <p class="conversation-preview">{{ conv?.lastMessage?.message }}</p>
+              <p class="conversation-preview">{{ conv?.lastMessage[0]?.message?? "Commencer à envoyer un message" }}</p>
             </div>
             <!-- @if (conv.unread > 0) {
               <span class="conversation-badge">{{ conv.unread }}</span>
@@ -52,7 +52,7 @@
               <span class="material-symbols-outlined">person</span>
             </div>
             <div class="chat-user-info">
-              <span class="chat-user-name">{{ selectedMesssage?.conv.lastMessage.otherUser.name }}</span>
+              <span class="chat-user-name">{{ selectedMesssage?.conv.name }}</span>
               <span class="chat-user-status">En ligne</span>
             </div>
           </div>
