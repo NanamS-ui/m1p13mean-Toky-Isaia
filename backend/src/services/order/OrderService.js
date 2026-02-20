@@ -77,6 +77,26 @@ const getOrders = async () => Order.find({ deleted_at: null })
   .populate("orderCategory")
   .populate("buyer");
 
+const getOrdersByBuyerId = async (buyerId) => {
+  const orders = await Order.find({ buyer: buyerId, deleted_at: null })
+    .sort({ created_at: -1 })
+    .populate("orderCategory")
+    .populate({
+      path: "orderItems",
+      match: { deleted_at: null },
+      populate: {
+        path: "stock",
+        select: "shop",
+        populate: {
+          path: "shop",
+          select: "name"
+        }
+      }
+    });
+
+  return orders;
+};
+
 
 const getOrderById = async (id) => {
   const order = await Order.findOne({
@@ -160,6 +180,7 @@ const deleteOrder = async (id) => {
 module.exports = {
   createOrder,
   getOrders,
+  getOrdersByBuyerId,
   getOrderById,
   updateOrder,
   deleteOrder,

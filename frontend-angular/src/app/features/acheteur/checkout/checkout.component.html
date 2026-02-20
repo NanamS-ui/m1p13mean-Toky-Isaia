@@ -258,84 +258,66 @@
             </h2>
 
             <form [formGroup]="paymentForm">
-              <!-- Card Number -->
               <div class="form-group">
-                <label for="cardNumber">Numéro de carte</label>
+                <label for="bankName">Nom de la banque</label>
                 <input
-                  id="cardNumber"
+                  id="bankName"
                   type="text"
-                  formControlName="cardNumber"
-                  placeholder="1234 5678 9012 3456"
-                  maxlength="19"
-                  (input)="onCardNumberInput($event)"
-                  [class.error]="paymentForm.get('cardNumber')?.invalid && paymentForm.get('cardNumber')?.touched"
+                  formControlName="bankName"
+                  placeholder="BNI, BOA, ..."
+                  [class.error]="paymentForm.get('bankName')?.invalid && paymentForm.get('bankName')?.touched"
                 />
-                @if (paymentForm.get('cardNumber')?.invalid && paymentForm.get('cardNumber')?.touched) {
-                  <p class="error-message">Numéro de carte invalide</p>
+                @if (paymentForm.get('bankName')?.invalid && paymentForm.get('bankName')?.touched) {
+                  <p class="error-message">Champ obligatoire</p>
                 }
               </div>
 
-              <!-- Card Details Row -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="expiryMonth">Mois</label>
-                  <input
-                    id="expiryMonth"
-                    type="text"
-                    formControlName="expiryMonth"
-                    placeholder="MM"
-                    maxlength="2"
-                    [class.error]="paymentForm.get('expiryMonth')?.invalid && paymentForm.get('expiryMonth')?.touched"
-                  />
-                  @if (paymentForm.get('expiryMonth')?.invalid && paymentForm.get('expiryMonth')?.touched) {
-                    <p class="error-message">Mois invalide</p>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="expiryYear">Année</label>
-                  <input
-                    id="expiryYear"
-                    type="text"
-                    formControlName="expiryYear"
-                    placeholder="YY"
-                    maxlength="2"
-                    [class.error]="paymentForm.get('expiryYear')?.invalid && paymentForm.get('expiryYear')?.touched"
-                  />
-                  @if (paymentForm.get('expiryYear')?.invalid && paymentForm.get('expiryYear')?.touched) {
-                    <p class="error-message">Année invalide</p>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="cvv">CVV</label>
-                  <input
-                    id="cvv"
-                    type="text"
-                    formControlName="cvv"
-                    placeholder="123"
-                    maxlength="4"
-                    [class.error]="paymentForm.get('cvv')?.invalid && paymentForm.get('cvv')?.touched"
-                  />
-                  @if (paymentForm.get('cvv')?.invalid && paymentForm.get('cvv')?.touched) {
-                    <p class="error-message">CVV invalide</p>
-                  }
-                </div>
+              <div class="form-group">
+                <label for="accountHolder">Titulaire du compte</label>
+                <input
+                  id="accountHolder"
+                  type="text"
+                  formControlName="accountHolder"
+                  placeholder="Nom et prénom"
+                  [class.error]="paymentForm.get('accountHolder')?.invalid && paymentForm.get('accountHolder')?.touched"
+                />
+                @if (paymentForm.get('accountHolder')?.invalid && paymentForm.get('accountHolder')?.touched) {
+                  <p class="error-message">Champ obligatoire</p>
+                }
               </div>
 
-              <!-- Cardholder Name -->
               <div class="form-group">
-                <label for="cardholderName">Nom sur la carte</label>
+                <label for="accountNumber">Numéro de compte (optionnel)</label>
                 <input
-                  id="cardholderName"
+                  id="accountNumber"
                   type="text"
-                  formControlName="cardholderName"
-                  placeholder="Jean Dupont"
-                  [class.error]="paymentForm.get('cardholderName')?.invalid && paymentForm.get('cardholderName')?.touched"
+                  formControlName="accountNumber"
+                  placeholder="0000 0000 0000"
                 />
-                @if (paymentForm.get('cardholderName')?.invalid && paymentForm.get('cardholderName')?.touched) {
-                  <p class="error-message">Nom invalide</p>
+              </div>
+
+              <div class="form-group">
+                <label for="reference">Référence / N° de transaction</label>
+                <input
+                  id="reference"
+                  type="text"
+                  formControlName="reference"
+                  placeholder="Ex: TRX123456"
+                  [class.error]="paymentForm.get('reference')?.invalid && paymentForm.get('reference')?.touched"
+                />
+                @if (paymentForm.get('reference')?.invalid && paymentForm.get('reference')?.touched) {
+                  <p class="error-message">Champ obligatoire</p>
                 }
+              </div>
+
+              <div class="form-group">
+                <label for="note">Note (optionnel)</label>
+                <input
+                  id="note"
+                  type="text"
+                  formControlName="note"
+                  placeholder="Informations complémentaires"
+                />
               </div>
             </form>
           </div>
@@ -417,7 +399,7 @@
 
           <h2>Commande confirmée !</h2>
           <p class="confirmation-message">
-            Votre commande a été enregistrée avec succès.
+            Votre commande a été enregistrée. Le paiement est en attente de confirmation par la boutique.
           </p>
 
           <div class="confirmation-details">
@@ -497,7 +479,7 @@
         </button>
       }
       @if (currentStep() === 2) {
-        <button class="btn-submit" (click)="submitOrder()">
+        <button class="btn-submit" (click)="submitOrder()" [disabled]="isSubmitting()">
           <span class="material-symbols-outlined">lock</span>
           Confirmer et payer
         </button>

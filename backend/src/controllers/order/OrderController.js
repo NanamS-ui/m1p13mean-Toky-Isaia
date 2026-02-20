@@ -27,6 +27,15 @@ exports.getOrders = async (req, res) => {
   }
 };
 
+exports.getOrdersByBuyer = async (req, res) => {
+  try {
+    const orders = await OrderService.getOrdersByBuyerId(req.user.id);
+    res.json(orders);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
+
 exports.getOrderById = async (req, res) => {
   try {
     const order = await OrderService.getOrderById(req.params.id);

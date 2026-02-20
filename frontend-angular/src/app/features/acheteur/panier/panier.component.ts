@@ -1,10 +1,11 @@
 import { Component, inject, Signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../../core/services/order/cart.service';
 import { CartItem } from '../../../core/models/order/cart-item.model';
 import { CartGroup } from '../../../core/models/order/cart-group.model';
+import { OrdersService } from '../../../core/services/order/order.service';
 
 @Component({
   selector: 'app-panier',
@@ -15,6 +16,8 @@ import { CartGroup } from '../../../core/models/order/cart-group.model';
 })
 export class PanierComponent {
   private cartService = inject(CartService);
+  private ordersService = inject(OrdersService);
+  private router = inject(Router);
 
   cartItems: WritableSignal<CartItem[]> = this.cartService.items;
   cartGroups: Signal<CartGroup[]> = this.cartService.groups;
@@ -67,9 +70,25 @@ export class PanierComponent {
   }
 
   proceedToCheckout(): void {
-    // TODO: Navigate to checkout
-    const orderItems = this.cartService.toOrderItems();
-    console.log('Proceed to checkout', orderItems);
+    if (this.isEmpty()) return;
+
+    const payload = {
+      total: this.total(),
+      orderItems: this.cartService.toOrderItems()
+    };
+
+    this.ordersService.createOrderWithItems(payload).subscribe({
+      next: (order) => {
+        const orderId = (order as any)?._id;
+        this.router.navigate(['/acheteur/checkout'], {
+          queryParams: orderId ? { orderId } : undefined
+        });
+      },
+      error: (err) => {
+        console.error('Erreur création commande', err);
+        alert(err?.error?.message || 'Erreur lors de la création de la commande');
+      }
+    });
   }
 
   isEmpty(): boolean {

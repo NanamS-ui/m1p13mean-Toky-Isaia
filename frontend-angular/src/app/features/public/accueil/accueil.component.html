@@ -82,7 +82,7 @@
           <a [routerLink]="['/boutiques', boutique.id]" class="boutique-card">
             <div class="boutique-card__logo">
               @if (boutique.logo) {
-                <img [src]="boutique.logo" [alt]="boutique.name" />
+                <img [src]="boutique.logo" alt="{{ boutique.name }}" title="{{ boutique.name }}" />
               } @else {
                 <span class="material-symbols-outlined">store</span>
               }
@@ -118,9 +118,9 @@
           <article class="event-card">
             <div class="event-card__image">
               @if (event.image) {
-                <img [src]="event.image" [alt]="event.title" />
+                <img [src]="event.image" alt="{{ event.title }}" title="{{ event.title }}" />
               } @else {
-                <span class="material-symbols-outlined">celebration</span>
+                <span class="material-symbols-outlined">{{ getCategoryIcon(event.categoryValue) }}</span>
               }
               <div class="event-card__date">
                 <span class="day">{{ event.date | date:'dd' }}</span>

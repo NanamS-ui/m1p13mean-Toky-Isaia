@@ -1,9 +1,14 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
 import { CartItem } from '../../../core/models/order/cart-item.model';
 import { CartGroup } from '../../../core/models/order/cart-group.model';
+import { CartService } from '../../../core/services/order/cart.service';
+import { OrdersService } from '../../../core/services/order/order.service';
+import { PaymentService } from '../../../core/services/payment/payment.service';
 
 interface DeliveryAddress {
   id: string;
@@ -32,64 +37,24 @@ type CheckoutStep = 1 | 2 | 3;
   styleUrl: './checkout.component.css'
 })
 export class CheckoutComponent {
+  private ordersService = inject(OrdersService);
+  private paymentService = inject(PaymentService);
+
   // Current step
   currentStep = signal<CheckoutStep>(1);
 
   // Delivery method
   deliveryMethod = signal<DeliveryMethod>('home');
 
-  // Mock cart data (same structure as panier component)
-  cartItems = signal<CartItem[]>([
-    {
-      stockId: '1',
-      productId: '1',
-      productName: 'Robe été fleurie',
-      price: 75000,
-      promoPrice: 59000,
-      quantity: 2,
-      boutiqueId: '1',
-      boutiqueName: 'Mode & Style',
-      inStock: true
-    },
-    {
-      stockId: '2',
-      productId: '2',
-      productName: 'Casque Bluetooth Pro',
-      price: 185000,
-      quantity: 1,
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      inStock: true
-    },
-    {
-      stockId: '3',
-      productId: '5',
-      productName: 'Montre connectée',
-      price: 250000,
-      promoPrice: 199000,
-      quantity: 1,
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      inStock: true
-    },
-    {
-      stockId: '4',
-      productId: '8',
-      productName: 'Sac à main cuir',
-      price: 180000,
-      promoPrice: 140000,
-      quantity: 1,
-      boutiqueId: '1',
-      boutiqueName: 'Mode & Style',
-      inStock: true
-    }
-  ]);
+  cartItems!: WritableSignal<CartItem[]>;
+  cartGroups!: Signal<CartGroup[]>;
+  total!: Signal<number>;
 
-  // Group items by shop
-  cartGroups = computed<CartGroup[]>(() => {
+  private orderCartItems = signal<CartItem[]>([]);
+  private orderCartGroups = computed<CartGroup[]>(() => {
     const groups = new Map<string, CartGroup>();
-    
-    this.cartItems().forEach(item => {
+
+    this.orderCartItems().forEach((item) => {
       if (!groups.has(item.boutiqueId)) {
         groups.set(item.boutiqueId, {
           boutiqueId: item.boutiqueId,
@@ -98,27 +63,25 @@ export class CheckoutComponent {
           subtotal: 0
         });
       }
-      
+
       const group = groups.get(item.boutiqueId)!;
       group.items.push(item);
       const itemPrice = item.promoPrice ?? item.price;
       group.subtotal += itemPrice * item.quantity;
     });
-    
+
     return Array.from(groups.values());
   });
-
-  // Total calculation
-  total = computed(() => {
-    return this.cartGroups().reduce((sum, group) => sum + group.subtotal, 0);
-  });
+  private orderCartTotal = computed(() =>
+    this.orderCartGroups().reduce((sum, group) => sum + group.subtotal, 0)
+  );
 
   // Mock delivery addresses
   deliveryAddresses = signal<DeliveryAddress[]>([
     {
       id: '1',
       label: 'Domicile',
-      street: '123 Avenue de l\'Indépendance',
+      street: "123 Avenue de l'Indépendance",
       city: 'Antananarivo',
       postalCode: '101',
       isDefault: true
@@ -132,8 +95,6 @@ export class CheckoutComponent {
       isDefault: false
     }
   ]);
-
-  selectedAddressId = signal<string>('1');
 
   // Mock pickup shops
   pickupShops = signal<PickupShop[]>([
@@ -151,7 +112,8 @@ export class CheckoutComponent {
     }
   ]);
 
-  selectedShopId = signal<string>('');
+  orderId = signal<string | null>(null);
+  isSubmitting = signal<boolean>(false);
 
   // Order number (generated after confirmation)
   orderNumber = signal<string>('');
@@ -162,8 +124,15 @@ export class CheckoutComponent {
 
   constructor(
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
+    private cartService: CartService
   ) {
+    // Par défaut: récap basé sur le panier local
+    this.cartItems = this.cartService.items;
+    this.cartGroups = this.cartService.groups;
+    this.total = this.cartService.total;
+
     // Delivery form
     this.deliveryForm = this.fb.nonNullable.group({
       method: ['home', Validators.required],
@@ -171,17 +140,17 @@ export class CheckoutComponent {
       shopId: ['']
     });
 
-    // Payment form
+    // Payment form (virement / infos bancaires)
     this.paymentForm = this.fb.nonNullable.group({
-      cardNumber: ['', [Validators.required, Validators.pattern(/^\d{4}\s?\d{4}\s?\d{4}\s?\d{4}$/)]],
-      expiryMonth: ['', [Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])$/)]],
-      expiryYear: ['', [Validators.required, Validators.pattern(/^\d{2}$/)]],
-      cvv: ['', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
-      cardholderName: ['', [Validators.required, Validators.minLength(3)]]
+      bankName: ['', [Validators.required]],
+      accountHolder: ['', [Validators.required]],
+      accountNumber: [''],
+      reference: ['', [Validators.required]],
+      note: ['']
     });
 
     // Watch delivery method changes
-    this.deliveryForm.get('method')?.valueChanges.subscribe(method => {
+    this.deliveryForm.get('method')?.valueChanges.subscribe((method) => {
       this.deliveryMethod.set(method);
       if (method === 'home') {
         this.deliveryForm.get('shopId')?.clearValidators();
@@ -193,6 +162,76 @@ export class CheckoutComponent {
       this.deliveryForm.get('shopId')?.updateValueAndValidity();
       this.deliveryForm.get('addressId')?.updateValueAndValidity();
     });
+
+    this.route.queryParamMap.subscribe((params) => {
+      const id = params.get('orderId');
+      this.orderId.set(id);
+
+      if (id) {
+        // Mode commande: récap basé sur l'order
+        this.cartItems = this.orderCartItems;
+        this.cartGroups = this.orderCartGroups;
+        this.total = this.orderCartTotal;
+        this.loadOrderSummary(id);
+      } else {
+        // Mode panier
+        this.cartItems = this.cartService.items;
+        this.cartGroups = this.cartService.groups;
+        this.total = this.cartService.total;
+      }
+    });
+  }
+
+  private loadOrderSummary(orderId: string): void {
+    this.ordersService.getOrderByIdAny(orderId).subscribe({
+      next: (order) => {
+        const items = this.mapOrderToCartItems(order);
+        this.orderCartItems.set(items);
+      },
+      error: (err) => {
+        console.error('Erreur chargement commande', err);
+        alert(err?.error?.message || 'Erreur lors du chargement de la commande');
+        this.orderCartItems.set([]);
+      }
+    });
+  }
+
+  private mapOrderToCartItems(order: any): CartItem[] {
+    const orderItems = order?.orderItems;
+    if (!Array.isArray(orderItems)) return [];
+
+    return orderItems
+      .map((item: any): CartItem | null => {
+        const stock = item?.stock;
+        const product = stock?.product;
+        const shop = stock?.shop;
+
+        if (!stock?._id || !product?._id || !shop?._id) {
+          return null;
+        }
+
+        const unitPrice = Number(item?.unit_price || 0);
+        const promoPct = Number(item?.promotion_percentage || 0);
+        const qty = Number(item?.quantity || 0);
+        const promoPrice = promoPct > 0 ? unitPrice * (1 - promoPct / 100) : undefined;
+
+        const reste = stock?.reste;
+        const inStock = typeof reste === 'number' ? reste >= qty : true;
+
+        return {
+          stockId: String(stock._id),
+          productId: String(product._id),
+          productName: String(product.name || 'Produit'),
+          productImage: product.image || undefined,
+          price: unitPrice,
+          promoPrice,
+          quantity: qty,
+          boutiqueId: String(shop._id),
+          boutiqueName: String(shop.name || 'Boutique'),
+          inStock
+        };
+      })
+      .filter((x: CartItem | null): x is CartItem => x !== null);
   }
 
   formatCurrency(value: number): string {
@@ -210,25 +249,27 @@ export class CheckoutComponent {
   }
 
   getSelectedAddress(): DeliveryAddress | undefined {
-    return this.deliveryAddresses().find(addr => addr.id === this.selectedAddressId());
+    const addressId = this.deliveryForm.get('addressId')?.value;
+    return this.deliveryAddresses().find((addr) => addr.id === addressId);
   }
 
   getSelectedShop(): PickupShop | undefined {
-    return this.pickupShops().find(shop => shop.id === this.selectedShopId());
+    const shopId = this.deliveryForm.get('shopId')?.value;
+    return this.pickupShops().find((shop) => shop.id === shopId);
   }
 
   addNewAddress(): void {
-    // TODO: Open address form modal/dialog
     console.log('Add new address');
   }
 
   // Step navigation
   goToStep(step: CheckoutStep): void {
+    if (step === 3 && !this.orderNumber()) {
+      return;
+    }
     if (step < this.currentStep()) {
-      // Allow going back
       this.currentStep.set(step);
     } else if (step === this.currentStep() + 1) {
-      // Validate current step before proceeding
       if (this.validateCurrentStep()) {
         this.currentStep.set(step);
       }
@@ -262,41 +303,43 @@ export class CheckoutComponent {
     }
   }
 
-  // Format card number with spaces
-  formatCardNumber(value: string): string {
-    const cleaned = value.replace(/\s/g, '');
-    const groups = cleaned.match(/.{1,4}/g) || [];
-    return groups.join(' ').substring(0, 19);
-  }
+  // Submit payment (manual) then show confirmation
+  async submitOrder(): Promise<void> {
+    if (this.isSubmitting()) return;
 
-  onCardNumberInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const formatted = this.formatCardNumber(input.value);
-    this.paymentForm.patchValue({ cardNumber: formatted }, { emitEvent: false });
-  }
+    const orderId = this.orderId();
+    if (!orderId) {
+      alert('orderId manquant. Veuillez retourner au panier et relancer la commande.');
+      return;
+    }
 
-  // Submit order
-  submitOrder(): void {
     if (this.paymentForm.invalid) {
       this.paymentForm.markAllAsTouched();
       return;
     }
 
-    // Generate order number
-    const orderNum = 'CMD-' + Date.now().toString().slice(-8);
-    this.orderNumber.set(orderNum);
+    const payload = {
+      orderId,
+      bankDetails: {
+        bank_name: String(this.paymentForm.get('bankName')?.value || '').trim(),
+        account_holder: String(this.paymentForm.get('accountHolder')?.value || '').trim(),
+        account_number: String(this.paymentForm.get('accountNumber')?.value || '').trim() || undefined,
+        reference: String(this.paymentForm.get('reference')?.value || '').trim(),
+        note: String(this.paymentForm.get('note')?.value || '').trim() || undefined
+      }
+    };
 
-    // Move to confirmation step
-    this.currentStep.set(3);
-
-    // TODO: Send order to backend
-    console.log('Order submitted:', {
-      orderNumber: orderNum,
-      delivery: this.deliveryForm.getRawValue(),
-      payment: this.paymentForm.getRawValue(),
-      items: this.cartItems(),
-      total: this.total()
-    });
+    this.isSubmitting.set(true);
+    try {
+      await firstValueFrom(this.paymentService.createBankPayment(payload as any));
+      this.orderNumber.set(orderId);
+      this.currentStep.set(3);
+    } catch (err: any) {
+      console.error('Erreur paiement bancaire', err);
+      alert(err?.error?.message || err?.message || "Erreur lors de l'enregistrement du paiement");
+    } finally {
+      this.isSubmitting.set(false);
+    }
   }
 
   // Estimated delivery/pickup date
