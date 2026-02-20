@@ -1,7 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
+import { MessengerService } from '../../../core/services/messenger/messenger.service';
+import { forkJoin } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 interface Message {
   id: string;
   content: string;
@@ -29,7 +31,84 @@ interface Conversation {
   styleUrl: './messagerie.component.css'
 })
 export class MessagerieComponent {
+  lastMessages:any;
+  selectedMesssage : any;
+  private authService = inject(AuthService);
+  user = this.authService.currentUser;
+  constructor(private messengerService : MessengerService, private cdr : ChangeDetectorRef){}
+  ngOnInit(): void {
+    forkJoin({
+      message : this.messengerService.getMessagesByUserConnecter()
+    }).subscribe(({message})=>{
+      this.lastMessages = message;
+      console.log(message);
+      this.cdr.detectChanges();
+    })
+  }
+  formatDate(date?: string | Date): string {
+    if (!date) return '-';
+    
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '-'; // sécurité
+    
+    return new Intl.DateTimeFormat('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(d);
+  }
+  selectConversation2(conv: any): void {
+    forkJoin({
+      selectedMessage: this.messengerService.getConversation(conv?.lastMessage?.otherUser?._id)
+    }).subscribe(({selectedMessage})=>{
+      console.log(selectedMessage);
+      this.selectedMesssage = {conv : conv,selectedMessage:selectedMessage};
+      this.cdr.detectChanges();
+    })
+    
+  }
   newMessage = '';
+  sendMessage2(): void {
+    if (!this.newMessage.trim() || !this.selectedMesssage) return;
+    const currentUser = this.user(); 
+
+    if (!currentUser) return;
+    const conv = this.selectedMesssage!;
+    const messagePayload = {
+      sender: currentUser.id,
+      recipient: this.selectedMesssage.conv.lastMessage.otherUser._id,
+      message: this.newMessage,
+      created_date : new Date()
+    };
+    this.messengerService.createMessage(messagePayload).subscribe((response) => {
+      console.log(response);
+      this.selectedMesssage = {
+        ...this.selectedMesssage,
+        selectedMessage: [
+          response
+          ,...this.selectedMesssage.selectedMessage
+          
+        ]
+      };
+      this.lastMessages = this.lastMessages.map((c: any) =>
+        c._id === this.selectedMesssage.conv._id
+          ? {
+              ...c,
+              lastMessage: {
+                ...c.lastMessage,
+                message: this.newMessage,
+                created_date: new Date()
+              }
+            }
+          : c
+      );
+      this.newMessage = '';
+      this.cdr.detectChanges();
+    });
+    
+  }
   selectedConversation = signal<Conversation | null>(null);
 
   conversations = signal<Conversation[]>([
@@ -70,6 +149,7 @@ export class MessagerieComponent {
     }
   ]);
 
+  
   selectConversation(conv: Conversation): void {
     this.selectedConversation.set(conv);
     // Mark as read

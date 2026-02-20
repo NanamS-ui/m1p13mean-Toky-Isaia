@@ -1,9 +1,9 @@
 <div class="messagerie-page">
   <div class="page-header">
     <h2>Messagerie</h2>
-    @if (totalUnread() > 0) {
+    <!-- @if (totalUnread() > 0) {
       <span class="unread-badge">{{ totalUnread() }} non lu(s)</span>
-    }
+    } -->
   </div>
 
   <div class="chat-container">
@@ -13,28 +13,26 @@
         <input type="text" placeholder="Rechercher une conversation..." class="search-input" />
       </div>
       <div class="conversations">
-        @for (conv of conversations(); track conv.id) {
+        @for (conv of lastMessages; track conv?._id) {
           <div class="conversation-item" 
-               [class.conversation-item--active]="selectedConversation()?.id === conv.id"
+               [class.conversation-item--active]="selectedMesssage?.conv?.lastMessage?._id === conv?.lastMessage?._id"
                [class.conversation-item--unread]="conv.unread > 0"
-               (click)="selectConversation(conv)">
+               (click)="selectConversation2(conv)">
             <div class="conversation-avatar">
-              @if (conv.customer.avatar) {
-                <img [src]="conv.customer.avatar" [alt]="conv.customer.name" />
-              } @else {
+              
                 <span class="material-symbols-outlined">person</span>
-              }
+              
             </div>
             <div class="conversation-content">
               <div class="conversation-header">
-                <span class="conversation-name">{{ conv.customer.name }}</span>
-                <span class="conversation-time">{{ conv.lastMessageTime }}</span>
+                <span class="conversation-name">{{ conv?.lastMessage?.otherUser?.name }}</span>
+                <span class="conversation-time">{{formatDate(conv?.lastMessage?.created_date)  }}</span>
               </div>
-              <p class="conversation-preview">{{ conv.lastMessage }}</p>
+              <p class="conversation-preview">{{ conv?.lastMessage?.message }}</p>
             </div>
-            @if (conv.unread > 0) {
+            <!-- @if (conv.unread > 0) {
               <span class="conversation-badge">{{ conv.unread }}</span>
-            }
+            } -->
           </div>
         } @empty {
           <div class="empty-conversations">
@@ -47,14 +45,14 @@
 
     <!-- Chat Area -->
     <div class="chat-area">
-      @if (selectedConversation()) {
+      @if (selectedMesssage) {
         <div class="chat-header">
           <div class="chat-user">
             <div class="chat-avatar">
               <span class="material-symbols-outlined">person</span>
             </div>
             <div class="chat-user-info">
-              <span class="chat-user-name">{{ selectedConversation()!.customer.name }}</span>
+              <span class="chat-user-name">{{ selectedMesssage?.conv.lastMessage.otherUser.name }}</span>
               <span class="chat-user-status">En ligne</span>
             </div>
           </div>
@@ -66,11 +64,11 @@
         </div>
 
         <div class="chat-messages">
-          @for (msg of selectedConversation()!.messages; track msg.id) {
-            <div class="message" [class.message--sent]="msg.sender === 'shop'" [class.message--received]="msg.sender === 'customer'">
+          @for (msg of selectedMesssage?.selectedMessage; track msg?._id) {
+            <div class="message" [class.message--sent]="msg?.sender !== selectedMesssage.conv?.lastMessage?.otherUser?._id" [class.message--received]="msg?.sender === selectedMesssage.conv?.lastMessage?.otherUser?._id">
               <div class="message-content">
-                <p>{{ msg.content }}</p>
-                <span class="message-time">{{ msg.timestamp }}</span>
+                <p>{{ msg?.message }}</p>
+                <span class="message-time">{{formatDate(msg?.created_date)  }}</span>
               </div>
             </div>
           }
@@ -79,9 +77,9 @@
         <div class="chat-input">
           <input type="text" 
                  [(ngModel)]="newMessage" 
-                 (keyup.enter)="sendMessage()"
+                 (keyup.enter)="sendMessage2()"
                  placeholder="Écrire un message..." />
-          <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+          <button class="send-btn" (click)="sendMessage2()" [disabled]="!newMessage.trim()">
             <span class="material-symbols-outlined">send</span>
           </button>
         </div>

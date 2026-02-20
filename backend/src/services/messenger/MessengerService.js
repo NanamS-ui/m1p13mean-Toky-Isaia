@@ -45,10 +45,7 @@ const getConversation = async (senderId, recipientId, page = 1, limit = 20) => {
       { sender: senderId, recipient: recipientId },
       { sender: recipientId, recipient: senderId }
     ]
-  })
-    .sort({ created_at: -1 })
-    .skip(skip)
-    .limit(limit);
+  }).sort({ created_at: 1 });
 
   return messages;
 };
@@ -57,51 +54,18 @@ const getUsersWithLastMessage = async (userId) => {
   const userObjectId = new mongoose.Types.ObjectId(userId); 
 
   const conversations = await Messenger.aggregate([
-    {
-      $match: {
-        deleted_at: null,
-        $or: [{ sender: userObjectId }, { recipient: userObjectId }]
-      }
-    },
-    {
-      $project: {
-        message: 1,
-        sender: 1,
-        recipient: 1,
-        created_at: 1,
-        otherUser: {
-          $cond: [
-            { $eq: ["$sender", userObjectId] }, 
-            "$recipient",
-            "$sender"
-          ]
-        }
-      }
-    },
-    { $sort: { created_at: -1 } },
-    {
-      $group: {
-        _id: "$otherUser",
-        lastMessage: { $first: "$$ROOT" }
-      }
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "_id",
-        foreignField: "_id",
-        as: "user"
-      }
-    },
-    { $unwind: "$user" },
-    {
-      $project: {
-        _id: 0,
-        user: 1,
-        lastMessage: 1
-      }
-    }
-  ]);
+  {$match: {deleted_at: null,$or: [{ sender: userObjectId }, { recipient:  userObjectId}]}},
+  {$addFields: {
+    otherUser: {$cond: [{ $eq: ["$sender", userObjectId] }, "$recipient","$sender"]}
+  }},
+  {$lookup: {
+    from: "users",let : {otherId : "$otherUser"},
+    pipeline:[{$match:{$expr:{$eq:['$_id',"$$otherId"]}}},{$project:{_id:1, name:1}}],
+    as: "otherUser"}},
+  {$unwind: "$otherUser"},{ $sort: { created_at: 1 } },
+  {$group: {_id: "$otherUser._id",lastMessage: { $last: "$$ROOT" }}},
+  
+]);
 
   return conversations;
 };

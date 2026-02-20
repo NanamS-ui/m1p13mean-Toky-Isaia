@@ -30,7 +30,11 @@ const MessengerSchema = new mongoose.Schema(
     }
   }
 );
-
+MessengerSchema.index({
+  sender: 1,
+  recipient: 1,
+  created_at: -1
+})
 module.exports = mongoose.model(
   "Messenger",
   MessengerSchema,
