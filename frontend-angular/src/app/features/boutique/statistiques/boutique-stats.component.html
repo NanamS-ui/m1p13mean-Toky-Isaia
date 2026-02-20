@@ -50,7 +50,7 @@
         <span class="material-symbols-outlined">payments</span>
         <!-- <span class="kpi-card__trend kpi-card__trend--up">+12.5%</span> -->
       </div>
-      <div class="kpi-card__value">{{ formatCurrency(statistiques?.stats[0].globalStats[0].CA) }}</div>
+      <div class="kpi-card__value">{{ formatCurrency(statistiques?.stats?.orders?.stat[0]?.totalRevenue) }}</div>
       <div class="kpi-card__label">Chiffre d'affaires</div>
     </div>
 
@@ -59,7 +59,7 @@
         <span class="material-symbols-outlined">shopping_bag</span>
         <!-- <span class="kpi-card__trend kpi-card__trend--up">+8.3%</span> -->
       </div>
-      <div class="kpi-card__value">{{ statistiques?.stats[0].globalStats[0].totalOrders }}</div>
+      <div class="kpi-card__value">{{ statistiques?.stats?.orders?.stat[0]?.totalOrders }}</div>
       <div class="kpi-card__label">Commandes</div>
     </div>
 
@@ -67,7 +67,7 @@
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">shopping_cart</span>
       </div>
-      <div class="kpi-card__value">{{ formatCurrency(statistiques?.stats[0].globalStats[0].panierMoyen) }}</div>
+      <div class="kpi-card__value">{{ formatCurrency(statistiques?.stats?.orders?.stat[0]?.averageBasket) }}</div>
       <div class="kpi-card__label">Panier moyen</div>
     </div>
 
@@ -75,7 +75,7 @@
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">conversion_path</span>
       </div>
-      <div class="kpi-card__value">{{ statistiques?.stats[0].globalStats[0].delivered }}</div>
+      <div class="kpi-card__value">{{ statistiques?.stats?.orders?.stat[0]?.deliveredPercent }}%</div>
       <div class="kpi-card__label">Commandes livrées</div>
     </div>
 
@@ -84,7 +84,7 @@
         <span class="material-symbols-outlined">remove_shopping_cart</span>
         <!-- <span class="kpi-card__trend kpi-card__trend--down">-2.1%</span> -->
       </div>
-      <div class="kpi-card__value">{{ statistiques?.stats[0].globalStats[0].cancelled }}</div>
+      <div class="kpi-card__value">{{ statistiques?.stats?.orders?.stat[0]?.cancelledPercent }}%</div>
       <div class="kpi-card__label">Commandes annulées</div>
     </div>
 
@@ -92,8 +92,8 @@
       <div class="kpi-card__header">
         <span class="material-symbols-outlined">undo</span>
       </div>
-      <div class="kpi-card__value">{{ kpis().returnsRate }}%</div>
-      <div class="kpi-card__label">Taux de retour</div>
+      <div class="kpi-card__value">{{ statistiques?.stats?.orders?.stat[0]?.deliveredPercent }}%</div>
+      <div class="kpi-card__label">Commandes en prépration</div>
     </div>
   </div>
 
@@ -109,15 +109,15 @@
       </div>
       <div class="chart-container">
         <div class="bar-chart">
-          @for (day of dailySales(); track day.period) {
+          @for (day of statistiques?.stats?.revenueParMois?.caParMois; track day._id) {
             <div class="bar-chart__item">
               <div class="bar-chart__bar-wrapper">
                 <div class="bar-chart__bar" 
-                     [style.height.%]="getBarHeight(day.revenue)"
-                     [attr.data-value]="formatCurrency(day.revenue)">
+                     [style.height.%]="getBarHeight2(day.CA)"
+                     [attr.data-value]="formatCurrency(day.CA)">
                 </div>
               </div>
-              <span class="bar-chart__label">{{ day.period }}</span>
+              <span class="bar-chart__label">{{ getMois(day._id) }}</span>
             </div>
           }
         </div>
@@ -134,19 +134,19 @@
       </div>
       <div class="promo-stats">
         <div class="promo-stat">
-          <span class="promo-stat__value">{{ promoStats().activePromos }}</span>
-          <span class="promo-stat__label">Promotions actives</span>
+          <span class="promo-stat__value">{{ statistiques?.stats?.orders?.stat[0]?.totalOrders }}</span>
+          <span class="promo-stat__label">Commandes totals</span>
         </div>
         <div class="promo-stat">
-          <span class="promo-stat__value">{{ promoStats().promoOrders }}</span>
+          <span class="promo-stat__value">{{ statistiques?.stats?.orderItems?.globalStats[0]?.ordersWithPromo }}</span>
           <span class="promo-stat__label">Commandes avec promo</span>
         </div>
         <div class="promo-stat">
-          <span class="promo-stat__value">{{ promoStats().avgPromoDiscount }}%</span>
+          <span class="promo-stat__value">{{ statistiques?.stats?.orderItems?.globalStats[0]?.avgReduction }}%</span>
           <span class="promo-stat__label">Réduction moyenne</span>
         </div>
         <div class="promo-stat promo-stat--highlight">
-          <span class="promo-stat__value">{{ formatCurrency(promoStats().totalDiscounted) }}</span>
+          <span class="promo-stat__value">{{ formatCurrency(statistiques?.stats?.orderItems?.globalStats[0]?.totalReduction) }}</span>
           <span class="promo-stat__label">Économies clients</span>
         </div>
       </div>
@@ -164,17 +164,17 @@
         </h3>
       </div>
       <div class="products-list">
-        @for (product of topProducts(); track product.name; let i = $index) {
+        @for (product of statistiques?.stats?.orderItems?.top5Produits; track product._id; let i = $index) {
           <div class="product-row">
             <span class="product-rank" [class.product-rank--gold]="i === 0">{{ i + 1 }}</span>
             <div class="product-info">
-              <span class="product-name">{{ product.name }}</span>
-              <span class="product-meta">{{ product.sales }} vendus • Stock: {{ product.stock }}</span>
+              <span class="product-name">{{ product._id.name }}</span>
+              <span class="product-meta">{{ product.totalSold }} vendus • Stock: {{ product.stock }}</span>
             </div>
             <div class="product-revenue">
-              <span class="revenue-value">{{ formatCurrency(product.revenue) }}</span>
+              <span class="revenue-value">{{ formatCurrency(product.CA) }}</span>
               <div class="revenue-bar">
-                <div class="revenue-fill" [style.width.%]="(product.revenue / topProducts()[0].revenue) * 100"></div>
+                <div class="revenue-fill" [style.width.%]="(product.CA / statistiques?.stats?.orders?.stat[0]?.totalRevenue) * 100"></div>
               </div>
             </div>
           </div>
@@ -191,16 +191,16 @@
         </h3>
       </div>
       <div class="products-list">
-        @for (product of lowPerformers(); track product.name) {
+        @for (product of statistiques?.stats?.orderItems?.top3ProduitsFaibles; track product._id) {
           <div class="product-row product-row--low">
             <span class="material-symbols-outlined product-warning">warning</span>
             <div class="product-info">
-              <span class="product-name">{{ product.name }}</span>
-              <span class="product-meta">{{ product.views }} vues • {{ product.sales }} vendus</span>
+              <span class="product-name">{{ product._id.name }}</span>
+              <span class="product-meta">{{ product.totalSold }} vendus • Stock: {{ product.stock }}</span>
             </div>
             <div class="product-conversion">
-              <span class="conversion-value">{{ product.conversionRate }}%</span>
-              <span class="conversion-label">conversion</span>
+              <span class="conversion-value">{{ formatCurrency(product.CA) }}</span>
+              <span class="conversion-label">revenue</span>
             </div>
           </div>
         }
@@ -213,7 +213,7 @@
   </div>
 
   <!-- Summary Cards -->
-  <div class="summary-row">
+  <!-- <div class="summary-row">
     <div class="summary-card">
       <div class="summary-icon summary-icon--blue">
         <span class="material-symbols-outlined">visibility</span>
@@ -250,5 +250,5 @@
         <span class="summary-label">Note moyenne</span>
       </div>
     </div>
-  </div>
+  </div> -->
 </div>

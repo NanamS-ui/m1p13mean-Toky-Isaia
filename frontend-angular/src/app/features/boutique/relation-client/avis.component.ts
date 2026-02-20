@@ -15,6 +15,7 @@ import { ShopService } from '../../../core/services/shop/shop.service';
 export class AvisComponent {
   filterRating = 0;
   filterStatus = '';
+  filterBoutique = '';
   replyingTo = signal<string | null>(null);
   replyText = '';
   shopReviews: any[] = [];
@@ -33,7 +34,7 @@ export class AvisComponent {
       this.shopReviews = shopReviews;
       this.shops = shops;
       this.shopReviewStats = this.getReviewStats(shopReviews);
-      console.log(shopReviews);
+      console.log(shops);
 
       this.cdr.detectChanges();
     });
@@ -71,6 +72,9 @@ export class AvisComponent {
       result = result.filter((r) => r.response == null);
     } else if (this.filterStatus === 'replied') {
       result = result.filter((r) => r.response != null);
+    }
+    if(this.filterBoutique !==''){
+      result = result.filter((r) => r.shop._id === this.filterBoutique);
     }
 
     return result;

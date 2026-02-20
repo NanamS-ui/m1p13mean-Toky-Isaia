@@ -44,7 +44,7 @@ export class BoutiqueLayoutComponent {
       children: [
         { route: '/boutique/messagerie', label: 'Messagerie' },
         { route: '/boutique/avis', label: 'Avis clients' },
-        { route: '/boutique/retours', label: 'Retours' }
+        // { route: '/boutique/retours', label: 'Retours' }
       ]
     }
   ];

@@ -42,6 +42,15 @@
   <!-- Filters -->
   <div class="filters-bar">
     <div class="filter-group">
+      <label>Boutique :</label>
+      <select [(ngModel)]="filterBoutique">
+        <option value="">Toutes</option>
+        @for (i of shops; track i?._id) {
+        <option [value]="i?._id">{{ i?.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="filter-group">
       <label>Note :</label>
       <select [(ngModel)]="filterRating">
         <option [value]="0">Toutes</option>
