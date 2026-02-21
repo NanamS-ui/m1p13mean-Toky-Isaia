@@ -3,10 +3,12 @@ const mongoose = require("mongoose");
 const SuspensionSchema = new mongoose.Schema(
   {
     started_date: {
-      type: Date
+      type: Date,
+      default : Date.now
     },
     end_date: {
-      type: Date
+      type: Date,
+      default : null
     },
     description: {
       type: String,
@@ -74,6 +76,11 @@ const UserSchema = new mongoose.Schema(
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
+      required: true
+    },
+    status: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserStatus",
       required: true
     },
     suspensions: {

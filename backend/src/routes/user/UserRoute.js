@@ -7,10 +7,12 @@ router.use(requireAuth, requireRole("ADMIN"));
 
 router.post("/", userCtrl.createUser);
 router.get("/", userCtrl.getUsers);
+router.get("/gestion/admin", userCtrl.getUsersPourGestionAdmin);
 router.get("/:id", userCtrl.getUserById);
 router.put("/:id", userCtrl.updateUser);
 router.delete("/:id", userCtrl.deleteUser);
 router.get("/:id/suspensions", userCtrl.getUserSuspensions);
+router.put("/user/reactive", userCtrl.reactiverUser);
 router.post("/:id/suspensions", userCtrl.addUserSuspension);
 router.get("/:id/login-history", userCtrl.getUserLoginHistory);
 router.post("/:id/login-history", userCtrl.addUserLoginHistory);
