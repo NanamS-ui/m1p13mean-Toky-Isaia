@@ -1,13 +1,14 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
 import { ShopService } from '../../../core/services/shop/shop.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import type { Shop } from '../../../core/models/shop/shop.model';
 import { StockService } from '../../../core/services/product/stock.service';
 import type { CatalogProduct } from '../../../core/models/product/catalog-product.model';
+import { NoticeDto, NoticeService } from '../../../core/services/notice/notice.service';
 
 interface BoutiqueDetail {
   id: string;
@@ -70,43 +71,14 @@ export class BoutiqueDetailComponent implements OnInit {
 
   products = signal<Product[]>([]);
 
-  // Mock reviews
-  reviews = signal<Review[]>([
-    {
-      id: '1',
-      userName: 'Marie R.',
-      rating: 5,
-      comment: 'Excellente boutique ! Les vêtements sont de très bonne qualité et le service est impeccable. Je recommande vivement.',
-      date: '2026-01-15'
-    },
-    {
-      id: '2',
-      userName: 'Jean P.',
-      rating: 4,
-      comment: 'Bonne sélection de produits, prix raisonnables. Le personnel est accueillant et compétent.',
-      date: '2026-01-10'
-    },
-    {
-      id: '3',
-      userName: 'Sophie L.',
-      rating: 5,
-      comment: 'Ma boutique préférée ! Toujours les dernières tendances et des conseils personnalisés. Parfait !',
-      date: '2026-01-05'
-    },
-    {
-      id: '4',
-      userName: 'Thomas M.',
-      rating: 4,
-      comment: 'Très satisfait de mes achats. La qualité est au rendez-vous et les prix sont compétitifs.',
-      date: '2025-12-28'
-    }
-  ]);
+  reviews = signal<Review[]>([]);
 
   constructor(
     private route: ActivatedRoute,
     private shopService: ShopService,
     private openingHours: OpeningHoursService,
-    private stockService: StockService
+    private stockService: StockService,
+    private noticeService: NoticeService
   ) {}
 
   ngOnInit(): void {
@@ -126,10 +98,15 @@ export class BoutiqueDetailComponent implements OnInit {
     this.error.set(null);
     forkJoin({
       shop: this.shopService.getShopById(id),
-      products: this.stockService.getCatalogForShop(id)
+      products: this.stockService.getCatalogForShop(id),
+      notices: this.noticeService.getNoticesByShop(id).pipe(catchError(() => of([] as NoticeDto[])))
     }).subscribe({
-      next: ({ shop, products }) => {
-        this.boutique.set(this.mapShopToDetail(shop));
+      next: ({ shop, products, notices }) => {
+        const reviews = this.mapNoticesToReviews(notices);
+        const summary = this.computeRatingSummary(notices);
+
+        this.reviews.set(reviews);
+        this.boutique.set(this.mapShopToDetail(shop, summary));
         this.products.set(this.mapCatalogProducts(products));
         this.loading.set(false);
       },
@@ -137,16 +114,17 @@ export class BoutiqueDetailComponent implements OnInit {
         this.error.set(err?.message || 'Boutique introuvable');
         this.boutique.set(null);
         this.products.set([]);
+        this.reviews.set([]);
         this.loading.set(false);
       }
     });
   }
 
-  private mapShopToDetail(shop: Shop): BoutiqueDetail {
+  private mapShopToDetail(shop: Shop, ratingInfo?: { rating: number; reviewCount: number }): BoutiqueDetail {
     const category = this.normalizeCategory(shop.shop_category?.value);
     const floor = this.extractFloor(shop.door);
     const zone = this.extractZone(shop.door);
-    const { rating, reviewCount } = this.getMockRating(shop._id);
+    const { rating, reviewCount } = ratingInfo ?? { rating: 0, reviewCount: 0 };
     const hours = this.mapOpeningHours(shop.opening_hours);
     const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
 
@@ -168,6 +146,33 @@ export class BoutiqueDetailComponent implements OnInit {
       hours,
       isFavorite: this.isFavorite()
     };
+  }
+
+  private mapNoticesToReviews(notices: NoticeDto[]): Review[] {
+    return (notices || []).map(n => {
+      const user = n.user as any;
+      const userName = (typeof user === 'object' && user)
+        ? (user.name || user.email || 'Utilisateur')
+        : 'Utilisateur';
+
+      return {
+        id: n._id,
+        userName,
+        rating: Number(n.rating) || 0,
+        comment: String(n.comment || ''),
+        date: n.created_at || new Date().toISOString()
+      };
+    });
+  }
+
+  private computeRatingSummary(notices: NoticeDto[]): { rating: number; reviewCount: number } {
+    const list = (notices || []).filter(n => Number.isFinite(Number(n.rating)));
+    const reviewCount = list.length;
+    if (reviewCount === 0) return { rating: 0, reviewCount: 0 };
+
+    const sum = list.reduce((acc, n) => acc + Number(n.rating), 0);
+    const rating = Math.round((sum / reviewCount) * 10) / 10;
+    return { rating, reviewCount };
   }
 
   private isStatusActive(value?: string): boolean {
@@ -215,17 +220,6 @@ export class BoutiqueDetailComponent implements OnInit {
     const normalized = (value ?? '').toUpperCase();
     const match = BOUTIQUE_CATEGORIES.find(c => c.value === normalized);
     return (match?.value as BoutiqueCategory) ?? 'AUTRE';
-  }
-
-  private getMockRating(shopId: string): { rating: number; reviewCount: number } {
-    let hash = 0;
-    for (let i = 0; i < shopId.length; i++) {
-      hash = ((hash << 5) - hash) + shopId.charCodeAt(i) | 0;
-    }
-    const n = Math.abs(hash);
-    const rating = 3.2 + (n % 18) / 10;
-    const reviewCount = 5 + (n % 95);
-    return { rating: Math.round(rating * 10) / 10, reviewCount };
   }
 
   private mapCatalogProducts(items: CatalogProduct[]): Product[] {

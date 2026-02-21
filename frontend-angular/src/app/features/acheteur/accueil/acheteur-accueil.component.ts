@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ShopService } from '../../../core/services/shop/shop.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
+import { NoticeService, type ShopNoticeSummaryDto } from '../../../core/services/notice/notice.service';
 import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
 import type { Shop } from '../../../core/models/shop/shop.model';
 
@@ -13,6 +14,7 @@ interface FeaturedBoutique {
   category: string;
   logo?: string;
   rating: number;
+  reviewCount: number;
   isOpen: boolean;
 }
 
@@ -42,6 +44,7 @@ const CATEGORY_ICONS: Record<BoutiqueCategory, string> = {
 })
 export class AcheteurAccueilComponent implements OnInit {
   boutiques = signal<Shop[]>([]);
+  private shopSummariesById = signal<Record<string, ShopNoticeSummaryDto>>({});
 
   userName = computed(() => {
     const user = this.auth.currentUser();
@@ -72,12 +75,25 @@ export class AcheteurAccueilComponent implements OnInit {
   constructor(
     private auth: AuthService,
     private shopService: ShopService,
-    private openingHours: OpeningHoursService
+    private openingHours: OpeningHoursService,
+    private noticeService: NoticeService
   ) {}
 
   ngOnInit(): void {
     this.shopService.getActiveShops().subscribe({
-      next: (shops) => this.boutiques.set(shops),
+      next: (shops) => {
+        this.boutiques.set(shops);
+
+        const ids = shops.map(s => s._id).filter(Boolean);
+        this.noticeService.getShopSummaries(ids).subscribe({
+          next: (summaries) => {
+            const byId: Record<string, ShopNoticeSummaryDto> = {};
+            for (const s of summaries) byId[s.shopId] = s;
+            this.shopSummariesById.set(byId);
+          },
+          error: () => this.shopSummariesById.set({})
+        });
+      },
       error: () => this.boutiques.set([])
     });
   }
@@ -85,7 +101,9 @@ export class AcheteurAccueilComponent implements OnInit {
   private mapShopToFeaturedBoutique(shop: Shop): FeaturedBoutique {
     const category = this.normalizeCategory(shop.shop_category?.value);
     const label = BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
-    const { rating } = this.getMockRating(shop._id);
+    const summary = this.shopSummariesById()[shop._id];
+    const rating = summary?.reviewCount ? summary.rating : 0;
+    const reviewCount = summary?.reviewCount ?? 0;
     const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
     const isOpen = isActive && this.openingHours.isShopOpenNow(shop);
 
@@ -95,6 +113,7 @@ export class AcheteurAccueilComponent implements OnInit {
       category: label,
       logo: shop.logo,
       rating,
+      reviewCount,
       isOpen
     };
   }
@@ -108,16 +127,6 @@ export class AcheteurAccueilComponent implements OnInit {
     const normalized = (value ?? '').toUpperCase().replace(/\s+/g, '');
     const match = BOUTIQUE_CATEGORIES.find(c => c.value === normalized);
     return (match?.value as BoutiqueCategory) ?? 'AUTRE';
-  }
-
-  private getMockRating(shopId: string): { rating: number } {
-    let hash = 0;
-    for (let i = 0; i < shopId.length; i++) {
-      hash = ((hash << 5) - hash) + shopId.charCodeAt(i) | 0;
-    }
-    const n = Math.abs(hash);
-    const rating = 3.2 + (n % 18) / 10;
-    return { rating: Math.round(rating * 10) / 10 };
   }
 
 }

@@ -15,7 +15,8 @@
       <span class="material-symbols-outlined">search</span>
       <input
         type="text"
-        [(ngModel)]="searchQuery"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
         placeholder="Rechercher une boutique, une catégorie..."
         class="search-input"
       />
@@ -34,7 +35,12 @@
           <span class="material-symbols-outlined">category</span>
           Catégorie
         </label>
-        <select [(ngModel)]="selectedCategory" class="filter-select">
+        <select
+          [ngModel]="selectedCategory()"
+          (ngModelChange)="selectedCategory.set($event)"
+          class="filter-select"
+          title="Catégorie"
+        >
           <option value="">Toutes les catégories</option>
           @for (cat of categories; track cat.value) {
             <option [value]="cat.value">{{ cat.label }}</option>
@@ -52,6 +58,7 @@
           [ngModel]="selectedFloor()"
           (ngModelChange)="onFloorChange($event)"
           class="filter-select"
+          title="Étage"
         >
           <option [ngValue]="''">Tous les étages</option>
           @for (floor of floors(); track floor) {
@@ -63,7 +70,7 @@
       <!-- Open Now Checkbox -->
       <div class="filter-group filter-group--checkboxes">
         <label class="filter-checkbox">
-          <input type="checkbox" [(ngModel)]="onlyOpen" />
+          <input type="checkbox" [ngModel]="onlyOpen()" (ngModelChange)="onlyOpen.set($event)" />
           <span class="material-symbols-outlined">schedule</span>
           Ouvert maintenant
         </label>
@@ -138,7 +145,7 @@
           <a [routerLink]="['/acheteur/boutiques', boutique.id]" class="boutique-card__link">
             <div class="boutique-card__media">
               @if (boutique.logoUrl) {
-                <img [src]="boutique.logoUrl" [alt]="boutique.name" class="boutique-card__img" />
+                <img [src]="boutique.logoUrl" alt="{{ boutique.name }}" title="{{ boutique.name }}" class="boutique-card__img" />
               } @else {
                 <div class="boutique-card__placeholder">
                   <span class="material-symbols-outlined">store</span>

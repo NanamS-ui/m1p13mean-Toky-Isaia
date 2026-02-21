@@ -5,7 +5,9 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
 import { ShopService } from '../../../core/services/shop/shop.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
+import { NoticeService, type ShopNoticeSummaryDto } from '../../../core/services/notice/notice.service';
 import type { Shop } from '../../../core/models/shop/shop.model';
+import { catchError, map, of, switchMap } from 'rxjs';
 
 interface BoutiqueDiscovery {
   id: string;
@@ -47,6 +49,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
   constructor(
     private shopService: ShopService,
     private openingHours: OpeningHoursService,
+    private noticeService: NoticeService,
     private route: ActivatedRoute
   ) {}
 
@@ -58,10 +61,24 @@ export class BoutiquesDiscoveryComponent implements OnInit {
       }
     });
 
-    this.shopService.getActiveShops().subscribe({
-      next: (shops) => this.boutiques.set(shops.map(shop => this.mapShopToDiscovery(shop))),
-      error: () => this.boutiques.set([])
-    });
+    this.shopService.getActiveShops()
+      .pipe(
+        switchMap((shops) => {
+          const ids = shops.map(s => s._id).filter(Boolean);
+          return this.noticeService.getShopSummaries(ids).pipe(
+            map((summaries) => ({ shops, summaries })),
+            catchError(() => of({ shops, summaries: [] as ShopNoticeSummaryDto[] }))
+          );
+        })
+      )
+      .subscribe({
+        next: ({ shops, summaries }) => {
+          const byId: Record<string, ShopNoticeSummaryDto> = {};
+          for (const s of summaries) byId[s.shopId] = s;
+          this.boutiques.set(shops.map(shop => this.mapShopToDiscovery(shop, byId[shop._id])));
+        },
+        error: () => this.boutiques.set([])
+      });
   }
 
   // Filtered and sorted boutiques
@@ -147,10 +164,11 @@ export class BoutiquesDiscoveryComponent implements OnInit {
     return `Étage ${floor}`;
   }
 
-  private mapShopToDiscovery(shop: Shop): BoutiqueDiscovery {
+  private mapShopToDiscovery(shop: Shop, summary?: ShopNoticeSummaryDto): BoutiqueDiscovery {
     const category = this.normalizeCategory(shop.shop_category?.value);
     const floor = this.extractFloor(shop.door);
-    const { rating, reviewCount } = this.getMockRating(shop._id);
+    const rating = summary?.reviewCount ? summary.rating : 0;
+    const reviewCount = summary?.reviewCount ?? 0;
     const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
 
     return {
@@ -166,18 +184,6 @@ export class BoutiquesDiscoveryComponent implements OnInit {
       description: shop.description ?? '',
       popularity: reviewCount
     };
-  }
-
-  /** Maquette de note : génère des valeurs fictives pour l'affichage */
-  private getMockRating(shopId: string): { rating: number; reviewCount: number } {
-    let hash = 0;
-    for (let i = 0; i < shopId.length; i++) {
-      hash = ((hash << 5) - hash) + shopId.charCodeAt(i) | 0;
-    }
-    const n = Math.abs(hash);
-    const rating = 3.2 + (n % 18) / 10;
-    const reviewCount = 5 + (n % 95);
-    return { rating: Math.round(rating * 10) / 10, reviewCount };
   }
 
   private normalizeCategory(value?: string): BoutiqueCategory {
