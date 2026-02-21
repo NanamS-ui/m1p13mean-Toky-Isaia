@@ -68,7 +68,14 @@ const PaymentSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["WAITING_CONFIRMATION", "CONFIRMED", "REJECTED"],
+      enum: [
+        "WAITING_CONFIRMATION",
+        "CONFIRMED",
+        "IN_PREPARATION",
+        "SHIPPED",
+        "DELIVERY_EFFECTED",
+        "REJECTED"
+      ],
       default: "WAITING_CONFIRMATION"
     },
 

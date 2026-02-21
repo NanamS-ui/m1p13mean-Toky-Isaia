@@ -4,6 +4,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { OrderStatus, Order } from './mes-commandes.component';
 import { OrdersService } from '../../../core/services/order/order.service';
 import { PaymentService } from '../../../core/services/payment/payment.service';
+import { DocumentService } from '../../../core/services/billing/document.service';
 import { catchError, forkJoin, of } from 'rxjs';
 
 export interface OrderItem {
@@ -32,10 +33,17 @@ export interface OrderDetail extends Order {
   estimatedDelivery?: Date;
   trackingNumber?: string;
   paymentMethod: string;
-  paymentStatus: 'paid' | 'pending' | 'rejected';
+  paymentStatus: PaymentStatus;
 }
 
-type PaymentStatus = 'WAITING_CONFIRMATION' | 'CONFIRMED' | 'REJECTED' | string;
+type PaymentStatus =
+  | 'WAITING_CONFIRMATION'
+  | 'CONFIRMED'
+  | 'IN_PREPARATION'
+  | 'SHIPPED'
+  | 'DELIVERY_EFFECTED'
+  | 'REJECTED'
+  | string;
 
 interface OrderPayment {
   _id: string;
@@ -63,6 +71,7 @@ interface OrderPayment {
 export class CommandeSuiviComponent implements OnInit {
   private ordersService = inject(OrdersService);
   private paymentService = inject(PaymentService);
+  private documentService = inject(DocumentService);
   private router = inject(Router);
 
   orderId = signal<string>('');
@@ -75,6 +84,25 @@ export class CommandeSuiviComponent implements OnInit {
   timelineSteps = computed<OrderTimelineStep[]>(() => {
     const currentOrder = this.order();
     if (!currentOrder) return [];
+
+    // Workflow attendu: En attente -> Confirmée -> En préparation -> Livrée (+ Annulée)
+    if (currentOrder.status === 'cancelled') {
+      return [
+        {
+          status: 'pending',
+          label: 'Commande en attente',
+          date: currentOrder.date,
+          completed: true,
+          icon: 'schedule'
+        },
+        {
+          status: 'cancelled',
+          label: 'Commande annulée',
+          completed: true,
+          icon: 'cancel'
+        }
+      ];
+    }
 
     const allSteps: OrderTimelineStep[] = [
       {
@@ -117,7 +145,18 @@ export class CommandeSuiviComponent implements OnInit {
   constructor(private route: ActivatedRoute) {}
 
   private mapCategoryToStatus(value: string | undefined | null): OrderStatus {
-    const v = String(value || '').toLowerCase();
+    const raw = String(value || '').trim();
+    const up = raw.toUpperCase();
+
+    // Support des codes backend
+    if (up === 'WAITING_CONFIRMATION') return 'pending';
+    if (up === 'CONFIRMED') return 'confirmed';
+    if (up === 'IN_PREPARATION') return 'preparing';
+    if (up === 'SHIPPED') return 'shipped';
+    if (up === 'DELIVERY_EFFECTED') return 'delivered';
+    if (up === 'REJECTED') return 'cancelled';
+
+    const v = raw.toLowerCase();
     if (v.includes('attente')) return 'pending';
     if (v.includes('confirm')) return 'confirmed';
     if (v.includes('prépar') || v.includes('prepar')) return 'preparing';
@@ -153,10 +192,23 @@ export class CommandeSuiviComponent implements OnInit {
   }
 
   private mapPaymentStatus(payment: OrderPayment | null): 'paid' | 'pending' | 'rejected' {
+    // Deprecated: conservé pour compat mais on utilise désormais PaymentStatus brut.
     const s = String(payment?.status || '').toUpperCase();
-    if (s === 'CONFIRMED') return 'paid';
-    if (s === 'WAITING_CONFIRMATION') return 'pending';
-    return 'rejected';
+    if (s === 'REJECTED') return 'rejected';
+    if (!s) return 'pending';
+    return 'pending';
+  }
+
+  getPaymentStatusLabel(status: PaymentStatus | undefined): string {
+    const s = String(status || '').toUpperCase();
+    if (s === 'WAITING_CONFIRMATION') return 'En attente';
+    if (s === 'CONFIRMED') return 'Confirmée';
+    if (s === 'IN_PREPARATION') return 'En préparation';
+    if (s === 'SHIPPED') return 'Expédiée';
+    if (s === 'DELIVERY_EFFECTED') return 'Livrée';
+    if (s === 'REJECTED') return 'Annulée';
+    if (!s) return '—';
+    return s;
   }
 
   private toOrderDetailVM(raw: any, payment: OrderPayment | null): OrderDetail {
@@ -204,7 +256,7 @@ export class CommandeSuiviComponent implements OnInit {
       pickupLocation: boutique.boutiqueName !== '-' ? boutique.boutiqueName : undefined,
       estimatedDelivery: status === 'delivered' ? updatedAt : undefined,
       paymentMethod: this.mapPaymentMethod(payment),
-      paymentStatus: this.mapPaymentStatus(payment)
+      paymentStatus: String(payment?.status || '').toUpperCase()
     };
   }
 
@@ -311,12 +363,41 @@ export class CommandeSuiviComponent implements OnInit {
   }
 
   downloadInvoice(): void {
-    // TODO: Implement invoice download
-    console.log('Download invoice for order:', this.orderId());
+    const orderId = this.orderId();
+    if (!orderId) return;
+
+    this.documentService.downloadInvoice(orderId).subscribe({
+      next: (blob) => this.saveBlob(blob, `facture-${orderId}.pdf`),
+      error: (err) => {
+        console.error('Erreur téléchargement facture:', err);
+      }
+    });
   }
 
   downloadReceipt(): void {
-    // TODO: Implement receipt download
-    console.log('Download receipt for order:', this.orderId());
+    const orderId = this.orderId();
+    if (!orderId) return;
+    if (!this.isReceiptAvailable(this.order()?.paymentStatus)) return;
+
+    this.documentService.downloadReceipt(orderId).subscribe({
+      next: (blob) => this.saveBlob(blob, `recu-${orderId}.pdf`),
+      error: (err) => {
+        console.error('Erreur téléchargement reçu:', err);
+      }
+    });
+  }
+
+  isReceiptAvailable(status: PaymentStatus | undefined): boolean {
+    const s = String(status || '').toUpperCase();
+    return s === 'DELIVERY_EFFECTED' || s === 'CONFIRMED';
+  }
+
+  private saveBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

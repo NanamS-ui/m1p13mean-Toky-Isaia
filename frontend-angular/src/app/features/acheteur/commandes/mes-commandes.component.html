@@ -184,14 +184,24 @@
                 Effectuer le paiement
               </button>
             }
-            @if (order.status === 'delivered' || order.status === 'cancelled') {
+
+            <button
+              class="btn-download"
+              (click)="downloadInvoice(order.id)"
+              title="Télécharger la facture"
+            >
+              <span class="material-symbols-outlined">download</span>
+              Facture
+            </button>
+
+            @if (isReceiptAvailable(order.id)) {
               <button
                 class="btn-download"
-                (click)="downloadInvoice(order.id)"
-                title="Télécharger la facture"
+                (click)="downloadReceipt(order.id)"
+                title="Télécharger le reçu"
               >
-                <span class="material-symbols-outlined">download</span>
-                Facture
+                <span class="material-symbols-outlined">receipt</span>
+                Reçu
               </button>
             }
           </div>

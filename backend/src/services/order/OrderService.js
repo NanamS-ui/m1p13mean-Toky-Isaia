@@ -3,6 +3,7 @@ const OrderItem = require("../../models/order/OrderItem");
 const Stock = require("../../models/product/Stock");
 const StockMouvement = require("../../models/product/StockMouvement");
 const OrderCategory = require("../../models/order/OrderCategory");
+const Payment = require("../../models/payment/Payment");
 const mongoose = require("mongoose");
 const buildError = (message, status) => {
   const error = new Error(message);
@@ -163,6 +164,61 @@ const updateOrder = async (id, payload) => {
     { new: true, runValidators: true }
   );
   if (!order) throw buildError("Commande introuvable", 404);
+
+  // Si la boutique met à jour le statut (orderCategory), on synchronise le paiement associé.
+  // Règles (selon OrderCategory.value):
+  // - En attente / Confirmée / En préparation -> WAITING_CONFIRMATION
+  // - Livrée  -> CONFIRMED
+  // - Annulée -> REJECTED
+  // Le paiement suit toujours le statut de la commande.
+  if (payload && Object.prototype.hasOwnProperty.call(payload, "orderCategory")) {
+    const category = await OrderCategory.findById(order.orderCategory).select("value");
+    const categoryValue = category?.value;
+
+    const statusMap = {
+      // Valeurs FR
+      "En attente": "WAITING_CONFIRMATION",
+      "Confirmée": "CONFIRMED",
+      "En préparation": "IN_PREPARATION",
+      "Expédiée": "SHIPPED",
+      "Expediee": "SHIPPED",
+      "Livrée": "DELIVERY_EFFECTED",
+      "Livree": "DELIVERY_EFFECTED",
+      "Annulée": "REJECTED",
+      "Annulee": "REJECTED",
+
+      // Valeurs CODE (le paiement suit toujours le statut)
+      WAITING_CONFIRMATION: "WAITING_CONFIRMATION",
+      CONFIRMED: "CONFIRMED",
+      IN_PREPARATION: "IN_PREPARATION",
+      SHIPPED: "SHIPPED",
+      DELIVERY_EFFECTED: "DELIVERY_EFFECTED",
+      REJECTED: "REJECTED"
+    };
+
+    const key = String(categoryValue || "").trim();
+    const nextPaymentStatus = statusMap[key] || statusMap[key.toUpperCase()] || null;
+
+    if (nextPaymentStatus) {
+      const latestPayment = await Payment.findOne({
+        order: order._id,
+        deleted_at: null
+      })
+        .sort({ created_at: -1 })
+        .select("_id status");
+
+      if (latestPayment) {
+        if (latestPayment.status !== nextPaymentStatus) {
+          await Payment.findByIdAndUpdate(
+            latestPayment._id,
+            { status: nextPaymentStatus },
+            { runValidators: true }
+          );
+        }
+      }
+    }
+  }
+
   return order;
 };
 

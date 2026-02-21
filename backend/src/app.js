@@ -37,5 +37,7 @@ app.use("/api/events", require("./routes/events/EventRoute"));
 
 app.use("/api/payments", require("./routes/payment/PaymentRoute"));
 
+app.use("/api/documents", require("./routes/billing/BillingDocumentRoute"));
+
 
 module.exports = app;
