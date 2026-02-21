@@ -18,6 +18,15 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+exports.getUsersPourGestionAdmin = async (req, res) => {
+  try {
+    const users = await userService.getUserPourGestionAdmin();
+    res.json(users);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
+
 exports.getUserById = async (req, res) => {
   try {
     const user = await userService.getUserById(req.params.id);
@@ -41,6 +50,18 @@ exports.deleteUser = async (req, res) => {
     await userService.deleteUser(req.params.id);
     res.json({ message: "Utilisateur supprime" });
   } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.reactiverUser = async (req, res) => {
+  try {
+    let { userId} = req.query;
+    if(!userId) res.status(400).json({ message: "User id is requiered" });
+    const user = await userService.reactiverUser(userId);
+    res.json(user);
+  } catch (error) {
+    console.error(error);
     res.status(error.status || 400).json({ message: error.message });
   }
 };

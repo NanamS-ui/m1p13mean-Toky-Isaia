@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const Role = require("../models/user/Role");
 const User = require("../models/user/User");
-
+const UserStatus = require("../models/user/UserStatus");
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "dev-refresh-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "15m";
@@ -117,6 +117,12 @@ const registerAcheteur = async (payload) => {
   const hashed = await bcrypt.hash(password, 10);
   const name = `${firstName} ${lastName}`.trim();
 
+  const status = await UserStatus.findOne({ value: "Actif" });
+  
+  if (!status) {
+    throw new Error("Le status 'Actif' n'existe pas en base");
+  }
+
   const user = await User.create({
     name,
     email,
@@ -124,7 +130,8 @@ const registerAcheteur = async (payload) => {
     adresse,
     password: hashed,
     role: role._id,
-    is_verified: false
+    is_verified: false,
+    status : status
   });
 
   await issueVerificationCode(user);
@@ -169,7 +176,7 @@ const login = async (payload) => {
     throw buildError("Champs obligatoires manquants", 400);
   }
 
-  const user = await User.findOne({ email }).select("password role email name is_verified created_at");
+  const user = await User.findOne({ email }).select("password role email name is_verified created_at status suspensions");
   if (!user) {
     throw buildError("Email ou mot de passe incorrect", 401);
   }
@@ -182,6 +189,8 @@ const login = async (payload) => {
   if (!user.is_verified) {
     throw buildError("Email non verifie", 403);
   }
+  
+  await verifyStatus(user);
 
   await user.populate("role");
 
@@ -200,6 +209,27 @@ const login = async (payload) => {
     }
   };
 };
+const verifyStatus= async (user)=>{
+  const now = new Date();
+  const actifStatus = await UserStatus.findOne({ value: "Actif" });
+
+  if(!user.status.equals(actifStatus._id)){
+    const activeSuspension = user.suspensions.find(s => {
+      if (s.end_date === null) {
+        return true;
+      }
+      return s.started_date <= now && s.end_date > now;
+    });
+    if (activeSuspension) {
+      if (activeSuspension.end_date === null) {
+        throw buildError("Compte suspendu pour une durée indéterminée", 403);
+      }
+      throw buildError(`Compte suspendu jusqu'au ${activeSuspension.end_date}`, 403);
+    }
+    user.status = actifStatus._id;
+    await user.save();
+  }
+}
 
 const refreshAccessToken = async (payload) => {
   const refreshToken = payload.refreshToken;
@@ -242,6 +272,7 @@ const logout = async (payload) => {
   }
 
   const user = await User.findById(decoded.sub);
+  
   if (user) {
     user.refresh_token_hash = null;
     await user.save();
@@ -371,5 +402,6 @@ module.exports = {
   resendVerificationCode,
   getMe,
   updateMe,
-  changePassword
+  changePassword,
+  verifyStatus
 };

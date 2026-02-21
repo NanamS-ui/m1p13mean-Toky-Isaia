@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/user/User");
-
+const UserStatus = require("../../models/user/UserStatus");
+const { default: mongoose } = require("mongoose");
 const buildError = (message, status) => {
   const error = new Error(message);
   error.status = status;
@@ -21,6 +22,53 @@ const createUser = async (payload) => {
 };
 
 const getUsers = async () => User.find();
+
+const reactiverUser = async (userID)=>{
+  const now = new Date();
+  const actifStatus = await UserStatus.findOne({ value: "Actif" });
+  const user = await User.findOne({_id : new mongoose.Types.ObjectId(userID)});
+  if(user.status.equals(actifStatus._id)){
+    return user;
+  }
+  console.log(user);
+  user.status = actifStatus._id;
+  for(let i =0 ; user.suspensions.length>i; i++){
+    if(user.suspensions[i].started_date <= now && user.suspensions[i].end_date > now)
+      user.suspensions[i].end_date = now;
+    if(user.suspensions[i].end_date == null)
+      user.suspensions[i].end_date = now;
+  }
+  await user.save();
+  return user;
+}
+const getUserPourGestionAdmin = async()=>{
+  let users = await User.aggregate([
+    {$lookup: {from: "roles", let : {idRole : "$role" },pipeline:[{$match: {$expr : {$eq: ["$_id","$$idRole"]}}}, 
+            {$project:{_id:1, val:1}}], as: "role"}},
+          {$unwind: "$role"},
+    {$lookup: {from: "user_status", let : {idStatus : "$status" },pipeline:[{$match: {$expr : {$eq: ["$_id","$$idStatus"]}}}, 
+            {$project:{_id:1, value:1}}], as: "status"}},
+          {$unwind: "$status"},
+    {$addFields: {
+        activeSuspension: {
+          $first: {$filter: {input: "$suspensions",as: "s",
+              cond: {$or: [{ $eq: ["$$s.end_date", null] },{$and: [{ $lte: ["$$s.started_date", new Date()] },{ $gte: ["$$s.end_date", new Date()] }]}]}
+          }}
+        }}},
+    {$addFields: {isSuspended: { $cond: [{ $ifNull: ["$activeSuspension", false] }, true, false] },suspensionEndDate: "$activeSuspension.end_date"}},
+    {$project: {
+      _id:1, name:1, email:1, role:1, status:1, created_at: 1,isSuspended: 1,suspensionEndDate: 1
+    }},
+    {$sort: {
+      created_at:-1
+    }}
+]);
+  for(let i =0 ; users.length>i; i++){
+    if(users[i].isSuspended && users[i].suspensionEndDate == null) await reactiverUser(users[i]._id)
+  }
+  return users;
+
+}
 
 const getUserById = async (id) => {
   const user = await User.findById(id);
@@ -76,6 +124,8 @@ const addUserLoginHistory = async (id, payload) => {
   return user.login_history;
 };
 
+
+
 module.exports = {
   createUser,
   getUsers,
@@ -85,5 +135,7 @@ module.exports = {
   getUserSuspensions,
   addUserSuspension,
   getUserLoginHistory,
-  addUserLoginHistory
+  addUserLoginHistory,
+  getUserPourGestionAdmin,
+  reactiverUser
 };
