@@ -204,8 +204,8 @@
               <span class="material-symbols-outlined">check_circle</span>
               Statut du paiement
             </span>
-            <span class="info-value payment-status" [class.payment-status--paid]="order()!.paymentStatus === 'paid'">
-              {{ order()!.paymentStatus === 'paid' ? 'Payé' : order()!.paymentStatus === 'pending' ? 'En attente' : 'Rejeté' }}
+            <span class="info-value payment-status" [class.payment-status--paid]="isReceiptAvailable(order()!.paymentStatus)">
+              {{ getPaymentStatusLabel(order()!.paymentStatus) }}
             </span>
           </div>
         </div>
@@ -222,6 +222,8 @@
             <span class="material-symbols-outlined">rate_review</span>
             Donner avis
           </button>
+        }
+        @if (isReceiptAvailable(order()!.paymentStatus)) {
           <button class="btn-download" (click)="downloadReceipt()">
             <span class="material-symbols-outlined">receipt</span>
             Télécharger le reçu

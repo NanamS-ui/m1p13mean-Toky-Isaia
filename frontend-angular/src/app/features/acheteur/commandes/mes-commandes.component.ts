@@ -7,6 +7,7 @@ import { OrdersService } from '../../../core/services/order/order.service';
 import { PaymentService } from '../../../core/services/payment/payment.service';
 import { OrderCategoryService } from '../../../core/services/order/orderCategory.service';
 import { OrderCategory } from '../../../core/models/order/order-category.model';
+import { DocumentService } from '../../../core/services/billing/document.service';
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -59,6 +60,7 @@ export class MesCommandesComponent {
   private ordersService = inject(OrdersService);
   private paymentService = inject(PaymentService);
   private orderCategoryService = inject(OrderCategoryService);
+  private documentService = inject(DocumentService);
   private router = inject(Router);
 
   private allOrders = signal<Order[]>([]);
@@ -90,8 +92,31 @@ export class MesCommandesComponent {
     { value: 'all', label: 'Toutes' }
   ]);
 
+  private mapCategoryToDisplayLabel(value: string | undefined | null): string {
+    const raw = String(value || '').trim();
+    const up = raw.toUpperCase();
+    if (up === 'WAITING_CONFIRMATION') return 'En attente';
+    if (up === 'CONFIRMED') return 'Confirmée';
+    if (up === 'IN_PREPARATION') return 'En préparation';
+    if (up === 'SHIPPED') return 'Expédiée';
+    if (up === 'DELIVERY_EFFECTED') return 'Livrée';
+    if (up === 'REJECTED') return 'Annulée';
+    return raw || '—';
+  }
+
   private mapCategoryToStatus(value: string | undefined | null): OrderStatus {
-    const v = String(value || '').toLowerCase();
+    const raw = String(value || '').trim();
+    const up = raw.toUpperCase();
+
+    // Support des codes backend
+    if (up === 'WAITING_CONFIRMATION') return 'pending';
+    if (up === 'CONFIRMED') return 'confirmed';
+    if (up === 'IN_PREPARATION') return 'preparing';
+    if (up === 'SHIPPED') return 'shipped';
+    if (up === 'DELIVERY_EFFECTED') return 'delivered';
+    if (up === 'REJECTED') return 'cancelled';
+
+    const v = raw.toLowerCase();
     if (v.includes('attente')) return 'pending';
     if (v.includes('confirm')) return 'confirmed';
     if (v.includes('prépar') || v.includes('prepar')) return 'preparing';
@@ -114,12 +139,12 @@ export class MesCommandesComponent {
 
       const seen = new Set<OrderStatus>();
       for (const c of cats || []) {
-        const label = String(c?.value || '').trim();
-        if (!label) continue;
-        const status = this.mapCategoryToStatus(label);
+        const rawValue = String(c?.value || '').trim();
+        if (!rawValue) continue;
+        const status = this.mapCategoryToStatus(rawValue);
         if (seen.has(status)) continue;
         seen.add(status);
-        options.push({ value: status, label });
+        options.push({ value: status, label: this.mapCategoryToDisplayLabel(rawValue) });
       }
 
       // Fallback si l'API renvoie vide: on garde la liste standard
@@ -313,8 +338,36 @@ export class MesCommandesComponent {
   }
 
   downloadInvoice(orderId: string): void {
-    // TODO: Implement invoice download
-    console.log('Download invoice for order:', orderId);
+    this.documentService.downloadInvoice(orderId).subscribe({
+      next: (blob) => this.saveBlob(blob, `facture-${orderId}.pdf`),
+      error: (err) => {
+        console.error('Erreur téléchargement facture', err);
+      }
+    });
+  }
+
+  downloadReceipt(orderId: string): void {
+    this.documentService.downloadReceipt(orderId).subscribe({
+      next: (blob) => this.saveBlob(blob, `recu-${orderId}.pdf`),
+      error: (err) => {
+        console.error('Erreur téléchargement reçu', err);
+      }
+    });
+  }
+
+  isReceiptAvailable(orderId: string): boolean {
+    const p = this.getPayment(orderId);
+    const s = String(p?.status || '').toUpperCase();
+    return s === 'DELIVERY_EFFECTED' || s === 'CONFIRMED';
+  }
+
+  private saveBlob(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 
   isPaymentNull(orderId: string): boolean {
@@ -342,9 +395,12 @@ export class MesCommandesComponent {
 
   getPaymentStatusLabel(status: PaymentStatus | undefined): string {
     const s = String(status || '').toUpperCase();
-    if (s === 'WAITING_CONFIRMATION') return 'En attente de confirmation';
-    if (s === 'CONFIRMED') return 'Confirmé';
-    if (s === 'REJECTED') return 'Rejeté';
+    if (s === 'WAITING_CONFIRMATION') return 'En attente';
+    if (s === 'CONFIRMED') return 'Confirmée';
+    if (s === 'IN_PREPARATION') return 'En préparation';
+    if (s === 'SHIPPED') return 'Expédiée';
+    if (s === 'DELIVERY_EFFECTED') return 'Livrée';
+    if (s === 'REJECTED') return 'Annulée';
     if (!s) return '—';
     return s;
   }
@@ -354,6 +410,7 @@ export class MesCommandesComponent {
     if (s === 'CONFIRMED') return 'success';
     if (s === 'REJECTED') return 'danger';
     if (s === 'WAITING_CONFIRMATION') return 'pending';
+    if (s === 'IN_PREPARATION' || s === 'SHIPPED' || s === 'DELIVERY_EFFECTED') return 'pending';
     return 'muted';
   }
 
