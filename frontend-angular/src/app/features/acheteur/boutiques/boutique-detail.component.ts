@@ -148,6 +148,7 @@ export class BoutiqueDetailComponent implements OnInit {
     const zone = this.extractZone(shop.door);
     const { rating, reviewCount } = this.getMockRating(shop._id);
     const hours = this.mapOpeningHours(shop.opening_hours);
+    const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
 
     return {
       id: shop._id,
@@ -158,7 +159,7 @@ export class BoutiqueDetailComponent implements OnInit {
       description: shop.description ?? '',
       rating,
       reviewCount,
-      isOpen: shop.is_accepted && this.openingHours.isShopOpenNow(shop),
+      isOpen: isActive && this.openingHours.isShopOpenNow(shop),
       floor,
       zone,
       phone: shop.phone,
@@ -167,6 +168,11 @@ export class BoutiqueDetailComponent implements OnInit {
       hours,
       isFavorite: this.isFavorite()
     };
+  }
+
+  private isStatusActive(value?: string): boolean {
+    if (!value) return false;
+    return value.toLowerCase().includes('active');
   }
 
   private mapOpeningHours(openingHours: Shop['opening_hours']): { day: string; open: string; close: string }[] {

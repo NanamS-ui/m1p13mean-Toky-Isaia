@@ -19,14 +19,7 @@ interface DeliveryAddress {
   isDefault: boolean;
 }
 
-interface PickupShop {
-  id: string;
-  name: string;
-  zone: string;
-  address: string;
-}
-
-type DeliveryMethod = 'home' | 'store';
+type DeliveryMethod = 'home';
 type CheckoutStep = 1 | 2 | 3;
 
 @Component({
@@ -96,23 +89,8 @@ export class CheckoutComponent {
     }
   ]);
 
-  // Mock pickup shops
-  pickupShops = signal<PickupShop[]>([
-    {
-      id: '1',
-      name: 'Mode & Style',
-      zone: 'Zone A',
-      address: 'Niveau 1, Allée 3'
-    },
-    {
-      id: '2',
-      name: 'TechZone',
-      zone: 'Zone B',
-      address: 'Niveau 2, Allée 1'
-    }
-  ]);
-
   orderId = signal<string | null>(null);
+  fromCart = signal<boolean>(false);
   isSubmitting = signal<boolean>(false);
 
   // Order number (generated after confirmation)
@@ -135,9 +113,7 @@ export class CheckoutComponent {
 
     // Delivery form
     this.deliveryForm = this.fb.nonNullable.group({
-      method: ['home', Validators.required],
-      addressId: ['1', Validators.required],
-      shopId: ['']
+      addressId: ['1', Validators.required]
     });
 
     // Payment form (virement / infos bancaires)
@@ -145,27 +121,15 @@ export class CheckoutComponent {
       bankName: ['', [Validators.required]],
       accountHolder: ['', [Validators.required]],
       accountNumber: [''],
-      reference: ['', [Validators.required]],
       note: ['']
-    });
-
-    // Watch delivery method changes
-    this.deliveryForm.get('method')?.valueChanges.subscribe((method) => {
-      this.deliveryMethod.set(method);
-      if (method === 'home') {
-        this.deliveryForm.get('shopId')?.clearValidators();
-        this.deliveryForm.get('addressId')?.setValidators(Validators.required);
-      } else {
-        this.deliveryForm.get('addressId')?.clearValidators();
-        this.deliveryForm.get('shopId')?.setValidators(Validators.required);
-      }
-      this.deliveryForm.get('shopId')?.updateValueAndValidity();
-      this.deliveryForm.get('addressId')?.updateValueAndValidity();
     });
 
     this.route.queryParamMap.subscribe((params) => {
       const id = params.get('orderId');
       this.orderId.set(id);
+
+      const fromCartParam = String(params.get('fromCart') || '').toLowerCase();
+      this.fromCart.set(fromCartParam === '1' || fromCartParam === 'true');
 
       if (id) {
         // Mode commande: récap basé sur l'order
@@ -253,11 +217,6 @@ export class CheckoutComponent {
     return this.deliveryAddresses().find((addr) => addr.id === addressId);
   }
 
-  getSelectedShop(): PickupShop | undefined {
-    const shopId = this.deliveryForm.get('shopId')?.value;
-    return this.pickupShops().find((shop) => shop.id === shopId);
-  }
-
   addNewAddress(): void {
     console.log('Add new address');
   }
@@ -324,7 +283,6 @@ export class CheckoutComponent {
         bank_name: String(this.paymentForm.get('bankName')?.value || '').trim(),
         account_holder: String(this.paymentForm.get('accountHolder')?.value || '').trim(),
         account_number: String(this.paymentForm.get('accountNumber')?.value || '').trim() || undefined,
-        reference: String(this.paymentForm.get('reference')?.value || '').trim(),
         note: String(this.paymentForm.get('note')?.value || '').trim() || undefined
       }
     };
@@ -332,6 +290,12 @@ export class CheckoutComponent {
     this.isSubmitting.set(true);
     try {
       await firstValueFrom(this.paymentService.createBankPayment(payload as any));
+
+      // Paiement enregistré: on vide le panier
+      if (this.fromCart()) {
+        this.cartService.clear();
+      }
+
       this.orderNumber.set(orderId);
       this.currentStep.set(3);
     } catch (err: any) {
@@ -345,7 +309,7 @@ export class CheckoutComponent {
   // Estimated delivery/pickup date
   getEstimatedDate(): string {
     const date = new Date();
-    date.setDate(date.getDate() + (this.deliveryMethod() === 'home' ? 3 : 1));
+    date.setDate(date.getDate() + 3);
     return date.toLocaleDateString('fr-FR', {
       weekday: 'long',
       day: 'numeric',

@@ -47,12 +47,11 @@ const createBankPaymentForOrder = async ({ orderId, userId, bankDetails }) => {
     bankDetails?.account_holder || bankDetails?.accountHolder || null;
   const account_number =
     bankDetails?.account_number || bankDetails?.accountNumber || null;
-  const reference = bankDetails?.reference || null;
   const note = bankDetails?.note || null;
 
-  if (!bank_name || !account_holder || !reference) {
+  if (!bank_name || !account_holder) {
     throw buildError(
-      "Informations bancaires incomplètes (bank_name, account_holder, reference)",
+      "Informations bancaires incomplètes (bank_name, account_holder)",
       400
     );
   }
@@ -69,7 +68,6 @@ const createBankPaymentForOrder = async ({ orderId, userId, bankDetails }) => {
       bank_name: String(bank_name).trim(),
       account_holder: String(account_holder).trim(),
       account_number: account_number ? String(account_number).trim() : null,
-      reference: String(reference).trim(),
       note: note ? String(note).trim() : null
     }
   });

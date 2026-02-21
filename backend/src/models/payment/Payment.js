@@ -17,11 +17,6 @@ const BankDetailsSchema = new mongoose.Schema(
       trim: true,
       default: null
     },
-    reference: {
-      type: String,
-      trim: true,
-      default: null
-    },
     note: {
       type: String,
       trim: true,

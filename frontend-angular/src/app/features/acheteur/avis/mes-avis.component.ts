@@ -1,7 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 interface Review {
   id: string;
@@ -35,10 +35,14 @@ interface PendingReview {
   styleUrl: './mes-avis.component.css'
 })
 export class MesAvisComponent {
+  private route = inject(ActivatedRoute);
+
   activeTab = signal<'all' | 'shops' | 'products'>('all');
   showReviewModal = signal(false);
   editingReview = signal<Review | null>(null);
   pendingReview = signal<PendingReview | null>(null);
+
+  private handledInitialQuery = false;
 
   // Form data
   formRating = signal(5);
@@ -134,6 +138,34 @@ export class MesAvisComponent {
   // Computed signals for review counts
   shopReviewsCount = computed(() => this.reviews().filter(r => r.type === 'shop').length);
   productReviewsCount = computed(() => this.reviews().filter(r => r.type === 'product').length);
+
+  constructor() {
+    const qp = this.route.snapshot.queryParamMap;
+    const orderId = qp.get('orderId');
+    if (orderId && !this.handledInitialQuery) {
+      this.handledInitialQuery = true;
+
+      const typeParam = qp.get('type');
+      const type: 'shop' | 'product' = typeParam === 'product' ? 'product' : 'shop';
+
+      const orderDateParam = qp.get('orderDate');
+      const parsedDate = orderDateParam ? new Date(orderDateParam) : new Date();
+      const orderDate = Number.isFinite(parsedDate.getTime()) ? parsedDate : new Date();
+
+      const pending: PendingReview = {
+        id: `order-${orderId}-${type}`,
+        type,
+        shopId: qp.get('shopId') || undefined,
+        shopName: qp.get('shopName') || undefined,
+        productId: qp.get('productId') || undefined,
+        productName: qp.get('productName') || undefined,
+        orderId,
+        orderDate
+      };
+
+      this.openReviewModal(pending);
+    }
+  }
 
   formatDate(date: Date): string {
     return new Intl.DateTimeFormat('fr-FR', {

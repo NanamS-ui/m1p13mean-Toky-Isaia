@@ -86,7 +86,8 @@ export class AcheteurAccueilComponent implements OnInit {
     const category = this.normalizeCategory(shop.shop_category?.value);
     const label = BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
     const { rating } = this.getMockRating(shop._id);
-    const isOpen = shop.is_accepted && this.openingHours.isShopOpenNow(shop);
+    const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
+    const isOpen = isActive && this.openingHours.isShopOpenNow(shop);
 
     return {
       id: shop._id,
@@ -96,6 +97,11 @@ export class AcheteurAccueilComponent implements OnInit {
       rating,
       isOpen
     };
+  }
+
+  private isStatusActive(value?: string): boolean {
+    if (!value) return false;
+    return value.toLowerCase().includes('active');
   }
 
   private normalizeCategory(value?: string): BoutiqueCategory {

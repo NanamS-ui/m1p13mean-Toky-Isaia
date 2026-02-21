@@ -83,125 +83,47 @@
             </h2>
 
             <form [formGroup]="deliveryForm">
-              <!-- Delivery Method Selection -->
-              <div class="delivery-methods">
-                <label class="delivery-option">
-                  <input
-                    type="radio"
-                    formControlName="method"
-                    value="home"
-                    class="radio-input"
-                  />
-                  <div class="delivery-option-content">
-                    <div class="delivery-option-header">
-                      <span class="material-symbols-outlined">home</span>
-                      <div>
-                        <h3>Livraison à domicile</h3>
-                        <p>Livraison à votre adresse (3-5 jours ouvrés)</p>
-                      </div>
-                    </div>
-                  </div>
-                </label>
-
-                <label class="delivery-option">
-                  <input
-                    type="radio"
-                    formControlName="method"
-                    value="store"
-                    class="radio-input"
-                  />
-                  <div class="delivery-option-content">
-                    <div class="delivery-option-header">
-                      <span class="material-symbols-outlined">store</span>
-                      <div>
-                        <h3>Retrait en magasin</h3>
-                        <p>Récupérez votre commande dans la boutique (1-2 jours)</p>
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              </div>
-
-              <!-- Address Selection (Home Delivery) -->
-              @if (deliveryMethod() === 'home') {
-                <div class="form-section">
-                  <div class="section-header">
-                    <h3>
-                      <span class="material-symbols-outlined">location_on</span>
-                      Adresse de livraison
-                    </h3>
-                    <button type="button" class="btn-add" (click)="addNewAddress()">
-                      <span class="material-symbols-outlined">add</span>
-                      Ajouter une adresse
-                    </button>
-                  </div>
-
-                  <div class="address-list">
-                    @for (address of deliveryAddresses(); track address.id) {
-                      <label class="address-card">
-                        <input
-                          type="radio"
-                          formControlName="addressId"
-                          [value]="address.id"
-                          class="radio-input"
-                        />
-                        <div class="address-card-content">
-                          <div class="address-header">
-                            <span class="address-label">{{ address.label }}</span>
-                            @if (address.isDefault) {
-                              <span class="address-badge">Par défaut</span>
-                            }
-                          </div>
-                          <p class="address-text">
-                            {{ address.street }}<br>
-                            {{ address.postalCode }} {{ address.city }}
-                          </p>
-                        </div>
-                      </label>
-                    }
-                  </div>
-
-                  @if (deliveryForm.get('addressId')?.invalid && deliveryForm.get('addressId')?.touched) {
-                    <p class="error-message">Veuillez sélectionner une adresse de livraison</p>
-                  }
-                </div>
-              }
-
-              <!-- Shop Selection (Store Pickup) -->
-              @if (deliveryMethod() === 'store') {
-                <div class="form-section">
+              <div class="form-section">
+                <div class="section-header">
                   <h3>
-                    <span class="material-symbols-outlined">store</span>
-                    Boutique de retrait
+                    <span class="material-symbols-outlined">location_on</span>
+                    Adresse de livraison
                   </h3>
+                  <button type="button" class="btn-add" (click)="addNewAddress()">
+                    <span class="material-symbols-outlined">add</span>
+                    Ajouter une adresse
+                  </button>
+                </div>
 
-                  <div class="shop-list">
-                    @for (shop of pickupShops(); track shop.id) {
-                      <label class="shop-card">
-                        <input
-                          type="radio"
-                          formControlName="shopId"
-                          [value]="shop.id"
-                          class="radio-input"
-                        />
-                        <div class="shop-card-content">
-                          <div class="shop-header">
-                            <span class="material-symbols-outlined">store</span>
-                            <div>
-                              <h4>{{ shop.name }}</h4>
-                              <p>{{ shop.zone }} - {{ shop.address }}</p>
-                            </div>
-                          </div>
+                <div class="address-list">
+                  @for (address of deliveryAddresses(); track address.id) {
+                    <label class="address-card">
+                      <input
+                        type="radio"
+                        formControlName="addressId"
+                        [value]="address.id"
+                        class="radio-input"
+                      />
+                      <div class="address-card-content">
+                        <div class="address-header">
+                          <span class="address-label">{{ address.label }}</span>
+                          @if (address.isDefault) {
+                            <span class="address-badge">Par défaut</span>
+                          }
                         </div>
-                      </label>
-                    }
-                  </div>
-
-                  @if (deliveryForm.get('shopId')?.invalid && deliveryForm.get('shopId')?.touched) {
-                    <p class="error-message">Veuillez sélectionner une boutique de retrait</p>
+                        <p class="address-text">
+                          {{ address.street }}<br>
+                          {{ address.postalCode }} {{ address.city }}
+                        </p>
+                      </div>
+                    </label>
                   }
                 </div>
-              }
+
+                @if (deliveryForm.get('addressId')?.invalid && deliveryForm.get('addressId')?.touched) {
+                  <p class="error-message">Veuillez sélectionner une adresse de livraison</p>
+                }
+              </div>
             </form>
           </div>
         </div>
@@ -287,27 +209,13 @@
               </div>
 
               <div class="form-group">
-                <label for="accountNumber">Numéro de compte (optionnel)</label>
+                <label for="accountNumber">Numéro de compte</label>
                 <input
                   id="accountNumber"
                   type="text"
                   formControlName="accountNumber"
                   placeholder="0000 0000 0000"
                 />
-              </div>
-
-              <div class="form-group">
-                <label for="reference">Référence / N° de transaction</label>
-                <input
-                  id="reference"
-                  type="text"
-                  formControlName="reference"
-                  placeholder="Ex: TRX123456"
-                  [class.error]="paymentForm.get('reference')?.invalid && paymentForm.get('reference')?.touched"
-                />
-                @if (paymentForm.get('reference')?.invalid && paymentForm.get('reference')?.touched) {
-                  <p class="error-message">Champ obligatoire</p>
-                }
               </div>
 
               <div class="form-group">
@@ -357,19 +265,14 @@
 
             <div class="summary-delivery">
               <div class="summary-delivery-info">
-                <span class="material-symbols-outlined">
-                  {{ deliveryMethod() === 'home' ? 'home' : 'store' }}
-                </span>
+                <span class="material-symbols-outlined">home</span>
                 <div>
                   <strong>
-                    {{ deliveryMethod() === 'home' ? 'Livraison à domicile' : 'Retrait en magasin' }}
+                    Livraison à domicile
                   </strong>
                   <p>
-                    @if (deliveryMethod() === 'home' && getSelectedAddress()) {
+                    @if (getSelectedAddress()) {
                       {{ getSelectedAddress()!.street }}, {{ getSelectedAddress()!.city }}
-                    }
-                    @if (deliveryMethod() === 'store' && getSelectedShop()) {
-                      {{ getSelectedShop()!.name }} - {{ getSelectedShop()!.address }}
                     }
                   </p>
                 </div>
@@ -412,19 +315,14 @@
             </div>
 
             <div class="confirmation-detail">
-              <span class="material-symbols-outlined">
-                {{ deliveryMethod() === 'home' ? 'home' : 'store' }}
-              </span>
+              <span class="material-symbols-outlined">home</span>
               <div>
                 <strong>
-                  {{ deliveryMethod() === 'home' ? 'Livraison à domicile' : 'Retrait en magasin' }}
+                  Livraison à domicile
                 </strong>
                 <p>
-                  @if (deliveryMethod() === 'home' && getSelectedAddress()) {
+                  @if (getSelectedAddress()) {
                     {{ getSelectedAddress()!.street }}, {{ getSelectedAddress()!.city }}
-                  }
-                  @if (deliveryMethod() === 'store' && getSelectedShop()) {
-                    {{ getSelectedShop()!.name }} - {{ getSelectedShop()!.address }}
                   }
                 </p>
               </div>

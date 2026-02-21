@@ -19,7 +19,6 @@ export interface CreateBankPaymentPayload {
     bank_name: string;
     account_holder: string;
     account_number?: string;
-    reference: string;
     note?: string;
   };
 }

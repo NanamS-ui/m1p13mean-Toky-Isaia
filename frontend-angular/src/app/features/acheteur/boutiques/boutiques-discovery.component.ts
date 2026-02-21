@@ -151,6 +151,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
     const category = this.normalizeCategory(shop.shop_category?.value);
     const floor = this.extractFloor(shop.door);
     const { rating, reviewCount } = this.getMockRating(shop._id);
+    const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
 
     return {
       id: shop._id,
@@ -159,7 +160,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
       logoUrl: shop.logo,
       rating,
       reviewCount,
-      isOpen: shop.is_accepted && this.openingHours.isShopOpenNow(shop),
+      isOpen: isActive && this.openingHours.isShopOpenNow(shop),
       floor,
       zone: this.extractZone(shop.door),
       description: shop.description ?? '',

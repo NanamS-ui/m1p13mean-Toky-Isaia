@@ -1,7 +1,10 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { OrderStatus, Order } from './mes-commandes.component';
+import { OrdersService } from '../../../core/services/order/order.service';
+import { PaymentService } from '../../../core/services/payment/payment.service';
+import { catchError, forkJoin, of } from 'rxjs';
 
 export interface OrderItem {
   id: string;
@@ -29,7 +32,25 @@ export interface OrderDetail extends Order {
   estimatedDelivery?: Date;
   trackingNumber?: string;
   paymentMethod: string;
-  paymentStatus: 'paid' | 'pending' | 'refunded';
+  paymentStatus: 'paid' | 'pending' | 'rejected';
+}
+
+type PaymentStatus = 'WAITING_CONFIRMATION' | 'CONFIRMED' | 'REJECTED' | string;
+
+interface OrderPayment {
+  _id: string;
+  provider?: string;
+  method?: string;
+  status?: PaymentStatus;
+  bank_details?: {
+    bank_name?: string | null;
+    account_holder?: string | null;
+    account_number?: string | null;
+    note?: string | null;
+  } | null;
+  amount?: number;
+  currency?: string;
+  created_at?: string | Date;
 }
 
 @Component({
@@ -40,104 +61,15 @@ export interface OrderDetail extends Order {
   styleUrl: './commande-suivi.component.css'
 })
 export class CommandeSuiviComponent implements OnInit {
-  // Mock order data
-  private mockOrders: Record<string, OrderDetail> = {
-    '1': {
-      id: '1',
-      orderNumber: 'CMD-2025-001',
-      date: new Date('2025-01-15'),
-      total: 234000,
-      status: 'delivered',
-      itemsCount: 3,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1',
-      items: [
-        {
-          id: '1',
-          productId: '1',
-          productName: 'Robe été fleurie',
-          quantity: 2,
-          price: 75000,
-          promoPrice: 59000
-        },
-        {
-          id: '2',
-          productId: '8',
-          productName: 'Sac à main cuir',
-          quantity: 1,
-          price: 180000,
-          promoPrice: 140000
-        }
-      ],
-      deliveryMethod: 'delivery',
-      deliveryAddress: 'Lot II M 12, Antananarivo 101',
-      estimatedDelivery: new Date('2025-01-18'),
-      paymentMethod: 'Mobile Money',
-      paymentStatus: 'paid'
-    },
-    '2': {
-      id: '2',
-      orderNumber: 'CMD-2025-002',
-      date: new Date('2025-01-20'),
-      total: 185000,
-      status: 'shipped',
-      itemsCount: 1,
-      boutiqueName: 'TechZone',
-      boutiqueId: '2',
-      items: [
-        {
-          id: '1',
-          productId: '2',
-          productName: 'Casque Bluetooth Pro',
-          quantity: 1,
-          price: 185000
-        }
-      ],
-      deliveryMethod: 'delivery',
-      deliveryAddress: 'Lot II M 12, Antananarivo 101',
-      estimatedDelivery: new Date('2025-02-05'),
-      trackingNumber: 'TRK-2025-002-ABC',
-      paymentMethod: 'Carte bancaire',
-      paymentStatus: 'paid'
-    },
-    '3': {
-      id: '3',
-      orderNumber: 'CMD-2025-003',
-      date: new Date('2025-01-25'),
-      total: 590000,
-      status: 'preparing',
-      itemsCount: 4,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1',
-      items: [
-        {
-          id: '1',
-          productId: '1',
-          productName: 'Robe été fleurie',
-          quantity: 3,
-          price: 75000,
-          promoPrice: 59000
-        },
-        {
-          id: '2',
-          productId: '5',
-          productName: 'Montre connectée',
-          quantity: 1,
-          price: 250000,
-          promoPrice: 199000
-        }
-      ],
-      deliveryMethod: 'pickup',
-      pickupLocation: 'Boutique Mode & Style - KORUS Center',
-      estimatedDelivery: new Date('2025-02-01'),
-      paymentMethod: 'Mobile Money',
-      paymentStatus: 'paid'
-    }
-  };
+  private ordersService = inject(OrdersService);
+  private paymentService = inject(PaymentService);
+  private router = inject(Router);
 
   orderId = signal<string>('');
   order = signal<OrderDetail | null>(null);
   loading = signal<boolean>(true);
+
+  showOrderDetails = signal<boolean>(false);
 
   // Timeline steps
   timelineSteps = computed<OrderTimelineStep[]>(() => {
@@ -184,6 +116,98 @@ export class CommandeSuiviComponent implements OnInit {
 
   constructor(private route: ActivatedRoute) {}
 
+  private mapCategoryToStatus(value: string | undefined | null): OrderStatus {
+    const v = String(value || '').toLowerCase();
+    if (v.includes('attente')) return 'pending';
+    if (v.includes('confirm')) return 'confirmed';
+    if (v.includes('prépar') || v.includes('prepar')) return 'preparing';
+    if (v.includes('expédi') || v.includes('expedi') || v.includes('shipp')) return 'shipped';
+    if (v.includes('livr')) return 'delivered';
+    if (v.includes('annul')) return 'cancelled';
+    return 'pending';
+  }
+
+  private buildBoutiqueInfo(rawOrder: any): { boutiqueName: string; boutiqueId: string } {
+    const items = rawOrder?.orderItems;
+    const shops: Array<{ id: string; name: string }> = [];
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        const shop = item?.stock?.shop;
+        if (shop?._id && shop?.name) {
+          shops.push({ id: String(shop._id), name: String(shop.name) });
+        }
+      }
+    }
+    const unique = new Map<string, string>();
+    for (const s of shops) unique.set(s.id, s.name);
+    const arr = Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
+    if (arr.length === 0) return { boutiqueName: '-', boutiqueId: '' };
+    if (arr.length === 1) return { boutiqueName: arr[0].name, boutiqueId: arr[0].id };
+    return { boutiqueName: `${arr.length} boutiques`, boutiqueId: arr[0].id };
+  }
+
+  private mapPaymentMethod(payment: OrderPayment | null): string {
+    if (!payment) return 'Non effectué';
+    if (payment.method === 'BANK_TRANSFER' || payment.provider === 'bank_transfer') return 'Virement bancaire';
+    return String(payment.method || payment.provider || '-');
+  }
+
+  private mapPaymentStatus(payment: OrderPayment | null): 'paid' | 'pending' | 'rejected' {
+    const s = String(payment?.status || '').toUpperCase();
+    if (s === 'CONFIRMED') return 'paid';
+    if (s === 'WAITING_CONFIRMATION') return 'pending';
+    return 'rejected';
+  }
+
+  private toOrderDetailVM(raw: any, payment: OrderPayment | null): OrderDetail {
+    const id = String(raw?._id || raw?.id || '');
+    const createdAt = raw?.created_at ? new Date(raw.created_at) : new Date();
+    const updatedAt = raw?.updated_at ? new Date(raw.updated_at) : undefined;
+    const categoryValue = raw?.orderCategory?.value;
+    const status = this.mapCategoryToStatus(categoryValue);
+    const boutique = this.buildBoutiqueInfo(raw);
+
+    const items: OrderItem[] = (Array.isArray(raw?.orderItems) ? raw.orderItems : [])
+      .map((it: any): OrderItem | null => {
+        const stock = it?.stock;
+        const product = stock?.product;
+        const productId = product?._id;
+        const productName = product?.name || product?.title || product?.designation;
+        const quantity = Number(it?.quantity || 0);
+        const unitPrice = Number(it?.unit_price || 0);
+        const promoPct = Number(it?.promotion_percentage || 0);
+        const promoPrice = promoPct > 0 ? unitPrice * (1 - promoPct / 100) : undefined;
+        if (!productId || !productName || !Number.isFinite(quantity) || quantity <= 0) return null;
+        return {
+          id: String(it?._id || ''),
+          productId: String(productId),
+          productName: String(productName),
+          productImage: product?.image || undefined,
+          quantity,
+          price: unitPrice,
+          promoPrice
+        };
+      })
+      .filter((x: OrderItem | null): x is OrderItem => x !== null);
+
+    return {
+      id,
+      orderNumber: id,
+      date: createdAt,
+      total: Number(raw?.total || 0),
+      status,
+      itemsCount: items.length,
+      boutiqueName: boutique.boutiqueName,
+      boutiqueId: boutique.boutiqueId,
+      items,
+      deliveryMethod: 'pickup',
+      pickupLocation: boutique.boutiqueName !== '-' ? boutique.boutiqueName : undefined,
+      estimatedDelivery: status === 'delivered' ? updatedAt : undefined,
+      paymentMethod: this.mapPaymentMethod(payment),
+      paymentStatus: this.mapPaymentStatus(payment)
+    };
+  }
+
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       const id = params['id'];
@@ -194,13 +218,40 @@ export class CommandeSuiviComponent implements OnInit {
 
   private loadOrder(id: string): void {
     this.loading.set(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const order = this.mockOrders[id] || null;
-      this.order.set(order);
-      this.loading.set(false);
-    }, 300);
+    this.showOrderDetails.set(false);
+
+    forkJoin({
+      order: this.ordersService.getOrderByIdAny(id),
+      payment: this.paymentService.getLatestPaymentForOrder(id).pipe(
+        catchError(() => of(null))
+      )
+    })
+      .pipe(
+        catchError(() => of({ order: null, payment: null }))
+      )
+      .subscribe(({ order, payment }) => {
+        this.order.set(order ? this.toOrderDetailVM(order, payment) : null);
+        this.loading.set(false);
+      });
+  }
+
+  toggleOrderDetails(): void {
+    this.showOrderDetails.update((v) => !v);
+  }
+
+  giveReview(): void {
+    const o = this.order();
+    if (!o) return;
+
+    this.router.navigate(['/acheteur/avis'], {
+      queryParams: {
+        orderId: o.id,
+        shopId: o.boutiqueId || undefined,
+        shopName: o.boutiqueName || undefined,
+        orderDate: o.date?.toISOString?.() || undefined,
+        type: 'shop'
+      }
+    });
   }
 
   formatCurrency(value: number): string {

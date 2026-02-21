@@ -81,7 +81,7 @@ export class PanierComponent {
       next: (order) => {
         const orderId = (order as any)?._id;
         this.router.navigate(['/acheteur/checkout'], {
-          queryParams: orderId ? { orderId } : undefined
+          queryParams: orderId ? { orderId, fromCart: 1 } : { fromCart: 1 }
         });
       },
       error: (err) => {
