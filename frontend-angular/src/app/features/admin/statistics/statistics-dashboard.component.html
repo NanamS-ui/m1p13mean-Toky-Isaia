@@ -13,6 +13,30 @@
     </div>
   </div>
 
+  <!-- Period Selector -->
+  <div class="card filters-card">
+    <h3>Filtres</h3>
+    <div class="filters">
+      <!-- Date de début -->
+      <div class="form-group">
+        <label>Date de début</label>
+        <input type="date" [(ngModel)]="startDate" />
+      </div>
+
+      <!-- Date de fin -->
+      <div class="form-group">
+        <label>Date de fin</label>
+        <input type="date" [(ngModel)]="endDate" />
+      </div>
+
+      <!-- Bouton appliquer -->
+      <div class="form-group">
+        <br>
+        <button class="apply-btn" (click)="fetchStats()">Appliquer</button>
+      </div>
+    </div>
+  </div>
+
   <section class="card stagger-children">
     <h3><span class="material-symbols-outlined card__icon">analytics</span> Indicateurs clés</h3>
     <div class="kpi-grid">
@@ -20,7 +44,7 @@
         <div class="kpi-card">
           <span class="kpi-card__icon"><span class="material-symbols-outlined">{{ kpi.icon }}</span></span>
           <span class="kpi-label">{{ kpi.label }}</span>
-          <span class="kpi-value">{{ kpi.value }}</span>
+          <span class="kpi-value">{{ kpi.value | numberFormat }}</span>
         </div>
       }
     </div>
@@ -35,21 +59,21 @@
           @for (slice of categoryData; track slice.label) {
             <div class="donut-legend__item">
               <span class="donut-legend__dot" [style.background]="slice.color"></span>
-              <span>{{ slice.label }} {{ slice.value }} %</span>
+              <span>{{ slice.label }} {{ slice.value | numberFormat }} %</span>
             </div>
           }
         </div>
       </div>
     </section>
     <section class="card card--bars">
-      <h3><span class="material-symbols-outlined card__icon">horizontal_rule</span> CA par boutique (M Ar)</h3>
+      <h3><span class="material-symbols-outlined card__icon">horizontal_rule</span> CA par boutique (MGA)</h3>
       <div class="bars-chart">
         @for (bar of boutiqueBars; track bar.name) {
           <div class="bars-chart__row">
             <span class="bars-chart__label">{{ bar.name }}</span>
             <div class="bars-chart__track">
               <div class="bars-chart__fill" [style.width.%]="(bar.value / maxBoutiqueValue) * 100"></div>
-              <span class="bars-chart__value">{{ bar.value }}</span>
+              <span class="bars-chart__value">{{ bar.value | numberFormat }}</span>
             </div>
           </div>
         }
