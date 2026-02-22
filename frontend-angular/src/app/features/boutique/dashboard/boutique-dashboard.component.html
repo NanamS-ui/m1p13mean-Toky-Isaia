@@ -1,4 +1,5 @@
 <div class="dashboard">
+  
   <!-- Header -->
   <div class="dashboard__header">
     <div class="header__info">
@@ -6,14 +7,14 @@
       <p class="header__date">{{ 'Aujourd\'hui' }}, {{ now | date:'dd/MM/yyyy' }}
       </p>
     </div>
-    <div class="header__actions">
-      <button class="btn btn--outline">
+    <div  class="header__actions">
+      <button  class="btn btn--outline" (click)="exportToPDF()">
         <span class="material-symbols-outlined">download</span>
         Exporter
       </button>
     </div>
   </div>
-
+  <div #contentToConvert >
   <!-- KPI Cards -->
   <div class="kpi-grid">
     <div class="kpi-card kpi-card--primary">
@@ -51,7 +52,7 @@
       <div class="kpi-card__content">
         <span class="kpi-card__label">Commandes en attente</span>
         <span class="kpi-card__value">{{ statistiques?.stats?.orderStats?.pending ?? 0 }}</span>
-        <a routerLink="/boutique/commandes" class="kpi-card__link">Voir les commandes</a>
+        <a data-html2canvas-ignore="true" routerLink="/boutique/commandes" class="kpi-card__link">Voir les commandes</a>
       </div>
     </div>
 
@@ -145,7 +146,7 @@
           </div>
         </div>
       </div>
-      <a routerLink="/boutique/statistiques" class="card__link">
+      <a data-html2canvas-ignore="true" routerLink="/boutique/statistiques" class="card__link">
         Voir toutes les statistiques
         <span class="material-symbols-outlined">arrow_forward</span>
       </a>
@@ -161,7 +162,7 @@
           <span class="material-symbols-outlined">receipt_long</span>
           Commandes récentes
         </h3>
-        <a routerLink="/boutique/commandes" class="btn btn--sm btn--ghost">
+        <a data-html2canvas-ignore="true" routerLink="/boutique/commandes" class="btn btn--sm btn--ghost">
           Voir tout
           <span class="material-symbols-outlined">chevron_right</span>
         </a>
@@ -201,10 +202,10 @@
     <section class="card products-card">
       <div class="card__header">
         <h3>
-          <span class="material-symbols-outlined">star</span>
+          <span data-html2canvas-ignore="true" class="material-symbols-outlined">star</span>
           Produits les plus vendus
         </h3>
-        <a routerLink="/boutique/produits" class="btn btn--sm btn--ghost">
+        <a data-html2canvas-ignore="true" routerLink="/boutique/produits" class="btn btn--sm btn--ghost">
           Gérer
           <span class="material-symbols-outlined">chevron_right</span>
         </a>
@@ -245,7 +246,7 @@
       </div>
     </section>
   </div>
-
+  </div>
   <!-- Quick Actions -->
   <section class="quick-actions">
     <h3>Actions rapides</h3>
@@ -268,4 +269,5 @@
       </a>
     </div>
   </section>
+  
 </div>

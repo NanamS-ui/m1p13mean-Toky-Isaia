@@ -6,10 +6,10 @@
       <p>Analysez les performances de votre boutique</p>
     </div>
     <div class="header__actions">
-      <button class="btn btn--outline" (click)="exportExcel()">
+      <!-- <button class="btn btn--outline" (click)="exportExcel()">
         <span class="material-symbols-outlined">table_chart</span>
         Export Excel
-      </button>
+      </button> -->
       <button class="btn btn--primary" (click)="exportPDF()">
         <span class="material-symbols-outlined">picture_as_pdf</span>
         Export PDF
@@ -42,7 +42,7 @@
   </div>
 </div>
 
-
+  <div #contentToConvert >
   <!-- Main KPIs -->
   <div class="kpi-grid">
     <div class="kpi-card kpi-card--primary">
@@ -211,7 +211,7 @@
       </div>
     </section>
   </div>
-
+  </div>
   <!-- Summary Cards -->
   <!-- <div class="summary-row">
     <div class="summary-card">

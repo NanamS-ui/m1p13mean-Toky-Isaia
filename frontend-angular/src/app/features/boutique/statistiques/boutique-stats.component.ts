@@ -1,9 +1,10 @@
-import { ChangeDetectorRef, Component, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, signal,ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrderStatisticService } from '../../../core/services/statistic/orderStatistic.service';
 import { forkJoin } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 interface SalesData {
   period: string;
   revenue: number;
@@ -137,10 +138,57 @@ export class BoutiqueStatsComponent {
   getBarHeight(value: number): number {
     return (value / this.maxDailyRevenue) * 100;
   }
-
+  @ViewChild('contentToConvert') contentToConvert!: ElementRef;
   exportPDF(): void {
-    console.log('Exporting PDF...');
-    alert('Export PDF (simulation)');
+    const data = this.contentToConvert.nativeElement;
+
+    html2canvas(data, { scale: 2 }).then(canvas => {
+      
+      const now = new Date();
+      const formattedDate = 
+        now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + '_' +
+        String(now.getHours()).padStart(2, '0') + '-' +
+        String(now.getMinutes()).padStart(2, '0');
+
+      
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      
+      
+      const pageWidth = 297; 
+      const pageHeight = 210; 
+      
+      
+      const padding = 15; 
+      
+      
+      const maxImgWidth = pageWidth - (padding * 2);
+      const maxImgHeight = pageHeight - (padding * 2);
+
+      
+      const ratio = canvas.width / canvas.height;
+      
+      
+      let imgWidth = maxImgWidth;
+      let imgHeight = imgWidth / ratio;
+
+      
+      if (imgHeight > maxImgHeight) {
+        imgHeight = maxImgHeight;
+        imgWidth = imgHeight * ratio;
+      }
+
+      
+      const xOffset = padding + (maxImgWidth - imgWidth) / 2;
+      const yOffset = padding + (maxImgHeight - imgHeight) / 2;
+      
+      const contentDataURL = canvas.toDataURL('image/png');
+      
+      
+      pdf.addImage(contentDataURL, 'PNG', xOffset, yOffset, imgWidth, imgHeight);
+      pdf.save(`${formattedDate}_statistique_boutique.pdf`);
+    });
   }
 
   exportExcel(): void {

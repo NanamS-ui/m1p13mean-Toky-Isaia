@@ -11,7 +11,7 @@
       </div>
       @if (sidebarOpen) {
         <div class="brand__info">
-          <span class="brand__name">{{ boutiqueInfo().name }}</span>
+          <span class="brand__name">{{  user()?.firstName  }}</span>
           <span class="brand__status" [class]="'brand__status--' + boutiqueInfo().status">
             {{ getStatusLabel(boutiqueInfo().status) }}
           </span>
@@ -70,7 +70,7 @@
     </nav>
 
     <!-- Quick Stats -->
-    @if (sidebarOpen) {
+    <!-- @if (sidebarOpen) {
       <div class="sidebar__stats">
         <div class="quick-stat">
           <span class="material-symbols-outlined">shopping_cart</span>
@@ -87,7 +87,7 @@
           </div>
         </div>
       </div>
-    }
+    } -->
 
     <!-- Toggle -->
     <button type="button" class="sidebar__toggle" (click)="sidebarOpen = !sidebarOpen">
@@ -101,12 +101,12 @@
         <h1 class="header__title">Espace Boutique</h1>
       </div>
       <div class="header__actions">
-        <button type="button" class="header__btn header__btn--notif">
+        <!-- <button type="button" class="header__btn header__btn--notif">
           <span class="material-symbols-outlined">notifications</span>
           @if (unreadMessages > 0) {
             <span class="header__btn-badge">{{ unreadMessages }}</span>
           }
-        </button>
+        </button> -->
         <div class="user-menu">
           <span class="material-symbols-outlined user-menu__avatar">account_circle</span>
           <span class="user-menu__name">{{ user()?.firstName }} {{ user()?.lastName }}</span>
