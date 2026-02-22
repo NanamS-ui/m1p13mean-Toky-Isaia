@@ -43,6 +43,9 @@ app.use("/api/payments", require("./routes/payment/PaymentRoute"));
 app.use("/api/user_status", require("./routes/user/UserStatusRoute"));
 
 app.use("/api/documents", require("./routes/billing/BillingDocumentRoute"));
+app.use("/api/status_support_clients", require("./routes/supportClient/StatusSupportClientRoute"));
+app.use("/api/type_support_clients", require("./routes/supportClient/TypeSupportClientRoute"));
+app.use("/api/support_clients", require("./routes/supportClient/SupportClientRoute"));
 
 
 
