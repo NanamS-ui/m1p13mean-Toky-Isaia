@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError,switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 const publicPaths = [
   '/auth/login',
@@ -35,9 +35,29 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
+      // if (error.status === 401) {
+      //   auth.logout();
+      //   router.navigate(['/login']);
+      // }
       if (error.status === 401) {
-        auth.logout();
-        router.navigate(['/login']);
+
+        return auth.refreshToken().pipe(
+          switchMap((newToken) => {
+
+            const retryReq = req.clone({
+              setHeaders: {
+                Authorization: `Bearer ${newToken}`
+              }
+            });
+
+            return next(retryReq);
+          }),
+          catchError((refreshError) => {
+            auth.logout();
+            router.navigate(['/login']);
+            return throwError(() => refreshError);
+          })
+        );
       }
       return throwError(() => error);
     })

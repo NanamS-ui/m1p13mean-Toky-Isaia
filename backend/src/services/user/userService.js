@@ -23,6 +23,26 @@ const createUser = async (payload) => {
 
 const getUsers = async () => User.find();
 
+const logoutUser = async (userID)=>{
+  const now = new Date();
+  const user = await User.findOne({_id : new mongoose.Types.ObjectId(userID)});
+  if (!user) return;
+
+  const lastSession = user.login_history
+    .slice()
+    .reverse()
+    .find(h => h.logout_date == null);
+
+  if (lastSession) {
+    lastSession.logout_date = now;
+  }
+  // for(let i =0 ; user.login_history.length>i; i++){
+  //   if(user.login_history[i].logout_date == null)
+  //     user.login_history[i].logout_date = now;
+  // }
+  await user.save();
+  return user;
+}
 const reactiverUser = async (userID)=>{
   const now = new Date();
   const actifStatus = await UserStatus.findOne({ value: "Actif" });
@@ -30,7 +50,6 @@ const reactiverUser = async (userID)=>{
   if(user.status.equals(actifStatus._id)){
     return user;
   }
-  console.log(user);
   user.status = actifStatus._id;
   for(let i =0 ; user.suspensions.length>i; i++){
     if(user.suspensions[i].started_date <= now && user.suspensions[i].end_date > now)
@@ -137,5 +156,6 @@ module.exports = {
   getUserLoginHistory,
   addUserLoginHistory,
   getUserPourGestionAdmin,
-  reactiverUser
+  reactiverUser,
+  logoutUser
 };

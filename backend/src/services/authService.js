@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const Role = require("../models/user/Role");
 const User = require("../models/user/User");
 const UserStatus = require("../models/user/UserStatus");
+const UserService = require("../services/user/userService");
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "dev-refresh-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "15m";
@@ -194,6 +195,8 @@ const login = async (payload) => {
 
   await user.populate("role");
 
+  await UserService.logoutUser(user._id);
+  await UserService.addUserLoginHistory(user.id,{login_date : new Date()});
   const { accessToken, refreshToken, roleValue } = await buildTokens(user);
 
   return {
@@ -241,16 +244,22 @@ const refreshAccessToken = async (payload) => {
   try {
     decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
   } catch (error) {
+    const decodedUnsafe = jwt.decode(refreshToken);
+    if (decodedUnsafe?.sub) {
+      await UserService.logoutUser(decodedUnsafe.sub);
+    }
     throw buildError("Refresh token invalide", 401);
   }
 
   const user = await User.findById(decoded.sub).populate("role");
   if (!user || !user.refresh_token_hash) {
+    await UserService.logoutUser(decoded.sub);
     throw buildError("Refresh token invalide", 401);
   }
 
   const match = await bcrypt.compare(refreshToken, user.refresh_token_hash);
   if (!match) {
+    await UserService.logoutUser(decoded.sub);
     throw buildError("Refresh token invalide", 401);
   }
 
@@ -272,7 +281,7 @@ const logout = async (payload) => {
   }
 
   const user = await User.findById(decoded.sub);
-  
+  await UserService.logoutUser(user._id);
   if (user) {
     user.refresh_token_hash = null;
     await user.save();

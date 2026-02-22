@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
-
+const UserService = require("../services/user/userService");
 const requireAuth = (req, res, next) => {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;

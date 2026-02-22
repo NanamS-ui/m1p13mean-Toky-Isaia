@@ -21,10 +21,12 @@ const SuspensionSchema = new mongoose.Schema(
 const LoginHistorySchema = new mongoose.Schema(
   {
     login_date: {
-      type: Date
+      type: Date,
+      default : Date.now
     },
     logout_date: {
-      type: Date
+      type: Date,
+      default : null
     }
   },
   { _id: false }
