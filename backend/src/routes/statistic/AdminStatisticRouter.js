@@ -9,5 +9,6 @@ router.use(requireAuth);
 
 router.get("/dashboard", requireRole("ADMIN"),AdminStatisticController.getAdminDashboard);
 router.get("/statistics", requireRole("ADMIN"),AdminStatisticController.getAdminStatistics);
+router.get("/userstatistics", requireRole("ADMIN"),AdminStatisticController.getAdminUserStatistics);
 
 module.exports = router;
