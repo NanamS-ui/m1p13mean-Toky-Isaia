@@ -1,0 +1,96 @@
+<div class="messagerie-page">
+  <div class="page-header">
+    <h2>Messagerie</h2>
+    <!-- @if (totalUnread() > 0) {
+      <span class="unread-badge">{{ totalUnread() }} non lu(s)</span>
+    } -->
+  </div>
+
+  <div class="chat-container">
+    <!-- Conversations List -->
+    <div class="conversations-list">
+      <div class="conversations-header">
+        <input [(ngModel)]="recherche" type="text" placeholder="Rechercher un utilisateur..." class="search-input" />
+      </div>
+      <div class="conversations">
+        @for (conv of FilterLastMessage; track conv?._id) {
+          <div class="conversation-item" 
+               [class.conversation-item--active]="selectedMesssage?.conv?.lastMessage[0]?._id === conv?.lastMessage[0]?._id"
+               [class.conversation-item--unread]="conv.unread > 0"
+               (click)="selectConversation2(conv)">
+            <div class="conversation-avatar">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="conversation-content">
+              <div class="conversation-header">
+                <span class="conversation-name">{{ conv?.name }}</span>
+                <span class="conversation-time">{{ formatDate(conv?.lastMessage[0]?.created_date) }}</span>
+              </div>
+              <p class="conversation-preview">{{ conv?.lastMessage[0]?.message ?? "Commencer à envoyer un message" }}</p>
+            </div>
+            <!-- @if (conv.unread > 0) {
+              <span class="conversation-badge">{{ conv.unread }}</span>
+            } -->
+          </div>
+        } @empty {
+          <div class="empty-conversations">
+            <span class="material-symbols-outlined">chat_bubble</span>
+            <p>Aucune conversation</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area">
+      @if (selectedMesssage) {
+        <div class="chat-header">
+          <div class="chat-user">
+            <div class="chat-avatar">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="chat-user-info">
+              <span class="chat-user-name">{{ selectedMesssage?.conv.name }}</span>
+              <span class="chat-user-status">En ligne</span>
+            </div>
+          </div>
+          <div class="chat-actions">
+            <button class="action-btn" type="button">
+              <span class="material-symbols-outlined">more_vert</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="chat-messages">
+          @for (msg of selectedMesssage?.selectedMessage; track msg?._id) {
+            <div class="message"
+                 [class.message--sent]="msg?.sender === user()?.id"
+                 [class.message--received]="msg?.sender !== user()?.id"
+                 [style.justifyContent]="msg?.sender === user()?.id ? 'flex-end' : 'flex-start'">
+              <div class="message-content">
+                <p>{{ msg?.message }}</p>
+                <span class="message-time">{{ formatDate(msg?.created_date) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="chat-input">
+          <input type="text" 
+                 [(ngModel)]="newMessage" 
+                 (keyup.enter)="sendMessage2()"
+                 placeholder="Écrire un message..." />
+          <button class="send-btn" type="button" (click)="sendMessage2()" [disabled]="!newMessage.trim()">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      } @else {
+        <div class="no-conversation">
+          <span class="material-symbols-outlined">forum</span>
+          <h4>Sélectionnez une conversation</h4>
+          <p>Choisissez une conversation dans la liste pour commencer</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

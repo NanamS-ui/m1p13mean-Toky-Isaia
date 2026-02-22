@@ -35,6 +35,7 @@ export class AcheteurLayoutComponent {
     { route: '/acheteur/produits', label: 'Produits', icon: 'inventory_2' },
     { route: '/acheteur/panier', label: 'Mon panier', icon: 'shopping_cart' },
     { route: '/acheteur/commandes', label: 'Mes commandes', icon: 'local_shipping' },
+    { route: '/acheteur/messagerie', label: 'Messagerie', icon: 'forum' },
     { route: '/acheteur/avis', label: 'Mes avis', icon: 'rate_review' },
     { route: '/acheteur/carte', label: 'Carte du centre', icon: 'map' }
   ];

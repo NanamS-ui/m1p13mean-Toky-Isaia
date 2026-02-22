@@ -61,6 +61,10 @@ export const acheteurRoutes: Routes = [
       { 
         path: 'notifications', 
         loadComponent: () => import('./notifications/notifications.component').then(m => m.NotificationsComponent)
+      },
+      { 
+        path: 'messagerie', 
+        loadComponent: () => import('./messagerie/messagerie.component').then(m => m.MessagerieComponent)
       }
     ]
   }
