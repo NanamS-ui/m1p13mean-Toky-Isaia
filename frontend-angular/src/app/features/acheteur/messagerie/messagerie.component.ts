@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { MessengerService } from '../../../core/services/messenger/messenger.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { OrderByDateAscPipe } from './order-by-date-asc.pipe';
 
 @Component({
   selector: 'app-acheteur-messagerie',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, OrderByDateAscPipe],
   templateUrl: './messagerie.component.html',
   styleUrl: './messagerie.component.css'
 })
@@ -64,7 +65,8 @@ export class MessagerieComponent {
 
   selectConversation2(conv: any): void {
     forkJoin({
-      selectedMessage: this.messengerService.getConversation(conv?._id)
+      selectedMessage: this.messengerService.getConversation(conv?._id),
+      markAsRead: this.messengerService.markConversationAsRead(conv?._id)
     }).subscribe(({ selectedMessage }) => {
       this.selectedMesssage = { conv, selectedMessage };
       this.cdr.detectChanges();

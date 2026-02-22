@@ -1,3 +1,15 @@
+// Marquer tous les messages reçus comme lus dans une conversation
+const markConversationAsRead = async (userId, otherUserId) => {
+  await Messenger.updateMany(
+    {
+      recipient: userId,
+      sender: otherUserId,
+      read: false,
+      deleted_at: null
+    },
+    { $set: { read: true } }
+  );
+};
 const Messenger = require("../../models/messenger/Messenger");
 const mongoose = require("mongoose");
 const User = require("../../models/user/User")
@@ -104,5 +116,6 @@ module.exports = {
   updateMessage,
   deleteMessage,
   getConversation,
-  getUsersWithLastMessage
+  getUsersWithLastMessage,
+  markConversationAsRead
 };

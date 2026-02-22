@@ -13,6 +13,8 @@ router.put("/:id", ctrl.updateMessage);
 router.delete("/:id", ctrl.deleteMessage);
 
 
+
+router.post("/contacts/mark-as-read", ctrl.markConversationAsRead);
 router.get("/contacts/conversation", ctrl.getConversation);
 
 

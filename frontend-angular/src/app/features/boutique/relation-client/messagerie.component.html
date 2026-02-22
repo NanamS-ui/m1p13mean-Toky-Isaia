@@ -64,8 +64,11 @@
         </div>
 
         <div class="chat-messages">
-          @for (msg of selectedMesssage?.selectedMessage; track msg?._id) {
-            <div class="message" [class.message--sent]="msg?.sender !== selectedMesssage.conv?.lastMessage?.otherUser?._id" [class.message--received]="msg?.sender === selectedMesssage.conv?.lastMessage?.otherUser?._id">
+          @for (msg of (selectedMesssage?.selectedMessage | orderByDateAsc); track msg?._id) {
+            <div class="message"
+                 [class.message--sent]="msg?.sender === user()?.id"
+                 [class.message--received]="msg?.sender !== user()?.id"
+                 [style.justifyContent]="msg?.sender === user()?.id ? 'flex-end' : 'flex-start'">
               <div class="message-content">
                 <p>{{ msg?.message }}</p>
                 <span class="message-time">{{formatDate(msg?.created_date)  }}</span>

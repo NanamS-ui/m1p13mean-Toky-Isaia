@@ -21,6 +21,10 @@ const MessengerSchema = new mongoose.Schema(
     deleted_at: {
       type: Date,
       default: null
+    },
+    read: {
+      type: Boolean,
+      default: false
     }
   },
   {

@@ -1,3 +1,13 @@
+// Marquer tous les messages reçus comme lus
+exports.markConversationAsRead = async (req, res) => {
+  try {
+    const { recipientId } = req.body;
+    await MessengerService.markConversationAsRead(req.user.id, recipientId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+};
 
 const MessengerService = require("../../services/messenger/MessengerService");
 

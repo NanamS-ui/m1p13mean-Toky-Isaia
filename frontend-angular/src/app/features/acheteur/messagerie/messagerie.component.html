@@ -62,7 +62,7 @@
         </div>
 
         <div class="chat-messages">
-          @for (msg of selectedMesssage?.selectedMessage; track msg?._id) {
+          @for (msg of (selectedMesssage?.selectedMessage | orderByDateAsc); track msg?._id) {
             <div class="message"
                  [class.message--sent]="msg?.sender === user()?.id"
                  [class.message--received]="msg?.sender !== user()?.id"

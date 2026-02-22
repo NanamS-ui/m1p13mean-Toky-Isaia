@@ -30,4 +30,9 @@ export class MessengerService{
     createMessage( payload: Partial<any>): Observable<any> {
         return this.http.post<any>(`${this.apiBaseUrl}/messenger`, payload);
     }
+
+    markConversationAsRead(recipientId: string): Observable<any> {
+        return this.http.post<any>(`${this.apiBaseUrl}/messenger/contacts/mark-as-read`, { recipientId });
+    }
+
 }
