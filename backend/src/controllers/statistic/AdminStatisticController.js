@@ -1,4 +1,5 @@
 const AdminStatisticService = require("../../services/statistics/AdminStatisticService");
+const AdminStatisticExportService = require("../../services/statistics/AdminStatisticExportService");
 exports.getAdminUserStatistics= async (req,res) => {
     try{
         let { startDate, endDate } = req.query;
@@ -14,6 +15,28 @@ exports.getAdminStatistics= async (req,res) => {
         const statistic = await AdminStatisticService.getAdminStatistics(startDate, endDate);
         res.json(statistic);
     }catch(error){
+        res.status(error.status || 400).json({ message: error.message });
+    }
+}
+
+exports.exportAdminStatisticsExcel = async (req, res) => {
+    try {
+        const startDate = req.query.startDate || req.query.dateDebut;
+        const endDate = req.query.endDate || req.query.dateFin;
+
+        const stats = await AdminStatisticService.getAdminStatistics(startDate, endDate);
+        const workbook = await AdminStatisticExportService.buildAdminStatisticsWorkbook(stats, { startDate, endDate });
+
+        const safeStart = startDate || 'all';
+        const safeEnd = endDate || 'now';
+        const filename = `statistiques-korus-centre_${safeStart}_${safeEnd}.xlsx`;
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
         res.status(error.status || 400).json({ message: error.message });
     }
 }

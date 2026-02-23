@@ -22,8 +22,7 @@ export class StatisticsDashboardComponent implements OnInit {
   endDate: string | null = null;
 
   ngOnInit(): void {
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0, 10);
+    const todayStr = this.formatDateLocal(new Date());
     this.startDate = todayStr;
     this.endDate = todayStr;
     this.fetchStats();
@@ -34,10 +33,33 @@ export class StatisticsDashboardComponent implements OnInit {
       .subscribe((stats: any) => this.applyStats(stats));
   }
 
+  exportExcel(): void {
+    const startDate = this.startDate || undefined;
+    const endDate = this.endDate || undefined;
+
+    const safeStart = startDate || 'all';
+    const safeEnd = endDate || 'now';
+    const filename = `statistiques-centre_${safeStart}_${safeEnd}.xlsx`;
+
+    this.adminStatsService.exportAdminStatisticsExcel(startDate, endDate).subscribe({
+      next: (blob) => this.saveBlob(blob, filename),
+      error: (err) => {
+        console.error("Erreur export Excel statistiques:", err);
+      }
+    });
+  }
+
   resetFilters(): void {
     this.startDate = null;
     this.endDate = null;
     this.fetchStats();
+  }
+
+  private formatDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private applyStats(stats: any) {
@@ -78,5 +100,14 @@ export class StatisticsDashboardComponent implements OnInit {
   getRandomColor(): string {
     const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#6366f1', '#a21caf', '#db2777', '#f472b6'];
     return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  private saveBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }
