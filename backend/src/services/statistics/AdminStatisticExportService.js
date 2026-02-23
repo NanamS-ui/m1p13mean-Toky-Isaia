@@ -112,6 +112,68 @@ const buildAdminStatisticsWorkbook = async (stats, options = {}) => {
   return workbook;
 };
 
+/**
+ * Construit un workbook Excel à partir des données du dashboard admin.
+ * @param {object} dashboard Retour de AdminStatisticService.getAdminDashboard
+ * @param {{ startDate?: string, endDate?: string }} options
+ */
+const buildAdminDashboardWorkbook = async (dashboard, options = {}) => {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Korus';
+  workbook.created = new Date();
+
+  const startDate = options.startDate || null;
+  const endDate = options.endDate || null;
+
+  // 1) Période / Meta
+  const metaSheet = workbook.addWorksheet('Période');
+  addKeyValueRows(metaSheet, [
+    { key: 'Date de début', value: startDate },
+    { key: 'Date de fin', value: endDate },
+    { key: 'Généré le', value: new Date().toISOString() }
+  ]);
+
+  // 2) Indicateurs du dashboard
+  const kpiSheet = workbook.addWorksheet('Indicateurs');
+  kpiSheet.columns = [
+    { header: 'Indicateur', key: 'label', width: 38 },
+    { header: 'Valeur', key: 'value', width: 22 }
+  ];
+  kpiSheet.getRow(1).font = { bold: true };
+  kpiSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+  const kpis = [
+    { label: 'Nombre de boutiques actives', value: toNumberOrNull(dashboard?.totalBoutiques) ?? 0 },
+    { label: "Nombre d'utilisateurs", value: toNumberOrNull(dashboard?.totalUsers) ?? 0 },
+    { label: 'Nombre de commandes', value: toNumberOrNull(dashboard?.totalCommandes) ?? 0 },
+    { label: 'CA total (12 derniers mois)', value: toNumberOrNull(dashboard?.CA12LastMonths?.total12Months) ?? 0 }
+  ];
+
+  kpis.forEach((k) => kpiSheet.addRow(k));
+  kpiSheet.getColumn('value').numFmt = '#,##0.00';
+
+  // 3) CA par mois (12 derniers mois)
+  const seriesSheet = workbook.addWorksheet('CA par mois');
+  seriesSheet.columns = [
+    { header: 'Mois', key: 'month', width: 14 },
+    { header: 'CA', key: 'ca', width: 18 }
+  ];
+  seriesSheet.getRow(1).font = { bold: true };
+  seriesSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+  const series = Array.isArray(dashboard?.CAParMois12DernierMois) ? dashboard.CAParMois12DernierMois : [];
+  series.forEach((m) => {
+    seriesSheet.addRow({
+      month: m?._id ?? null,
+      ca: toNumberOrNull(m?.total) ?? 0
+    });
+  });
+  seriesSheet.getColumn('ca').numFmt = '#,##0.00';
+
+  return workbook;
+};
+
 module.exports = {
-  buildAdminStatisticsWorkbook
+  buildAdminStatisticsWorkbook,
+  buildAdminDashboardWorkbook
 };

@@ -26,7 +26,17 @@ export class AdminStatisticsService {
     const params: any = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    return this.http.get(`${this.apiBaseUrl}/adminStats/export/excel`, {
+    return this.http.get(`${this.apiBaseUrl}/adminStats/statistics/export/excel`, {
+      params,
+      responseType: 'blob'
+    });
+  }
+
+  exportAdminDashboardExcel(startDate?: string, endDate?: string): Observable<Blob> {
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return this.http.get(`${this.apiBaseUrl}/adminStats/dashboard/export/excel`, {
       params,
       responseType: 'blob'
     });

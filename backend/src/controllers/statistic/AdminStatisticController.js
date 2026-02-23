@@ -49,3 +49,25 @@ exports.getAdminDashboard= async (req,res) => {
         res.status(error.status || 400).json({ message: error.message });
     }
 }
+
+exports.exportAdminDashboardExcel = async (req, res) => {
+    try {
+        const startDate = req.query.startDate || req.query.dateDebut;
+        const endDate = req.query.endDate || req.query.dateFin;
+
+        const dashboard = await AdminStatisticService.getAdminDashboard(startDate, endDate);
+        const workbook = await AdminStatisticExportService.buildAdminDashboardWorkbook(dashboard, { startDate, endDate });
+
+        const safeStart = startDate || 'all';
+        const safeEnd = endDate || 'now';
+        const filename = `dashboard-korus-centre_${safeStart}_${safeEnd}.xlsx`;
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        res.status(error.status || 400).json({ message: error.message });
+    }
+}

@@ -82,6 +82,22 @@ export class AdminDashboardComponent implements OnInit {
       });
   }
 
+  exportExcel(): void {
+    const startDate = this.startDate || undefined;
+    const endDate = this.endDate || undefined;
+
+    const safeStart = startDate || 'all';
+    const safeEnd = endDate || 'now';
+    const filename = `dashboard-centre_${safeStart}_${safeEnd}.xlsx`;
+
+    this.adminStatsService.exportAdminDashboardExcel(startDate, endDate).subscribe({
+      next: (blob) => this.saveBlob(blob, filename),
+      error: (err) => {
+        console.error('Erreur export Excel dashboard:', err);
+      }
+    });
+  }
+
   private applyDashboard(data: AdminDashboardApi): void {
     const totalBoutiques = Number(data?.totalBoutiques ?? 0);
     const totalUsers = Number(data?.totalUsers ?? 0);
@@ -136,5 +152,14 @@ export class AdminDashboardComponent implements OnInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private saveBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }
