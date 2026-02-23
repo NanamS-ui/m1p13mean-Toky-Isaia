@@ -57,8 +57,16 @@
       <span class="material-symbols-outlined">{{ sidebarOpen ? 'chevron_left' : 'chevron_right' }}</span>
     </button>
   </aside>
+  <!-- Backdrop mobile -->
+  <div class="sidebar-backdrop"
+       [class.sidebar-backdrop--visible]="sidebarOpen"
+       (click)="sidebarOpen = false"></div>
+
   <div class="main-wrapper">
     <header class="header">
+      <button type="button" class="hamburger" (click)="sidebarOpen = !sidebarOpen" aria-label="Ouvrir le menu">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
       <h1 class="header__title">Administration</h1>
       <div class="header__actions">
         <span class="user-badge">

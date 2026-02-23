@@ -13,3 +13,9 @@
 .badge--due { background: #fef3c7; color: #92400e; }
 .btn-link { background: none; border: none; color: var(--korus-accent); font-size: 0.85rem; cursor: pointer; }
 .btn-link:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .page-header h2 { font-size: 1.25rem; }
+  .data-table th, .data-table td { padding: 0.6rem 0.65rem; font-size: 0.8rem; }
+}
