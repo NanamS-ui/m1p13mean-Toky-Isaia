@@ -3,7 +3,7 @@
     <h2>Gestion des utilisateurs (acheteurs)</h2>
     <div class="page-actions">
       <a routerLink="/admin/support" class="btn btn--secondary">Support client (feedback, réclamations)</a>
-      <button type="button" class="btn btn--secondary">Historique sanctions</button>
+      <button type="button" class="btn btn--secondary" (click)="exportExcel()">Exporter Excel</button>
     </div>
   </div>
 
@@ -44,23 +44,37 @@
           </tr>
         </thead>
         <tbody>
-          @for (u of filteredUsers; track u.id) {
+          @if (isLoading) {
             <tr>
-              <td><strong>{{ u.firstName }} {{ u.lastName }}</strong></td>
-              <td>{{ u.email }}</td>
-              <td>{{ getRoleLabel(u.role) }}</td>
-              <td><span class="badge" [class]="'badge--' + u.status.toLowerCase()">{{ getStatusLabel(u.status) }}</span></td>
-              <td>{{ u.createdAt }}</td>
-              <td>
-                @if (u.status === 'ACTIVE') {
-                  <button type="button" class="btn-link btn-link--warning">Suspendre</button>
-                  <button type="button" class="btn-link btn-link--danger">Bloquer</button>
-                }
-                @if (u.status === 'SUSPENDED' || u.status === 'BLOCKED') {
-                  <button type="button" class="btn-link btn-link--success">Réactiver</button>
-                }
-              </td>
+              <td colspan="6">Chargement...</td>
             </tr>
+          } @else if (error) {
+            <tr>
+              <td colspan="6">{{ error }}</td>
+            </tr>
+          } @else if (filteredUsers.length === 0) {
+            <tr>
+              <td colspan="6">Aucun utilisateur trouvé.</td>
+            </tr>
+          } @else {
+            @for (u of filteredUsers; track u.id) {
+              <tr>
+                <td><strong>{{ u.firstName }} {{ u.lastName }}</strong></td>
+                <td>{{ u.email }}</td>
+                <td>{{ getRoleLabel(u.role) }}</td>
+                <td><span class="badge" [class]="'badge--' + u.status.toLowerCase()">{{ getStatusLabel(u.status) }}</span></td>
+                <td>{{ u.createdAt }}</td>
+                <td>
+                  @if (u.status === 'ACTIVE') {
+                    <button type="button" class="btn-link btn-link--warning">Suspendre</button>
+                    <button type="button" class="btn-link btn-link--danger">Bloquer</button>
+                  }
+                  @if (u.status === 'SUSPENDED' || u.status === 'BLOCKED') {
+                    <button type="button" class="btn-link btn-link--success">Réactiver</button>
+                  }
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>

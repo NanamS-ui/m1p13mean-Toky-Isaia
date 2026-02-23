@@ -6,6 +6,7 @@ const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 router.use(requireAuth, requireRole("ADMIN"));
 
 router.post("/", userCtrl.createUser);
+router.get("/export/excel", userCtrl.exportUsersExcel);
 router.get("/", userCtrl.getUsers);
 router.get("/gestion/admin", userCtrl.getUsersPourGestionAdmin);
 router.get("/:id", userCtrl.getUserById);

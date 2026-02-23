@@ -23,6 +23,57 @@ const createUser = async (payload) => {
 
 const getUsers = async () => User.find();
 
+const getUsersForAdminExport = async () => {
+  const now = new Date();
+  const users = await User.find()
+    .populate('role', 'val')
+    .populate('status', 'value')
+    .lean();
+
+  return (users || []).map((u) => {
+    const suspensions = Array.isArray(u.suspensions) ? u.suspensions : [];
+
+    const activeSuspension = suspensions.find((s) => {
+      if (!s) return false;
+      const started = s.started_date ? new Date(s.started_date) : null;
+      const end = s.end_date ? new Date(s.end_date) : null;
+      if (!started || Number.isNaN(started.getTime())) return false;
+      if (end === null) return started <= now;
+      if (Number.isNaN(end.getTime())) return false;
+      return started <= now && end >= now;
+    });
+
+    const loginHistory = Array.isArray(u.login_history) ? u.login_history : [];
+    const lastLogin = loginHistory
+      .map((h) => (h?.login_date ? new Date(h.login_date) : null))
+      .filter((d) => d && !Number.isNaN(d.getTime()))
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+
+    const lastLogout = loginHistory
+      .map((h) => (h?.logout_date ? new Date(h.logout_date) : null))
+      .filter((d) => d && !Number.isNaN(d.getTime()))
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+
+    return {
+      id: String(u._id),
+      name: u.name || '',
+      email: u.email || '',
+      phone: u.phone || '',
+      adresse: u.adresse || '',
+      role: u.role?.val || '',
+      status: u.status?.value || '',
+      is_verified: Boolean(u.is_verified),
+      isSuspended: Boolean(activeSuspension),
+      suspensionEndDate: activeSuspension?.end_date ? new Date(activeSuspension.end_date).toISOString() : activeSuspension ? null : '',
+      created_at: u.created_at ? new Date(u.created_at).toISOString() : '',
+      lastLoginAt: lastLogin ? lastLogin.toISOString() : '',
+      lastLogoutAt: lastLogout ? lastLogout.toISOString() : '',
+      suspensions,
+      login_history: loginHistory
+    };
+  });
+};
+
 const logoutUser = async (userID)=>{
   const now = new Date();
   const user = await User.findOne({_id : new mongoose.Types.ObjectId(userID)});
@@ -148,6 +199,7 @@ const addUserLoginHistory = async (id, payload) => {
 module.exports = {
   createUser,
   getUsers,
+  getUsersForAdminExport,
   getUserById,
   updateUser,
   deleteUser,
