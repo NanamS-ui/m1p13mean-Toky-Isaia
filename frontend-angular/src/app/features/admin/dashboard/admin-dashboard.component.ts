@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { AdminStatisticsService } from '../../../core/services/statistic/adminStatistics.service';
+import { retry, timer } from 'rxjs';
 
 interface StatCard {
   label: string;
@@ -10,19 +13,32 @@ interface StatCard {
   link?: string;
 }
 
+type AdminDashboardApi = {
+  totalUsers?: number;
+  totalBoutiques?: number;
+  totalCommandes?: number;
+  CA12LastMonths?: { total12Months?: number };
+  CAParMois12DernierMois?: Array<{ _id: string; total: number }>;
+};
+
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css'
 })
-export class AdminDashboardComponent {
+export class AdminDashboardComponent implements OnInit {
+  private adminStatsService = inject(AdminStatisticsService);
+
+  startDate: string | null = null;
+  endDate: string | null = null;
+
   stats: StatCard[] = [
-    { label: 'Boutiques actives', value: 42, trend: '+3 ce mois', icon: 'store', link: '/admin/boutiques' },
-    { label: 'Chiffre d\'affaires global', value: '125 M Ar', trend: '+12 %', icon: 'trending_up', link: '/admin/statistiques' },
-    { label: 'Taux d\'occupation', value: '94 %', trend: 'Stable', icon: 'pie_chart', link: '/admin/statistiques' },
-    { label: 'Acheteurs inscrits', value: '12 450', trend: '+8 %', icon: 'people', link: '/admin/utilisateurs' }
+    { label: 'Boutiques actives', value: '—', icon: 'store', link: '/admin/boutiques' },
+    { label: 'Utilisateurs inscrits', value: '—', icon: 'people', link: '/admin/utilisateurs' },
+    { label: 'Commandes', value: '—', icon: 'shopping_cart', link: '/admin/statistiques' },
+    { label: "CA total (12 derniers mois)", value: '—', icon: 'trending_up', link: '/admin/statistiques' }
   ];
 
   recentAlerts = [
@@ -32,14 +48,93 @@ export class AdminDashboardComponent {
   ];
 
   /** Données pour le graphique barres CA (6 derniers mois) */
-  chartData = [
-    { month: 'Août', value: 18 },
-    { month: 'Sept', value: 22 },
-    { month: 'Oct', value: 19 },
-    { month: 'Nov', value: 25 },
-    { month: 'Déc', value: 28 },
-    { month: 'Jan', value: 32 }
-  ];
+  chartData: Array<{ month: string; value: number }> = [];
+  maxChartValue = 1;
 
-  maxChartValue = 32;
+  ngOnInit(): void {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    this.startDate = this.formatDateLocal(startOfMonth);
+    this.endDate = this.formatDateLocal(today);
+    this.fetchDashboard();
+  }
+
+  fetchDashboard(): void {
+    this.adminStatsService
+      .getAdminDashboard(this.startDate || undefined, this.endDate || undefined)
+      .pipe(
+        // Comportement voulu: comme la page statistiques (chargement auto).
+        // En pratique, le premier appel peut échouer si l'API ou l'auth n'est pas encore prête;
+        // on retente brièvement pour éviter d'obliger l'utilisateur à cliquer sur "Appliquer".
+        retry({
+          count: 5,
+          delay: (_err, retryCount) => timer(500 * retryCount)
+        })
+      )
+      .subscribe({
+        next: (data: AdminDashboardApi) => {
+          this.applyDashboard(data);
+        },
+        error: (err) => {
+          console.error('Erreur chargement dashboard admin:', err);
+        }
+      });
+  }
+
+  private applyDashboard(data: AdminDashboardApi): void {
+    const totalBoutiques = Number(data?.totalBoutiques ?? 0);
+    const totalUsers = Number(data?.totalUsers ?? 0);
+    const totalCommandes = Number(data?.totalCommandes ?? 0);
+    const caTotal = Number(data?.CA12LastMonths?.total12Months ?? 0);
+
+    const caMillions = caTotal / 1_000_000;
+    const caValue = `${this.formatNumber(caMillions, 2)} M Ar`;
+
+    this.stats = [
+      { label: 'Boutiques actives', value: this.formatNumber(totalBoutiques, 0), icon: 'store', link: '/admin/boutiques' },
+      { label: 'Utilisateurs inscrits', value: this.formatNumber(totalUsers, 0), icon: 'people', link: '/admin/utilisateurs' },
+      { label: 'Commandes', value: this.formatNumber(totalCommandes, 0), icon: 'shopping_cart', link: '/admin/statistiques' },
+      { label: 'CA total (12 derniers mois)', value: caValue, icon: 'trending_up', link: '/admin/statistiques' }
+    ];
+
+    const series = Array.isArray(data?.CAParMois12DernierMois) ? data.CAParMois12DernierMois : [];
+    const last6 = series.slice(-6);
+    this.chartData = last6
+      .map((m) => {
+        const total = Number(m?.total ?? 0);
+        return {
+          month: this.formatYearMonthToShortLabel(String(m?._id || '')),
+          value: Number((total / 1_000_000).toFixed(2))
+        };
+      })
+      .filter((x) => Boolean(x.month));
+
+    this.maxChartValue = Math.max(...this.chartData.map((b) => b.value), 1);
+  }
+
+  private formatYearMonthToShortLabel(yearMonth: string): string {
+    // attendu: YYYY-MM
+    const parts = yearMonth.split('-');
+    if (parts.length !== 2) return '';
+    const monthIndex = Number(parts[1]);
+    if (!Number.isFinite(monthIndex) || monthIndex < 1 || monthIndex > 12) return '';
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+    return months[monthIndex - 1];
+  }
+
+  private formatNumber(value: number, decimals: number): string {
+    if (!Number.isFinite(value)) return '0';
+    return value.toLocaleString('fr-FR', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  private formatDateLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 }
