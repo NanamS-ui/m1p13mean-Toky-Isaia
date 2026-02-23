@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -18,6 +18,7 @@ export class StatisticsDashboardComponent implements OnInit {
   boutiqueBars: any[] = [];
   maxBoutiqueValue = 0;
   private adminStatsService = inject(AdminStatisticsService);
+  private cdr = inject(ChangeDetectorRef);
   startDate: string | null = null;
   endDate: string | null = null;
 
@@ -30,7 +31,10 @@ export class StatisticsDashboardComponent implements OnInit {
 
   fetchStats(): void {
     this.adminStatsService.getAdminStatistics(this.startDate || undefined, this.endDate || undefined)
-      .subscribe((stats: any) => this.applyStats(stats));
+      .subscribe((stats: any) => {
+        this.applyStats(stats);
+        this.cdr.detectChanges();
+      });
   }
 
   exportExcel(): void {

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -24,6 +24,7 @@ interface UserRow {
 })
 export class UsersListComponent implements OnInit {
   private adminUsersService = inject(AdminUsersService);
+  private cdr = inject(ChangeDetectorRef);
 
   filterStatus: UserStatus | '' = '';
   filterRole: string = '';
@@ -45,6 +46,7 @@ export class UsersListComponent implements OnInit {
       next: (data) => {
         this.users = (Array.isArray(data) ? data : []).map((u) => this.mapAdminUserToRow(u));
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoading = false;

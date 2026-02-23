@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -30,6 +30,7 @@ type AdminDashboardApi = {
 })
 export class AdminDashboardComponent implements OnInit {
   private adminStatsService = inject(AdminStatisticsService);
+  private cdr = inject(ChangeDetectorRef);
 
   startDate: string | null = null;
   endDate: string | null = null;
@@ -75,6 +76,7 @@ export class AdminDashboardComponent implements OnInit {
       .subscribe({
         next: (data: AdminDashboardApi) => {
           this.applyDashboard(data);
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Erreur chargement dashboard admin:', err);

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -38,7 +38,8 @@ export class CommunicationComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private eventService: EventService,
-    private eventCategoryService: EventCategoryService
+    private eventCategoryService: EventCategoryService,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.nonNullable.group({
       title: ['', Validators.required],
@@ -69,6 +70,7 @@ export class CommunicationComponent implements OnInit {
         if (this.categories.length > 0) {
           this.form.patchValue({ category: this.categories[0].value });
         }
+        this.cdr.detectChanges();
       },
       error: () => {
         // en cas d'erreur, on laisse la liste vide
@@ -95,6 +97,7 @@ export class CommunicationComponent implements OnInit {
     ).subscribe({
       next: (events) => {
         this.events = (events || []).map((e) => this.mapEntityToCalendarEvent(e));
+        this.cdr.detectChanges();
       },
       error: (err) => {
         // On ne vide pas la liste si on avait déjà des données: meilleure UX lors du changement de section.
@@ -145,6 +148,7 @@ export class CommunicationComponent implements OnInit {
       next: (updated) => {
         const mapped = this.mapEntityToCalendarEvent(updated);
         this.events = this.events.map(ev => (ev.id === mapped.id ? mapped : ev));
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error("Erreur mise à jour de l'état publié:", err);
@@ -177,6 +181,7 @@ export class CommunicationComponent implements OnInit {
         this.selectedFile = null;
         this.imagePreview = null;
         this.isSubmitting = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Erreur création événement:', err);

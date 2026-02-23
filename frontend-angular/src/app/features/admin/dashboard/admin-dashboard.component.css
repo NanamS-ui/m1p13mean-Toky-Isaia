@@ -450,3 +450,35 @@
   border-radius: 8px;
   font-size: 22px !important;
 }
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 900px) {
+  .page-header h2 { font-size: 1.45rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .card--chart .chart-bar { height: 240px; gap: 0.75rem; }
+  .chart-bar__bar { max-width: 32px; }
+  .card--shortcuts .shortcuts { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .dashboard { gap: 1.25rem; }
+  .page-header { flex-direction: column; align-items: flex-start; }
+  .page-header h2 { font-size: 1.25rem; }
+  .page-actions { width: 100%; }
+  .btn--secondary { width: 100%; justify-content: center; }
+  .filters { flex-direction: column; gap: 0.75rem; }
+  .form-group input[type="date"] { min-width: 0; width: 100%; }
+  .apply-btn { width: 100%; text-align: center; }
+  .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .stat-card { padding: 1.15rem; }
+  .stat-card__value { font-size: 1.45rem; }
+  .dashboard-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+  .card--chart .chart-bar { height: 200px; gap: 0.5rem; }
+  .chart-bar__bar { max-width: 24px; }
+  .chart-bar__label { font-size: 0.72rem; }
+  .alert-item { padding: 0.75rem; gap: 0.75rem; }
+  .card--shortcuts .shortcuts { grid-template-columns: 1fr; }
+}

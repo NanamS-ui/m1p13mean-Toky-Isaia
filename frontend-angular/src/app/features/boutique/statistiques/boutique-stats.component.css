@@ -623,3 +623,12 @@
   border-color: var(--korus-accent);
   color: var(--korus-accent);
 }
+
+/* ============================================
+   Extra Responsive (mobile)
+   ============================================ */
+
+@media (max-width: 640px) {
+  .promo-stats { grid-template-columns: 1fr; }
+  .summary-row { grid-template-columns: 1fr; }
+}

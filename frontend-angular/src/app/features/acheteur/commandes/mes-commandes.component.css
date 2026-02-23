@@ -505,3 +505,17 @@
 .btn-download .material-symbols-outlined {
   font-size: 20px;
 }
+
+/* ============================================
+   Responsive mobile
+   ============================================ */
+
+@media (max-width: 480px) {
+  .orders-page { gap: 1rem; }
+  .page-header h2 { font-size: 1.25rem; }
+  .order-card__header { padding: 1.25rem 1rem; }
+  .order-card__body { padding: 1.25rem 1rem; }
+  .order-card__actions { padding: 1rem; flex-direction: column; }
+  .order-card { min-height: auto; }
+  .order-status-badge { font-size: 0.75rem; padding: 0.35rem 0.75rem; }
+}

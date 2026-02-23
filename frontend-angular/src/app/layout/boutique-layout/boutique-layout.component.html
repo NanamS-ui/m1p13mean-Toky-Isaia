@@ -95,9 +95,17 @@
     </button>
   </aside>
 
+  <!-- Backdrop mobile -->
+  <div class="sidebar-backdrop"
+       [class.sidebar-backdrop--visible]="sidebarOpen"
+       (click)="sidebarOpen = false"></div>
+
   <div class="main-wrapper">
     <header class="header">
       <div class="header__left">
+        <button type="button" class="hamburger" (click)="sidebarOpen = !sidebarOpen" aria-label="Ouvrir le menu">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
         <h1 class="header__title">Espace Boutique</h1>
       </div>
       <div class="header__actions">

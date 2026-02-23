@@ -11,3 +11,9 @@
 .form-actions { margin-top: 0.5rem; }
 .btn--primary { padding: 0.6rem 1.25rem; background: linear-gradient(135deg, var(--korus-accent), var(--korus-accent-dark)); color: white; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
 .btn--primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .page-header h2 { font-size: 1.25rem; }
+  .form-row { grid-template-columns: 1fr; }
+}
