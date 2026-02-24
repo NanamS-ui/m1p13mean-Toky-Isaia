@@ -95,6 +95,73 @@
                   </button>
                 </div>
 
+                @if (showNewAddressForm()) {
+                  <div class="new-address">
+                    <form [formGroup]="newAddressForm">
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label for="addrLabel">Libellé</label>
+                          <input
+                            id="addrLabel"
+                            type="text"
+                            formControlName="label"
+                            placeholder="Ex: Domicile, Bureau..."
+                            [class.error]="newAddressForm.get('label')?.invalid && newAddressForm.get('label')?.touched"
+                          />
+                          @if (newAddressForm.get('label')?.invalid && newAddressForm.get('label')?.touched) {
+                            <p class="error-message">Champ obligatoire</p>
+                          }
+                        </div>
+                        <div class="form-group">
+                          <label for="addrPostal">Code postal</label>
+                          <input
+                            id="addrPostal"
+                            type="text"
+                            formControlName="postalCode"
+                            placeholder="101"
+                            [class.error]="newAddressForm.get('postalCode')?.invalid && newAddressForm.get('postalCode')?.touched"
+                          />
+                          @if (newAddressForm.get('postalCode')?.invalid && newAddressForm.get('postalCode')?.touched) {
+                            <p class="error-message">Champ obligatoire</p>
+                          }
+                        </div>
+                        <div class="form-group">
+                          <label for="addrCity">Ville</label>
+                          <input
+                            id="addrCity"
+                            type="text"
+                            formControlName="city"
+                            placeholder="Antananarivo"
+                            [class.error]="newAddressForm.get('city')?.invalid && newAddressForm.get('city')?.touched"
+                          />
+                          @if (newAddressForm.get('city')?.invalid && newAddressForm.get('city')?.touched) {
+                            <p class="error-message">Champ obligatoire</p>
+                          }
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label for="addrStreet">Adresse</label>
+                        <input
+                          id="addrStreet"
+                          type="text"
+                          formControlName="street"
+                          placeholder="Rue, quartier, numéro..."
+                          [class.error]="newAddressForm.get('street')?.invalid && newAddressForm.get('street')?.touched"
+                        />
+                        @if (newAddressForm.get('street')?.invalid && newAddressForm.get('street')?.touched) {
+                          <p class="error-message">Champ obligatoire</p>
+                        }
+                      </div>
+
+                      <div class="new-address__actions">
+                        <button type="button" class="btn-secondary" (click)="cancelNewAddress()">Annuler</button>
+                        <button type="button" class="btn-primary" (click)="saveNewAddress()">Enregistrer</button>
+                      </div>
+                    </form>
+                  </div>
+                }
+
                 <div class="address-list">
                   @for (address of deliveryAddresses(); track address.id) {
                     <label class="address-card">

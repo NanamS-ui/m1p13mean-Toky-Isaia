@@ -99,6 +99,8 @@ export class CheckoutComponent {
   // Forms
   deliveryForm: FormGroup;
   paymentForm: FormGroup;
+  newAddressForm: FormGroup;
+  showNewAddressForm = signal<boolean>(false);
 
   constructor(
     private fb: FormBuilder,
@@ -114,6 +116,14 @@ export class CheckoutComponent {
     // Delivery form
     this.deliveryForm = this.fb.nonNullable.group({
       addressId: ['1', Validators.required]
+    });
+
+    // New address form (inline)
+    this.newAddressForm = this.fb.nonNullable.group({
+      label: ['', [Validators.required]],
+      street: ['', [Validators.required]],
+      city: ['', [Validators.required]],
+      postalCode: ['', [Validators.required]]
     });
 
     // Payment form (virement / infos bancaires)
@@ -218,7 +228,38 @@ export class CheckoutComponent {
   }
 
   addNewAddress(): void {
-    console.log('Add new address');
+    this.showNewAddressForm.set(true);
+    this.newAddressForm.reset({
+      label: '',
+      street: '',
+      city: '',
+      postalCode: ''
+    });
+  }
+
+  cancelNewAddress(): void {
+    this.showNewAddressForm.set(false);
+  }
+
+  saveNewAddress(): void {
+    this.newAddressForm.markAllAsTouched();
+    if (this.newAddressForm.invalid) return;
+
+    const id = String(Date.now());
+    const payload = this.newAddressForm.getRawValue();
+
+    const newAddress: DeliveryAddress = {
+      id,
+      label: String(payload.label).trim(),
+      street: String(payload.street).trim(),
+      city: String(payload.city).trim(),
+      postalCode: String(payload.postalCode).trim(),
+      isDefault: false
+    };
+
+    this.deliveryAddresses.update((prev) => [newAddress, ...prev]);
+    this.deliveryForm.patchValue({ addressId: id });
+    this.showNewAddressForm.set(false);
   }
 
   // Step navigation
