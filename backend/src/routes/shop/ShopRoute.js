@@ -4,6 +4,7 @@ const ShopCtrl = require("../../controllers/shop/ShopController");
 const { requireAuth, requireRole } = require("../../middleware/authMiddleware");
 
 // Routes publiques (pas d'auth)
+router.get("/top", ShopCtrl.getTopShops);
 router.get("/active", ShopCtrl.getActiveShops);
 router.get("/:id", ShopCtrl.getShopById);
 

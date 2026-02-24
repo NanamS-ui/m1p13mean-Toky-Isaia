@@ -63,7 +63,7 @@
               (click)="onFloorChange('ALL')">
               Tous
             </button>
-            @for (floor of floors; track floor.value) {
+            @for (floor of floors(); track floor.value) {
               <button 
                 class="filter-chip"
                 [class.filter-chip--active]="selectedFloor() === floor.value"
@@ -85,7 +85,7 @@
 
       <!-- Results Count -->
       <div class="results-count">
-        <span>{{ filteredBoutiques().length }} boutique(s) trouvée(s)</span>
+        <span>{{ filteredBySearch().length }} boutique(s) trouvée(s)</span>
       </div>
     </div>
   </section>
@@ -93,9 +93,9 @@
   <!-- Boutiques Grid -->
   <section class="boutiques-section">
     <div class="container">
-      @if (filteredBoutiques().length > 0) {
+      @if (filteredBySearch().length > 0) {
         <div class="boutiques-grid">
-          @for (boutique of filteredBoutiques(); track boutique.id) {
+          @for (boutique of filteredBySearch(); track boutique.id) {
             <div class="boutique-card">
               <div class="boutique-card__header">
                 <div class="boutique-card__logo">

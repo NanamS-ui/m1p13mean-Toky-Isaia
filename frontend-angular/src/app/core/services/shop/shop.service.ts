@@ -16,8 +16,29 @@ export class ShopService {
     return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops`);
   }
 
-  getActiveShops(): Observable<Shop[]> {
-    return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops/active`);
+  getActiveShops(floor?: string | number, category?: string): Observable<Shop[]> {
+    let url = `${this.apiBaseUrl}/shops/active`;
+    const params: string[] = [];
+    
+    if (floor && floor !== 'ALL') {
+      params.push(`floor=${floor}`);
+    }
+    
+    if (category && category !== 'ALL') {
+      params.push(`category=${category}`);
+    }
+    
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+    
+    return this.http.get<Shop[]>(url);
+  }
+
+  getTopShops(limit = 10): Observable<Array<Shop & { avgRating: number; ratingCount: number }>> {
+    return this.http.get<Array<Shop & { avgRating: number; ratingCount: number }>>(
+      `${this.apiBaseUrl}/shops/top?limit=${limit}`
+    );
   }
   getShopsByOwner():Observable<Shop[]>{
     return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops/shop/owner`);

@@ -69,8 +69,8 @@
       <div class="section__header">
         <div>
           <span class="section__badge">A découvrir</span>
-          <h2>Boutiques populaires</h2>
-          <p>Les enseignes préférées de nos visiteurs</p>
+          <h2>Top 10 meilleures boutiques</h2>
+          <p>Les boutiques les mieux notées par nos visiteurs</p>
         </div>
         <a routerLink="/boutiques" class="btn btn--outline">
           Voir toutes les boutiques
@@ -90,6 +90,15 @@
             <div class="boutique-card__content">
               <span class="boutique-card__category">{{ boutique.category }}</span>
               <h4>{{ boutique.name }}</h4>
+              <div class="boutique-card__rating">
+                @if (boutique.ratingCount > 0) {
+                  <span class="material-symbols-outlined boutique-card__rating-star">star</span>
+                  <span class="boutique-card__rating-value">{{ boutique.ratingAvg | number:'1.1-1' }}</span>
+                  <span class="boutique-card__rating-count">({{ boutique.ratingCount }} avis)</span>
+                } @else {
+                  <span class="boutique-card__rating-empty">Aucun avis</span>
+                }
+              </div>
               <p>{{ boutique.description }}</p>
             </div>
             <span class="material-symbols-outlined boutique-card__arrow">arrow_forward</span>

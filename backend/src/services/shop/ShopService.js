@@ -26,13 +26,92 @@ const getShops = async () =>
     .populate("owner")
     .populate("shop_category");
 
-const getActiveShops = async () => {
+const getActiveShops = async (floor, category) => {
   const activeStatus = await ShopStatusService.getStatusByValue("Active");
-  return Shop.find({ deleted_at: null, shop_status: activeStatus._id })
+  
+  const query = { deleted_at: null, shop_status: activeStatus._id };
+  
+  // Ajouter le filtre par étage si fourni
+  if (floor && floor !== "ALL") {
+    const Floor = require("../../models/shop/Floor");
+    const Door = require("../../models/shop/Door");
+    
+    // Chercher les Floors avec une valeur correspondant au filtre (matching de nombres entiers)
+    const floors = await Floor.find({ value: { $regex: `\\b${floor}\\b`, $options: 'i' } });
+    const floorIds = floors.map(f => f._id);
+    
+    // Chercher les Doors avec ces Floors
+    const doors = await Door.find({ floor: { $in: floorIds } });
+    const doorIds = doors.map(d => d._id);
+    query.door = { $in: doorIds };
+  }
+  
+  // Ajouter le filtre par catégorie si fourni
+  if (category && category !== "ALL") {
+    query.shop_category = category;
+  }
+  
+  return Shop.find(query)
     .populate({ path: "door", populate: { path: "floor" } })
     .populate("shop_status")
     .populate("owner")
     .populate("shop_category");
+};
+
+const getTopShopsPublic = async (limit = 10) => {
+  const activeStatus = await ShopStatusService.getStatusByValue("Active");
+  const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 10;
+
+  const rows = await Shop.aggregate([
+    { $match: { deleted_at: null, shop_status: activeStatus._id } },
+    {
+      $lookup: {
+        from: "shop_reviews",
+        localField: "_id",
+        foreignField: "shop",
+        as: "reviews"
+      }
+    },
+    {
+      $addFields: {
+        ratingCount: { $size: "$reviews" },
+        avgRating: {
+          $cond: [
+            { $gt: [{ $size: "$reviews" }, 0] },
+            { $avg: "$reviews.rating" },
+            0
+          ]
+        }
+      }
+    },
+    { $sort: { avgRating: -1, ratingCount: -1, name: 1 } },
+    { $limit: safeLimit },
+    {
+      $lookup: {
+        from: "shop_categories",
+        localField: "shop_category",
+        foreignField: "_id",
+        as: "shop_category_doc"
+      }
+    },
+    { $addFields: { shop_category: { $arrayElemAt: ["$shop_category_doc", 0] } } },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        logo: 1,
+        description: 1,
+        avgRating: "$avgRating",
+        ratingCount: 1,
+        shop_category: {
+          _id: "$shop_category._id",
+          value: "$shop_category.value"
+        }
+      }
+    }
+  ]);
+
+  return rows;
 };
 
 const getShopById = async (id) => {
@@ -131,6 +210,7 @@ module.exports = {
   createShop,
   getShops,
   getActiveShops,
+  getTopShopsPublic,
   getShopById,
   updateShop,
   deleteShop,

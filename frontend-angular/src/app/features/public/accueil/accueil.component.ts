@@ -13,6 +13,8 @@ interface FeaturedBoutique {
   category: string;
   logo?: string;
   description: string;
+  ratingAvg: number;
+  ratingCount: number;
 }
 
 interface Event {
@@ -67,19 +69,43 @@ export class AccueilComponent implements OnInit {
   categories: Category[] = [];
 
   featuredBoutiques = signal<FeaturedBoutique[]>([
-    { id: '1', name: 'Mode & Style', category: 'Mode', description: 'Prêt-à-porter tendance pour toute la famille' },
-    { id: '2', name: 'TechZone', category: 'High-Tech', description: 'Électronique et gadgets dernière génération' },
-    { id: '3', name: 'Beauty Corner', category: 'Beauté', description: 'Cosmétiques et soins de qualité' },
-    { id: '4', name: 'Sport Plus', category: 'Sport', description: 'Équipements sportifs pour tous les niveaux' },
-    { id: '5', name: 'Gourmet House', category: 'Restaurant', description: 'Cuisine gastronomique et ambiance raffinée' },
-    { id: '6', name: 'Kids Paradise', category: 'Enfants', description: 'Jouets et vêtements pour enfants' }
+    { id: '1', name: 'Mode & Style', category: 'Mode', description: 'Prêt-à-porter tendance pour toute la famille', ratingAvg: 0, ratingCount: 0 },
+    { id: '2', name: 'TechZone', category: 'High-Tech', description: 'Électronique et gadgets dernière génération', ratingAvg: 0, ratingCount: 0 },
+    { id: '3', name: 'Beauty Corner', category: 'Beauté', description: 'Cosmétiques et soins de qualité', ratingAvg: 0, ratingCount: 0 },
+    { id: '4', name: 'Sport Plus', category: 'Sport', description: 'Équipements sportifs pour tous les niveaux', ratingAvg: 0, ratingCount: 0 },
+    { id: '5', name: 'Gourmet House', category: 'Restaurant', description: 'Cuisine gastronomique et ambiance raffinée', ratingAvg: 0, ratingCount: 0 },
+    { id: '6', name: 'Kids Paradise', category: 'Enfants', description: 'Jouets et vêtements pour enfants', ratingAvg: 0, ratingCount: 0 }
   ]);
 
   upcomingEvents = signal<Event[]>([]);
 
   ngOnInit(): void {
     this.loadCategories();
+    this.loadTopBoutiques();
     this.loadEvents();
+  }
+
+  private loadTopBoutiques(): void {
+    this.shopService.getTopShops(10).subscribe({
+      next: (shops) => {
+        const mapped = (shops || []).map((s) => ({
+          id: s._id,
+          name: s.name,
+          category: s.shop_category?.value || '',
+          logo: s.logo || undefined,
+          description: s.description || '',
+          ratingAvg: Number((s as any).avgRating ?? 0),
+          ratingCount: Number((s as any).ratingCount ?? 0)
+        }));
+        if (mapped.length > 0) {
+          this.featuredBoutiques.set(mapped);
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        console.error('Erreur chargement top boutiques:', err);
+      }
+    });
   }
 
   private loadCategories(): void {
@@ -102,16 +128,6 @@ export class AccueilComponent implements OnInit {
           icon: this.getCategoryIconByName(cat.value),
           count: countMap.get(cat.value) || countMap.get(cat._id) || 0
         }));
-
-        // Mapper aussi les boutiques populaires
-        const activeBoutiques = (shops || []).slice(0, 6).map(s => ({
-          id: s._id,
-          name: s.name,
-          category: s.shop_category?.value || '',
-          logo: s.logo || undefined,
-          description: s.description || ''
-        }));
-        this.featuredBoutiques.set(activeBoutiques);
 
         this.cdr.detectChanges();
       },

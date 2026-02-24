@@ -408,6 +408,29 @@
 }
 .boutique-card__content h4 { margin: 0.5rem 0 0.3rem; font-size: 1.15rem; font-weight: 800; color: var(--korus-text-dark); }
 .boutique-card:hover .boutique-card__content h4 { color: var(--korus-accent); }
+.boutique-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  flex-wrap: wrap;
+}
+.boutique-card__rating-star {
+  font-size: 18px;
+  color: var(--korus-accent);
+  font-variation-settings: 'FILL' 1;
+}
+.boutique-card__rating-value {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--korus-text-dark);
+}
+.boutique-card__rating-count,
+.boutique-card__rating-empty {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--korus-text-muted);
+}
 .boutique-card__content p { margin: 0; font-size: 0.9rem; color: var(--korus-text-muted); line-height: 1.55; }
 .boutique-card__arrow { color: var(--korus-text-muted); transition: all 0.3s ease; font-size: 28px; }
 

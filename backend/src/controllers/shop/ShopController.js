@@ -21,7 +21,19 @@ exports.getShops = async (req, res) => {
 
 exports.getActiveShops = async (req, res) => {
   try {
-    const shops = await ShopService.getActiveShops();
+    const { floor, category } = req.query;
+    const shops = await ShopService.getActiveShops(floor, category);
+    res.json(shops);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
+
+exports.getTopShops = async (req, res) => {
+  try {
+    const limit = Number(req.query.limit || 10);
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 10;
+    const shops = await ShopService.getTopShopsPublic(safeLimit);
     res.json(shops);
   } catch (error) {
     res.status(error.status || 500).json({ message: error.message });
