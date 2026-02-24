@@ -41,4 +41,10 @@ export class AdminStatisticsService {
       responseType: 'blob'
     });
   }
+  getAdminUserStatistics(startDate?: string, endDate?: string): Observable<any> {
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return this.http.get<any>(`${this.apiBaseUrl}/adminStats/userstatistics`, { params });
+  }
 }

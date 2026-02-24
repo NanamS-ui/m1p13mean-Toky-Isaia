@@ -115,21 +115,22 @@ export class SupportComponent {
 
   cancelReply(): void {
     const reviewId = this.replyingTo();
-    if (!reviewId) return;
-    this.adminSupportService
-      .updateSupport(reviewId, { status_support_client: this.getEnAttenteStatus()._id })
-      .subscribe({
-        next: (updatedReview) => {
-          this.supportClients = this.supportClients.map((r: any) =>
-            r._id === reviewId ? { ...r, status_support_client: this.getEnAttenteStatus() } : r
-          );
-          this.replyingTo.set(null);
-          this.replyText = '';
-          this.cdr.detectChanges();
-        },
-        error: (err) => console.error('Erreur lors de update status', err),
-      });
-    
+    // if (!reviewId) return;
+    // this.adminSupportService
+    //   .updateSupport(reviewId, { status_support_client: this.getEnAttenteStatus()._id })
+    //   .subscribe({
+    //     next: (updatedReview) => {
+    //       this.supportClients = this.supportClients.map((r: any) =>
+    //         r._id === reviewId ? { ...r, status_support_client: this.getEnAttenteStatus() } : r
+    //       );
+          
+    //       this.cdr.detectChanges();
+    //     },
+    //     error: (err) => console.error('Erreur lors de update status', err),
+    //   });
+    this.replyingTo.set(null);
+    this.replyText = '';
+    this.cdr.detectChanges();
 
   }
   submitReply(): void {
