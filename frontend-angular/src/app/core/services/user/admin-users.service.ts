@@ -36,7 +36,24 @@ export class AdminUsersService {
 
   exportUsersExcel(): Observable<Blob> {
     return this.http.get(`${this.apiBaseUrl}/users/export/excel`, {
-      responseType: 'blob'
+      responseType: 'blob',
     });
+  }
+  updateUsers(id: string, payload: Partial<any>): Observable<any> {
+    return this.http.put<any>(`${this.apiBaseUrl}/users/${id}`, payload);
+  }
+  addSuspension(id: string, payload: Partial<any>): Observable<any> {
+    return this.http.post<any>(`${this.apiBaseUrl}/users/${id}/suspensions`, payload);
+  }
+  reactiverUser(userId: string): Observable<any> {
+    return this.http.put(`${this.apiBaseUrl}/users/user/reactive`, null, {
+      params: { userId },
+    });
+  }
+  getUsersRoles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiBaseUrl}/roles`);
+  }
+  getUsersStatus(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiBaseUrl}/user_status`);
   }
 }

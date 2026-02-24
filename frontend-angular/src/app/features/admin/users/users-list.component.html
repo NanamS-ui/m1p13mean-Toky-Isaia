@@ -2,8 +2,12 @@
   <div class="page-header">
     <h2>Gestion des utilisateurs (acheteurs)</h2>
     <div class="page-actions">
-      <a routerLink="/admin/support" class="btn btn--secondary">Support client (feedback, réclamations)</a>
-      <button type="button" class="btn btn--secondary" (click)="exportExcel()">Exporter Excel</button>
+      <a routerLink="/admin/support" class="btn btn--secondary"
+        >Support client (feedback, réclamations)</a
+      >
+      <button type="button" class="btn btn--secondary" (click)="exportExcel()">
+        Exporter Excel
+      </button>
     </div>
   </div>
 
@@ -14,22 +18,51 @@
         <label>Rôle</label>
         <select [(ngModel)]="filterRole" (ngModelChange)="filterRole = $event">
           <option value="">Tous</option>
-          <option value="ACHETEUR">Acheteur</option>
-          <option value="BOUTIQUE">Boutique</option>
+          @for (role of roles; track role._id) {
+          <option [value]="role._id">{{ role.val }}</option>
+          }
         </select>
       </div>
       <div class="form-group">
         <label>Statut</label>
         <select [(ngModel)]="filterStatus" (ngModelChange)="filterStatus = $event">
           <option value="">Tous</option>
-          <option value="ACTIVE">Actif</option>
-          <option value="SUSPENDED">Suspendu</option>
-          <option value="BLOCKED">Bloqué</option>
+          @for (status of status; track status._id) {
+          <option [value]="status._id">{{ status.value }}</option>
+          }
         </select>
       </div>
     </div>
   </div>
+  @if (selectedUser) {
+  <div class="modal-overlay">
+    <div class="modal-card">
+      <h3>
+        {{ actionType === 'suspend' ? 'Suspendre utilisateur' : 'Bloquer utilisateur' }}
+      </h3>
 
+      <form [formGroup]="actionForm" (ngSubmit)="submitAction()">
+        <div class="form-group">
+          <label>Motif</label>
+          <textarea formControlName="description"></textarea>
+        </div>
+
+        @if (actionType === 'suspend') {
+        <div class="form-group">
+          <label>Date fin</label>
+          <input type="datetime-local" formControlName="end_date" />
+        </div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeModal()" class="btn--secondary">Annuler</button>
+
+          <button type="submit" class="btn btn--secondary">Confirmer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  }
   <div class="card table-card">
     <div class="table-wrapper">
       <table class="data-table">
@@ -45,37 +78,45 @@
         </thead>
         <tbody>
           @if (isLoading) {
-            <tr>
-              <td colspan="6">Chargement...</td>
-            </tr>
+          <tr>
+            <td colspan="6">Chargement...</td>
+          </tr>
           } @else if (error) {
-            <tr>
-              <td colspan="6">{{ error }}</td>
-            </tr>
+          <tr>
+            <td colspan="6">{{ error }}</td>
+          </tr>
           } @else if (filteredUsers.length === 0) {
-            <tr>
-              <td colspan="6">Aucun utilisateur trouvé.</td>
-            </tr>
-          } @else {
-            @for (u of filteredUsers; track u.id) {
-              <tr>
-                <td><strong>{{ u.firstName }} {{ u.lastName }}</strong></td>
-                <td>{{ u.email }}</td>
-                <td>{{ getRoleLabel(u.role) }}</td>
-                <td><span class="badge" [class]="'badge--' + u.status.toLowerCase()">{{ getStatusLabel(u.status) }}</span></td>
-                <td>{{ u.createdAt }}</td>
-                <td>
-                  @if (u.status === 'ACTIVE') {
-                    <button type="button" class="btn-link btn-link--warning">Suspendre</button>
-                    <button type="button" class="btn-link btn-link--danger">Bloquer</button>
-                  }
-                  @if (u.status === 'SUSPENDED' || u.status === 'BLOCKED') {
-                    <button type="button" class="btn-link btn-link--success">Réactiver</button>
-                  }
-                </td>
-              </tr>
-            }
-          }
+          <tr>
+            <td colspan="6">Aucun utilisateur trouvé.</td>
+          </tr>
+          } @else { @for (u of filteredUsers; track u._id) {
+          <tr>
+            <td>
+              <strong>{{ u.name }}</strong>
+            </td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.role.val }}</td>
+            <td>
+              <span class="badge" [class]="'badge--' + getStatusLabel(u.status.value)">{{
+                u.status.value
+              }}</span>
+            </td>
+            <td>{{ formatDateLocal(u.created_at)  }}</td>
+            <td>
+              @if (u.status.value === 'Actif') {
+              <button type="button" class="btn-link btn-link--warning" (click)="openSuspendForm(u)">
+                Suspendre
+              </button>
+
+              <button type="button" class="btn-link btn-link--danger" (click)="openBlockForm(u)">
+                Bloquer
+              </button>
+              } @if (u.status.value === 'Suspendu' || u.status.value === 'Bloquer') {
+              <button type="button" class="btn-link btn-link--success" (click)="reactiverUser(u)">Réactiver</button>
+              }
+            </td>
+          </tr>
+          } }
         </tbody>
       </table>
     </div>

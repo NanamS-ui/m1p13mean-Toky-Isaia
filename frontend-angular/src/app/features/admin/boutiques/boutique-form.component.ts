@@ -19,12 +19,13 @@ import { UploadService } from '../../../core/services/shop/upload.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './boutique-form.component.html',
-  styleUrl: './boutique-form.component.css'
+  styleUrl: './boutique-form.component.css',
 })
 export class BoutiqueFormComponent implements OnInit {
-  form!: FormGroup; 
+  form!: FormGroup;
   floors: Floor[] = [];
   doors: Door[] = [];
+  owner: any;
   shopCategories: ShopCategory[] = [];
   shopId: string | null = null;
   logoPreview: string | null = null;
@@ -45,13 +46,10 @@ export class BoutiqueFormComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    
     this.initForm();
 
-    
     this.shopId = this.route.snapshot.paramMap.get('id');
 
-    
     this.loadStaticData();
   }
 
@@ -60,14 +58,13 @@ export class BoutiqueFormComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(2)]],
       description: [''],
       category: ['', Validators.required],
-      zone: ['', Validators.required], 
+      zone: ['', Validators.required],
       door: [{ value: '', disabled: true }, Validators.required],
-      logo: ['']
+      owner: ['', Validators.required],
+      logo: [''],
     });
 
-    
-    this.form.get('zone')?.valueChanges.subscribe(floorId => {
-      
+    this.form.get('zone')?.valueChanges.subscribe((floorId) => {
       if (floorId) {
         this.loadDoorsForFloor(floorId);
       } else {
@@ -81,11 +78,12 @@ export class BoutiqueFormComponent implements OnInit {
   private loadStaticData(): void {
     forkJoin({
       categories: this.shopCategorieService.getShopCategories(),
-      floors: this.floorService.getFloors()
-    }).subscribe(({ categories, floors }) => {
+      floors: this.floorService.getFloors(),
+      owner: this.shopService.getOwner(),
+    }).subscribe(({ categories, floors, owner }) => {
       this.shopCategories = categories;
       this.floors = floors;
-      
+      this.owner = owner;
       this.cdr.detectChanges();
       if (this.shopId) {
         this.loadShopForEdit(this.shopId);
@@ -95,7 +93,7 @@ export class BoutiqueFormComponent implements OnInit {
 
   private loadDoorsForFloor(floorId: string): void {
     this.form.get('door')?.disable();
-    this.doorService.getAvailableDoorsByFloor(floorId).subscribe(doors => {
+    this.doorService.getAvailableDoorsByFloor(floorId).subscribe((doors) => {
       this.doors = doors;
       this.form.get('door')?.enable();
       this.cdr.detectChanges();
@@ -103,44 +101,46 @@ export class BoutiqueFormComponent implements OnInit {
   }
 
   private loadShopForEdit(id: string): void {
-    this.shopService.getShopById(id).subscribe(shop => {
-      const door = shop.door as any; 
+    this.shopService.getShopById2(id).subscribe((shop) => {
+      const door = shop.door as any;
       const floorId = door.floor && door.floor._id ? door.floor._id : door.floor;
 
-      
       if (floorId) {
-        this.doorService.getAvailableDoorsByFloor(floorId).subscribe(availableDoors => {
+        this.doorService.getAvailableDoorsByFloor(floorId).subscribe((availableDoors) => {
           this.doors = availableDoors;
 
-          const isCurrentDoorInList = this.doors.find(d => d._id === door._id);
+          const isCurrentDoorInList = this.doors.find((d) => d._id === door._id);
           if (!isCurrentDoorInList) {
-            this.doors.push(door); 
+            this.doors.push(door);
           }
 
-          
           this.form.get('door')?.enable({ emitEvent: false });
 
-          this.form.patchValue({
-            name: shop.name,
-            description: shop.description,
-            category: shop.shop_category._id,
-            zone: floorId,
-            door: door._id
-          }, { emitEvent: false });
+          this.form.patchValue(
+            {
+              name: shop.name,
+              description: shop.description,
+              category: shop.shop_category._id,
+              owner:shop.owner._id,
+              zone: floorId,
+              door: door._id,
+            },
+            { emitEvent: false }
+          );
 
           this.cdr.detectChanges();
         });
       } else {
-        
         this.form.patchValue({
-            name: shop.name,
-            description: shop.description,
-            category: shop.shop_category._id
+          name: shop.name,
+          description: shop.description,
+          category: shop.shop_category._id,
+          owner: shop.owner._id
         });
       }
     });
   }
-  
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -154,7 +154,7 @@ export class BoutiqueFormComponent implements OnInit {
     if (logoBase64) {
       this.isUploading = true;
       this.uploadError = null;
-      
+
       this.uploadService.uploadShopLogo(logoBase64).subscribe({
         next: (response) => {
           this.submitShopForm(response.url);
@@ -163,7 +163,7 @@ export class BoutiqueFormComponent implements OnInit {
           this.isUploading = false;
           this.uploadError = err.error?.message || 'Erreur upload logo';
           console.error('Erreur upload:', err);
-        }
+        },
       });
     } else {
       // Pas de logo, soumettre directement
@@ -178,12 +178,13 @@ export class BoutiqueFormComponent implements OnInit {
       description: formValue.description,
       door: formValue.door,
       shop_category: formValue.category,
-      ...(logoUrl && { logo: logoUrl })
+      owner: formValue.owner,
+      ...(logoUrl && { logo: logoUrl }),
     };
 
-    const request$ = this.shopId 
+    const request$ = this.shopId
       ? this.shopService.updateShop(this.shopId, payload)
-      : this.shopService.createShop(payload);
+      : this.shopService.createShopWithOwner(payload);
 
     request$.subscribe({
       next: () => {
@@ -193,7 +194,7 @@ export class BoutiqueFormComponent implements OnInit {
       error: (err) => {
         this.isUploading = false;
         console.error('Erreur lors de la sauvegarde', err);
-      }
+      },
     });
   }
 
@@ -223,7 +224,7 @@ export class BoutiqueFormComponent implements OnInit {
     if (file.size > 5 * 1024 * 1024) {
       this.logoPreview = null;
       this.logoFileName = null;
-      this.uploadError = 'L\'image doit faire moins de 5 Mo';
+      this.uploadError = "L'image doit faire moins de 5 Mo";
       this.form.get('logo')?.setValue('');
       return;
     }

@@ -7,6 +7,7 @@ router.use(requireAuth, requireRole("ADMIN"));
 
 router.post("/", userCtrl.createUser);
 router.get("/export/excel", userCtrl.exportUsersExcel);
+router.get("/user/proprietaire", userCtrl.getProprietaire);
 router.get("/", userCtrl.getUsers);
 router.get("/gestion/admin", userCtrl.getUsersPourGestionAdmin);
 router.get("/:id", userCtrl.getUserById);

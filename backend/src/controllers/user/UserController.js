@@ -18,6 +18,14 @@ exports.getUsers = async (req, res) => {
     res.status(error.status || 500).json({ message: error.message });
   }
 };
+exports.getProprietaire = async (req, res) => {
+  try {
+    const users = await userService.getProprietaire();
+    res.json(users);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
 
 exports.getUsersPourGestionAdmin = async (req, res) => {
   try {

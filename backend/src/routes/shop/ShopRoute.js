@@ -12,6 +12,7 @@ router.get("/:id", ShopCtrl.getShopById);
 router.use(requireAuth);
 
 router.post("/", requireRole("ADMIN"), ShopCtrl.createShop);
+router.post("/boutique/owner", requireRole("ADMIN"), ShopCtrl.createShopWithProprietaire);
 router.get("/", ShopCtrl.getShops);
 router.put("/:id", requireRole("ADMIN", "BOUTIQUE"), ShopCtrl.updateShop);
 router.delete("/:id", requireRole("ADMIN"), ShopCtrl.deleteShop);

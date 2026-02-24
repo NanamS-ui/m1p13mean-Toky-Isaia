@@ -8,6 +8,14 @@ const buildError = (message, status) => {
   return error;
 };
 
+const createShopWithProprietaire = async (payload) =>{
+  defaultStatus = await ShopStatus.findOne({ value: "En attente"});
+  if( !defaultStatus) throw buildError("Status 'En attente' introuvable", 500);
+  return Shop.create({
+    ...payload,
+    shop_status: defaultStatus._id,
+  });
+};
 const createShop = async (payload, userId) =>{
   defaultStatus = await ShopStatus.findOne({ value: "En attente"});
   if( !defaultStatus) throw buildError("Status 'En attente' introuvable", 500);
@@ -216,5 +224,6 @@ module.exports = {
   deleteShop,
   addSuspension,
   updateShopStatus,
-  getByIdOwner
+  getByIdOwner,
+  createShopWithProprietaire
 };

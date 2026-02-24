@@ -43,12 +43,21 @@ export class ShopService {
   getShopsByOwner():Observable<Shop[]>{
     return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops/shop/owner`);
   }
+  getOwner():Observable<any>{
+    return this.http.get<any>(`${this.apiBaseUrl}/users/user/proprietaire`);
+  }
+  getShopById2(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiBaseUrl}/shops/${id}`);
+  }
   getShopById(id: string): Observable<Shop> {
     return this.http.get<Shop>(`${this.apiBaseUrl}/shops/${id}`);
   }
 
   createShop(payload: Partial<Shop>): Observable<Shop> {
     return this.http.post<Shop>(`${this.apiBaseUrl}/shops`, payload);
+  }
+  createShopWithOwner(payload: Partial<Shop>): Observable<Shop> {
+    return this.http.post<Shop>(`${this.apiBaseUrl}/shops/boutique/owner`, payload);
   }
 
   updateShop(id: string, payload: Partial<Shop>): Observable<Shop> {

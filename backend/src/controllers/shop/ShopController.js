@@ -1,6 +1,15 @@
 const ShopService = require("../../services/shop/ShopService");
 const UploadService = require("../../services/UploadService");
 
+exports.createShopWithProprietaire = async (req, res) => {
+  try {
+    const shop = await ShopService.createShopWithProprietaire(req.body);
+    res.status(201).json(shop);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
 exports.createShop = async (req, res) => {
   try {
     const shop = await ShopService.createShop(req.body, req.user.id);

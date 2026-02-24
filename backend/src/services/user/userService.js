@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../../models/user/User");
+const Role = require("../../models/user/Role");
 const UserStatus = require("../../models/user/UserStatus");
 const { default: mongoose } = require("mongoose");
 const buildError = (message, status) => {
@@ -73,6 +74,11 @@ const getUsersForAdminExport = async () => {
     };
   });
 };
+const getProprietaire = async ()=>{
+  const roleBoutique = await Role.findOne({ val : "BOUTIQUE"});
+  const user = await User.find({role : new mongoose.Types.ObjectId(roleBoutique._id)}).select("_id name email");
+  return user;
+}
 
 const logoutUser = async (userID)=>{
   const now = new Date();
@@ -209,5 +215,6 @@ module.exports = {
   addUserLoginHistory,
   getUserPourGestionAdmin,
   reactiverUser,
-  logoutUser
+  logoutUser,
+  getProprietaire
 };

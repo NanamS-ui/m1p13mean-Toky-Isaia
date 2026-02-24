@@ -79,6 +79,15 @@
             </div>
           }
         </div>
+        <div class="form-group">
+          <label for="owner">Propriétaire*</label>
+          <select formControlName="owner" id="owner">
+            <!-- <option value="">Choisir une porte</option> -->
+            @for (own of owner; track own._id) {
+              <option [value]="own._id">{{ own.email }}</option>
+            }
+          </select>
+        </div>
         <!-- <div class="form-group">
           <label for="surfaceM2">Surface (m²) *</label>
           <input id="surfaceM2" type="number" formControlName="surfaceM2" min="1" />
