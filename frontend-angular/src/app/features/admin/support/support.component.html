@@ -5,31 +5,113 @@
 
   <section class="card">
     <h3>Feedback et réclamations</h3>
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Sujet</th>
-            <th>Utilisateur</th>
-            <th>Date</th>
-            <th>Statut</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (t of tickets; track t.id) {
-            <tr>
-              <td><span class="badge" [class.badge--feedback]="t.type === 'feedback'" [class.badge--reclamation]="t.type === 'reclamation'">{{ t.type === 'feedback' ? 'Feedback' : 'Réclamation' }}</span></td>
-              <td>{{ t.subject }}</td>
-              <td>{{ t.userEmail }}</td>
-              <td>{{ t.date }}</td>
-              <td><span class="badge" [class]="'badge--' + t.status">{{ t.status === 'open' ? 'Ouvert' : t.status === 'in_progress' ? 'En cours' : 'Fermé' }}</span></td>
-              <td><button type="button" class="btn-link">Voir / Répondre</button></td>
-            </tr>
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Date debut :</label>
+        <input type="date" [(ngModel)]="startDate" />
+      </div>
+      <div class="filter-group">
+        <label>Date fin :</label><input type="date" [(ngModel)]="endDate" />
+      </div>
+      <div class="filter-group">
+        <label>Statut :</label>
+        <select [(ngModel)]="filterStatus">
+          <option value="">Tous</option>
+          @for (t of status; track t._id) {
+          <option [value]="t._id">{{ t.value }}</option>
           }
-        </tbody>
-      </table>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Type :</label>
+        <select [(ngModel)]="filterType">
+          <option value="">Tous</option>
+          @for (t of types; track t._id) {
+          <option [value]="t._id">{{ t.value }}</option>
+          }
+        </select>
+      </div>
+      <div class="filter-group">
+        <button class="btn btn--primary btn--sm" (click)="reinitialiserFiltre()">
+          Réinitialiser
+        </button>
+      </div>
+    </div>
+
+    <div class="reviews-list">
+      @for (review of filteredSupport; track review?._id) {
+      <div class="review-card" [class.review-card--pending]="review?.reponse == null">
+        <div class="review-header">
+          <div class="review-author">
+            <div class="author-avatar">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="author-info">
+              <span class="author-name">{{ review?.user?.name }}</span>
+              <span class="review-date"
+                >{{ review?.user?.email }} {{ formatDate(review?.created_at) }}</span
+              >
+            </div>
+          </div>
+          <div class="review-rating">
+            <span
+              class="badge"
+              [class]="'badge--' + getStatusLabel(review?.status_support_client?.value)"
+              >{{ review?.status_support_client?.value }}</span
+            >
+          </div>
+        </div>
+        <div class="review-product">
+          <span
+            class="badge"
+            [class.badge--feedback]="review?.type_support_client?.value === 'Feedback'"
+            [class.badge--reclamation]="review?.type_support_client?.value === 'Réclamation'"
+            >{{ review?.type_support_client?.value }}</span
+          >
+        </div>
+        <p class="review-comment">{{ review?.sujet }}</p>
+
+        @if (review?.reponse!= null ) {
+        <div class="review-reply">
+          <div class="reply-header">
+            <span class="material-symbols-outlined">reply</span>
+            Votre réponse
+          </div>
+          <p>{{ review?.reponse }}</p>
+        </div>
+        } @if (replyingTo() === review._id) {
+        <div class="reply-form">
+          <textarea
+            [(ngModel)]="replyText"
+            placeholder="Écrivez votre réponse..."
+            rows="3"
+          ></textarea>
+          <div class="reply-actions">
+            <button class="btn btn--outline btn--sm" (click)="cancelReply()">Annuler</button>
+            <button
+              class="btn btn--primary btn--sm"
+              (click)="submitReply()"
+              [disabled]="!replyText.trim()"
+            >
+              <span class="material-symbols-outlined">send</span>
+              Répondre
+            </button>
+          </div>
+        </div>
+        } @else if (review?.reponse==null) {
+        <button class="btn btn--outline reply-btn" (click)="startReply(review?._id)">
+          <span class="material-symbols-outlined">reply</span>
+          Répondre
+        </button>
+        }
+      </div>
+      } @empty {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">rate_review</span>
+        <h4>Aucun avis</h4>
+        <p>Aucun avis ne correspond à vos critères</p>
+      </div>
+      }
     </div>
   </section>
 </div>

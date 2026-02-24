@@ -58,17 +58,17 @@ const getSupportClientsByDate = async (startDate, endDate) => {
     }
 
     return SupportClient.find(filter)
-        .select("_id sujet user type_support_client reponse status_support_client")
+        .select("_id sujet user type_support_client reponse status_support_client created_at")
         .populate({
             path: "user",
             select: "_id name email"
         })
         .populate({
             path: "type_support_client",
-            select: "_id name"
+            select: "_id value"
         }).populate({
             path: "status_support_client",
-            select: "_id name"
+            select: "_id value"
         });
 };
 
