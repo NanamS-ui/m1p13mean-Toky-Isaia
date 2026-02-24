@@ -1,8 +1,11 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EventService } from '../../../core/services/events/event.service';
 import { EventEntity } from '../../../core/models/events/event.model';
+import { ShopCategoryService } from '../../../core/services/shop/shop-category.service';
+import { ShopService } from '../../../core/services/shop/shop.service';
+import { forkJoin } from 'rxjs';
 
 interface FeaturedBoutique {
   id: string;
@@ -35,18 +38,33 @@ interface Category {
   templateUrl: './accueil.component.html',
   styleUrl: './accueil.component.css'
 })
-export class AccueilComponent {
+export class AccueilComponent implements OnInit {
+  private eventService = inject(EventService);
+  private shopCategoryService = inject(ShopCategoryService);
+  private shopService = inject(ShopService);
+  private cdr = inject(ChangeDetectorRef);
 
-  categories: Category[] = [
-    { icon: 'checkroom', label: 'Mode', count: 35 },
-    { icon: 'devices', label: 'High-Tech', count: 15 },
-    { icon: 'spa', label: 'Beauté', count: 20 },
-    { icon: 'sports_soccer', label: 'Sport', count: 12 },
-    { icon: 'restaurant', label: 'Restaurants', count: 25 },
-    { icon: 'diamond', label: 'Bijouterie', count: 8 },
-    { icon: 'chair', label: 'Maison', count: 18 },
-    { icon: 'child_care', label: 'Enfants', count: 15 }
-  ];
+  /** Mapping icône par nom de catégorie (insensible à la casse) */
+  private readonly categoryIcons: Record<string, string> = {
+    'mode': 'checkroom',
+    'tech & électronique': 'devices',
+    'beauté & bien-être': 'spa',
+    'sport': 'sports_soccer',
+    'restaurants': 'restaurant',
+    'restaurant/food': 'restaurant',
+    'bijouterie': 'diamond',
+    'maison & décoration': 'chair',
+    'enfants': 'child_care',
+    'alimentation': 'local_grocery_store',
+    'santé': 'local_pharmacy',
+    'services': 'miscellaneous_services',
+    'loisirs': 'attractions',
+    'culture': 'menu_book',
+    'animalerie': 'pets',
+    'auto': 'directions_car',
+  };
+
+  categories: Category[] = [];
 
   featuredBoutiques = signal<FeaturedBoutique[]>([
     { id: '1', name: 'Mode & Style', category: 'Mode', description: 'Prêt-à-porter tendance pour toute la famille' },
@@ -59,9 +77,51 @@ export class AccueilComponent {
 
   upcomingEvents = signal<Event[]>([]);
 
-  constructor(private eventService: EventService) {}
-
   ngOnInit(): void {
+    this.loadCategories();
+    this.loadEvents();
+  }
+
+  private loadCategories(): void {
+    forkJoin({
+      categories: this.shopCategoryService.getShopCategories(),
+      shops: this.shopService.getActiveShops()
+    }).subscribe({
+      next: ({ categories, shops }) => {
+        // Compter les boutiques par catégorie
+        const countMap = new Map<string, number>();
+        for (const shop of shops || []) {
+          const catValue = shop.shop_category?.value || shop.shop_category?._id || '';
+          if (catValue) {
+            countMap.set(catValue, (countMap.get(catValue) || 0) + 1);
+          }
+        }
+
+        this.categories = (categories || []).map(cat => ({
+          label: cat.value,
+          icon: this.getCategoryIconByName(cat.value),
+          count: countMap.get(cat.value) || countMap.get(cat._id) || 0
+        }));
+
+        // Mapper aussi les boutiques populaires
+        const activeBoutiques = (shops || []).slice(0, 6).map(s => ({
+          id: s._id,
+          name: s.name,
+          category: s.shop_category?.value || '',
+          logo: s.logo || undefined,
+          description: s.description || ''
+        }));
+        this.featuredBoutiques.set(activeBoutiques);
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erreur chargement catégories/boutiques:', err);
+      }
+    });
+  }
+
+  private loadEvents(): void {
     this.eventService.getEvents({ published: true }).subscribe({
       next: (entities) => {
         const today = new Date();
@@ -79,6 +139,7 @@ export class AccueilComponent {
           .map((e) => this.mapEntityToHomeEvent(e));
 
         this.upcomingEvents.set(mapped);
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Erreur chargement événements accueil:', err);
@@ -110,6 +171,11 @@ export class AccueilComponent {
     if (value === 'promo' || value === 'promotion' || value === 'promotions') return 'local_offer';
     if (value === 'atelier' || value === 'ateliers') return 'workshop';
     return 'celebration';
+  }
+
+  private getCategoryIconByName(name: string): string {
+    const key = (name || '').toLowerCase().trim();
+    return this.categoryIcons[key] || 'category';
   }
 
   private mapEntityToHomeEvent(entity: EventEntity): Event {
