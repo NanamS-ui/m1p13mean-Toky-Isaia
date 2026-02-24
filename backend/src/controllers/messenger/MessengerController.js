@@ -72,3 +72,13 @@ exports.getUsersWithLastMessage = async (req, res) => {
     res.status(err.status || 400).json({ message: err.message });
   }
 };
+
+exports.getUnreadCount = async (req, res) => {
+  try {
+    const count = await MessengerService.getUnreadCount(req.user.id);
+    res.json({ count });
+  } catch (err) {
+    console.error(err);
+    res.status(err.status || 400).json({ message: err.message });
+  }
+};

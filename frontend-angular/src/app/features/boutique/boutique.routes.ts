@@ -55,6 +55,10 @@ export const boutiqueRoutes: Routes = [
         path: 'avis', 
         loadComponent: () => import('./relation-client/avis.component').then(m => m.AvisComponent)
       },
+      {
+        path: 'reclamations',
+        loadComponent: () => import('./relation-client/reclamations.component').then(m => m.ReclamationsComponent)
+      },
       { 
         path: 'retours', 
         loadComponent: () => import('./relation-client/retours.component').then(m => m.RetoursComponent)

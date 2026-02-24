@@ -65,6 +65,10 @@ export const acheteurRoutes: Routes = [
       { 
         path: 'messagerie', 
         loadComponent: () => import('./messagerie/messagerie.component').then(m => m.MessagerieComponent)
+      },
+      {
+        path: 'reclamation-feedback',
+        loadComponent: () => import('./reclamation-feedback/reclamation-feedback.component').then(m => m.ReclamationFeedbackComponent)
       }
     ]
   }

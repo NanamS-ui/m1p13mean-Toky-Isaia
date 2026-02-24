@@ -119,6 +119,68 @@
   gap: 0.2rem;
 }
 
+/* Nav Group (Dropdown) */
+.nav-group {
+  margin-bottom: 0.25rem;
+}
+
+.nav-parent {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.nav-parent .nav-item--parent {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-parent__toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s var(--ease-spring);
+  flex: 0 0 auto;
+}
+
+.nav-parent__toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-parent__toggle .material-symbols-outlined {
+  font-size: 18px !important;
+}
+
+.nav-children {
+  margin: 0.15rem 0 0.35rem 0.5rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .sidebar__nav::-webkit-scrollbar {
   width: 4px;
 }

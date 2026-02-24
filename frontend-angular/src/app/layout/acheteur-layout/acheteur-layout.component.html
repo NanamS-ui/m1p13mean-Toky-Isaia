@@ -11,19 +11,58 @@
     <!-- Navigation -->
     <nav class="sidebar__nav">
       @for (item of navItems; track item.route) {
-        <a [routerLink]="item.route" 
-           routerLinkActive="active" 
-           [routerLinkActiveOptions]="{ exact: item.route === '/acheteur/accueil' }" 
-           class="nav-item"
-           [attr.data-tooltip]="item.label">
-          <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
-          @if (sidebarOpen) {
-            <span class="nav-item__label">{{ item.label }}</span>
-            @if (item.route === '/acheteur/panier' && cartItemsCount() > 0) {
-              <span class="nav-item__badge">{{ cartItemsCount() }}</span>
+        @if (item.children) {
+          <div class="nav-group" [class.nav-group--open]="sidebarOpen && isGroupOpen(item.route)">
+            <div class="nav-parent">
+              <a [routerLink]="item.children[0].route"
+                 routerLinkActive="active"
+                 [routerLinkActiveOptions]="{ exact: false }"
+                 class="nav-item nav-item--parent"
+                 [attr.data-tooltip]="item.label">
+                <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+                @if (sidebarOpen) {
+                  <span class="nav-item__label">{{ item.label }}</span>
+                  @if (unreadMessages() > 0) {
+                    <span class="nav-item__badge">{{ unreadMessages() }}</span>
+                  }
+                }
+              </a>
+              @if (sidebarOpen) {
+                <button type="button"
+                        class="nav-parent__toggle"
+                        (click)="toggleGroup(item.route, $event)">
+                  <span class="material-symbols-outlined">{{ isGroupOpen(item.route) ? 'expand_less' : 'expand_more' }}</span>
+                </button>
+              }
+            </div>
+            @if (sidebarOpen && isGroupOpen(item.route)) {
+              <div class="nav-children">
+                @for (child of item.children; track child.route) {
+                  <a [routerLink]="child.route"
+                     routerLinkActive="active"
+                     [routerLinkActiveOptions]="{ exact: true }"
+                     class="nav-item nav-item--child">
+                    {{ child.label }}
+                  </a>
+                }
+              </div>
             }
-          }
-        </a>
+          </div>
+        } @else {
+          <a [routerLink]="item.route" 
+             routerLinkActive="active" 
+             [routerLinkActiveOptions]="{ exact: item.route === '/acheteur/accueil' }" 
+             class="nav-item"
+             [attr.data-tooltip]="item.label">
+            <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+            @if (sidebarOpen) {
+              <span class="nav-item__label">{{ item.label }}</span>
+              @if (item.route === '/acheteur/panier' && cartItemsCount() > 0) {
+                <span class="nav-item__badge">{{ cartItemsCount() }}</span>
+              }
+            }
+          </a>
+        }
       }
     </nav>
 

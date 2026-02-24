@@ -82,6 +82,21 @@ const createSupportClientByUser = async (userId, payload) => {
 
     return SupportClient.create(payload);
 };
+
+const getSupportClientsByUser = async (userId) => SupportClient.find({
+    user: userId,
+    deleted_at: null
+})
+    .sort({ created_at: -1 })
+    .populate({
+        path: "type_support_client",
+        select: "_id value"
+    })
+    .populate({
+        path: "status_support_client",
+        select: "_id value"
+    })
+    .select("_id sujet reponse type_support_client status_support_client created_at");
 module.exports = {
     createSupportClient,
     getSupportClients,
@@ -89,5 +104,6 @@ module.exports = {
     updateSupportClient,
     deleteSupportClient,
     getSupportClientsByDate,
-    createSupportClientByUser
+    createSupportClientByUser,
+    getSupportClientsByUser
 };

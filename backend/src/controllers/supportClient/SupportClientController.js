@@ -62,3 +62,13 @@ exports.createSupportClientByUser = async (req, res) => {
         res.status(error.status || 400).json({ message: error.message });
     }
 };
+
+exports.getSupportClientsByUser = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const supports = await SupportClientService.getSupportClientsByUser(userId);
+        res.json(supports);
+    } catch (error) {
+        res.status(error.status || 500).json({ message: error.message });
+    }
+};

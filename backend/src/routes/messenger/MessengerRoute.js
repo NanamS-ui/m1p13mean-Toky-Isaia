@@ -7,17 +7,18 @@ const { requireAuth } = require("../../middleware/authMiddleware");
 router.use(requireAuth);
 
 
+router.get("/unread-count", ctrl.getUnreadCount);
+
+
 router.post("/", ctrl.createMessage);
-router.get("/:id", ctrl.getMessageById);
-router.put("/:id", ctrl.updateMessage);
-router.delete("/:id", ctrl.deleteMessage);
-
-
-
 router.post("/contacts/mark-as-read", ctrl.markConversationAsRead);
 router.get("/contacts/conversation", ctrl.getConversation);
 
 
 router.get("/contacts/last-message", ctrl.getUsersWithLastMessage);
+
+router.get("/:id", ctrl.getMessageById);
+router.put("/:id", ctrl.updateMessage);
+router.delete("/:id", ctrl.deleteMessage);
 
 module.exports = router;

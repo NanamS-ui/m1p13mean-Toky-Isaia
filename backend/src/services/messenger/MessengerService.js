@@ -110,6 +110,15 @@ const getUsersWithLastMessage = async (userId) => {
   return conversations;
 };
 
+const getUnreadCount = async (userId) => {
+  const count = await Messenger.countDocuments({
+    recipient: userId,
+    read: false,
+    deleted_at: null
+  });
+  return count;
+};
+
 module.exports = {
   createMessage,
   getMessageById,
@@ -117,5 +126,6 @@ module.exports = {
   deleteMessage,
   getConversation,
   getUsersWithLastMessage,
-  markConversationAsRead
+  markConversationAsRead,
+  getUnreadCount
 };

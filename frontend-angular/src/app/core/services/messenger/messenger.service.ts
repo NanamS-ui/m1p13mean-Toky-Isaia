@@ -35,4 +35,8 @@ export class MessengerService{
         return this.http.post<any>(`${this.apiBaseUrl}/messenger/contacts/mark-as-read`, { recipientId });
     }
 
+    getUnreadCount(): Observable<{ count: number }> {
+        return this.http.get<{ count: number }>(`${this.apiBaseUrl}/messenger/unread-count`);
+    }
+
 }
