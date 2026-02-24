@@ -36,7 +36,7 @@ export class AdminLayoutComponent {
       children: [
         { label: 'Liste des boutiques', route: '/admin/boutiques' },
         { label: 'Créer une boutique', route: '/admin/boutiques/nouvelle' },
-        { label: 'Suivi loyers', route: '/admin/boutiques/loyers' }
+        // { label: 'Suivi loyers', route: '/admin/boutiques/loyers' }
       ]
     },
     { label: 'Gestion des utilisateurs', route: '/admin/utilisateurs', icon: 'people' },
@@ -49,7 +49,7 @@ export class AdminLayoutComponent {
         { label: 'Statistiques utilisateurs', route: '/admin/statistiques/utilisateurs' }
       ]
     },
-    { label: 'Alertes & indicateurs', route: '/admin/alertes', icon: 'notifications_active' },
+    // { label: 'Alertes & indicateurs', route: '/admin/alertes', icon: 'notifications_active' },
     {
       label: 'Communication & Marketing',
       route: '/admin/communication',
@@ -60,7 +60,7 @@ export class AdminLayoutComponent {
       ]
     },
     { label: 'Support client', route: '/admin/support', icon: 'support_agent' },
-    { label: 'Rôles & Permissions', route: '/admin/roles', icon: 'admin_panel_settings' }
+    // { label: 'Rôles & Permissions', route: '/admin/roles', icon: 'admin_panel_settings' }
   ];
 
   constructor() {
