@@ -6,7 +6,7 @@ import { CalendarComponent, type CalendarEvent } from './calendar/calendar.compo
 import { EventService } from '../../../core/services/events/event.service';
 import { EventCategoryService } from '../../../core/services/events/event-category.service';
 import { EventEntity } from '../../../core/models/events/event.model';
-import { finalize, timeout } from 'rxjs';
+import { timeout } from 'rxjs';
 
 @Component({
   selector: 'app-communication',
@@ -21,7 +21,6 @@ export class CommunicationComponent implements OnInit {
   imagePreview: string | null = null;
   isDragOver = false;
   isSubmitting = false;
-  isLoadingEvents = false;
   eventsLoadError = '';
 
   private readonly categoryColors: Record<string, string> = {
@@ -83,18 +82,7 @@ export class CommunicationComponent implements OnInit {
   private refreshEvents(): void {
     this.eventsLoadError = '';
 
-    // Loader "intelligent": n'apparaît que si l'API dépasse un petit délai.
-    const loaderHandle = setTimeout(() => {
-      this.isLoadingEvents = true;
-    }, 150);
-
-    this.eventService.getEvents().pipe(
-      timeout(8000),
-      finalize(() => {
-        clearTimeout(loaderHandle);
-        this.isLoadingEvents = false;
-      })
-    ).subscribe({
+    this.eventService.getEvents().pipe(timeout(8000)).subscribe({
       next: (events) => {
         this.events = (events || []).map((e) => this.mapEntityToCalendarEvent(e));
         this.cdr.detectChanges();

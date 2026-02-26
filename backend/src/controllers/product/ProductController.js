@@ -1,4 +1,5 @@
 const ProductService = require("../../services/product/ProductService");
+const UploadService = require("../../services/UploadService");
 
 exports.createProduct = async (req, res) => {
   try {
@@ -65,5 +66,25 @@ exports.deleteProduct = async (req, res) => {
     res.json({ message: "Produit supprimé" });
   } catch (error) {
     res.status(error.status || 404).json({ message: error.message });
+  }
+};
+
+exports.uploadProductImage = async (req, res) => {
+  try {
+    const { image } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ message: "Image requise" });
+    }
+
+    const result = await UploadService.uploadToCloudinary(image, "products");
+
+    res.status(200).json({
+      url: result.url,
+      publicId: result.publicId,
+      message: "Image de produit uploadée avec succès"
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
   }
 };

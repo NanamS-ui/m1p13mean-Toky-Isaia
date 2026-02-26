@@ -6,6 +6,10 @@
         <span class="material-symbols-outlined btn__icon">table_chart</span>
         Exporter Excel
       </button>
+      <button type="button" class="btn btn--primary" (click)="exportPDF()">
+        <span class="material-symbols-outlined btn__icon">picture_as_pdf</span>
+        Exporter PDF
+      </button>
     </div>
   </div>
 
@@ -15,14 +19,14 @@
     <div class="filters">
       <!-- Date de début -->
       <div class="form-group">
-        <label>Date de début</label>
-        <input type="date" [(ngModel)]="startDate" />
+        <label for="startDate">Date de début</label>
+        <input id="startDate" type="date" [(ngModel)]="startDate" />
       </div>
 
       <!-- Date de fin -->
       <div class="form-group">
-        <label>Date de fin</label>
-        <input type="date" [(ngModel)]="endDate" />
+        <label for="endDate">Date de fin</label>
+        <input id="endDate" type="date" [(ngModel)]="endDate" />
       </div>
 
       <!-- Bouton appliquer -->
@@ -33,48 +37,50 @@
     </div>
   </div>
 
-  <section class="card stagger-children">
-    <h3><span class="material-symbols-outlined card__icon">analytics</span> Indicateurs clés</h3>
-    <div class="kpi-grid">
-      @for (kpi of kpiList; track kpi.label) {
-        <div class="kpi-card">
-          <span class="kpi-card__icon"><span class="material-symbols-outlined">{{ kpi.icon }}</span></span>
-          <span class="kpi-label">{{ kpi.label }}</span>
-          <span class="kpi-value">{{ kpi.value | numberFormat }}</span>
-        </div>
-      }
-    </div>
-  </section>
-
-  <div class="stats-charts stagger-children">
-    <section class="card card--donut">
-      <h3><span class="material-symbols-outlined card__icon">donut_large</span> CA par catégorie</h3>
-      <div class="donut-wrap">
-        <div class="donut-chart" [style.background]="getDonutGradient()"></div>
-        <div class="donut-legend">
-          @for (slice of categoryData; track slice.label) {
-            <div class="donut-legend__item">
-              <span class="donut-legend__dot" [style.background]="slice.color"></span>
-              <span>{{ slice.label }} {{ slice.value | numberFormat }} %</span>
-            </div>
-          }
-        </div>
-      </div>
-    </section>
-    <section class="card card--bars">
-      <h3><span class="material-symbols-outlined card__icon">horizontal_rule</span> CA par boutique (MGA)</h3>
-      <div class="bars-chart">
-        @for (bar of boutiqueBars; track bar.name) {
-          <div class="bars-chart__row">
-            <span class="bars-chart__label">{{ bar.name }}</span>
-            <div class="bars-chart__track">
-              <div class="bars-chart__fill" [style.width.%]="(bar.value / maxBoutiqueValue) * 100"></div>
-              <span class="bars-chart__value">{{ bar.value | numberFormat }}</span>
-            </div>
+  <div #contentToConvert>
+    <section class="card stagger-children">
+      <h3><span class="material-symbols-outlined card__icon">analytics</span> Indicateurs clés</h3>
+      <div class="kpi-grid">
+        @for (kpi of kpiList; track kpi.label) {
+          <div class="kpi-card">
+            <span class="kpi-card__icon"><span class="material-symbols-outlined">{{ kpi.icon }}</span></span>
+            <span class="kpi-label">{{ kpi.label }}</span>
+            <span class="kpi-value">{{ kpi.value | numberFormat }}</span>
           </div>
         }
       </div>
     </section>
+
+    <div class="stats-charts stagger-children">
+      <section class="card card--donut">
+        <h3><span class="material-symbols-outlined card__icon">donut_large</span> CA par catégorie</h3>
+        <div class="donut-wrap">
+          <div class="donut-chart" [style.background]="getDonutGradient()"></div>
+          <div class="donut-legend">
+            @for (slice of categoryData; track slice.label) {
+              <div class="donut-legend__item">
+                <span class="donut-legend__dot" [style.background]="slice.color"></span>
+                <span>{{ slice.label }} {{ slice.value | numberFormat }} %</span>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+      <section class="card card--bars">
+        <h3><span class="material-symbols-outlined card__icon">horizontal_rule</span> CA par boutique (MGA)</h3>
+        <div class="bars-chart">
+          @for (bar of boutiqueBars; track bar.name) {
+            <div class="bars-chart__row">
+              <span class="bars-chart__label">{{ bar.name }}</span>
+              <div class="bars-chart__track">
+                <div class="bars-chart__fill" [style.width.%]="(bar.value / maxBoutiqueValue) * 100"></div>
+                <span class="bars-chart__value">{{ bar.value | numberFormat }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
   </div>
 
   <a routerLink="/admin/statistiques/utilisateurs" class="link-next animate-fade-in">

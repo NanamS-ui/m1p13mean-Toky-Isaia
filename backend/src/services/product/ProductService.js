@@ -16,7 +16,8 @@ const updateProductStockByFormulaire = async (idStock, payload) => {
     description : payload.description,
     product_category : payload.category,
     poids : payload.weight,
-    dimension : payload.dimensions
+    dimension : payload.dimensions,
+    image : payload.image
   };
   await updateProduct(stockToUpdate.product._id,productPayload);
   await StockService.updateStockByUpdateProduct(idStock, payload, stockToUpdate);
@@ -31,7 +32,8 @@ const createProductStock = async (payload)=>{
       description : payload.description,
       product_category : payload.category,
       poids : payload.weight,
-      dimension : payload.dimensions
+      dimension : payload.dimensions,
+      image : payload.image
     };
     const product = await Product.create(productPayload);
     const stock = await StockService.createStockByProduct(product._id, payload);

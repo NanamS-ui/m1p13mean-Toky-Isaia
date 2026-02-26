@@ -114,12 +114,7 @@
 
     <section class="card card--calendar">
       <h3><span class="material-symbols-outlined card__icon">calendar_month</span> Calendrier</h3>
-      @if (isLoadingEvents) {
-        <div class="calendar-loading">
-          <span class="material-symbols-outlined">hourglass_top</span>
-          <span>Chargement des événements...</span>
-        </div>
-      } @else if (eventsLoadError && events.length === 0) {
+      @if (eventsLoadError && events.length === 0) {
         <div class="calendar-loading">
           <span class="material-symbols-outlined">error</span>
           <span>{{ eventsLoadError }}</span>
@@ -133,12 +128,7 @@
   <section class="card card--events animate-fade-in">
     <h3><span class="material-symbols-outlined card__icon">event_note</span> Tous les événements</h3>
     
-    @if (isLoadingEvents) {
-      <div class="events-empty">
-        <span class="material-symbols-outlined events-empty__icon">hourglass_top</span>
-        <p>Chargement des événements...</p>
-      </div>
-    } @else if (eventsLoadError && events.length === 0) {
+    @if (eventsLoadError && events.length === 0) {
       <div class="events-empty">
         <span class="material-symbols-outlined events-empty__icon">error</span>
         <p>{{ eventsLoadError }}</p>

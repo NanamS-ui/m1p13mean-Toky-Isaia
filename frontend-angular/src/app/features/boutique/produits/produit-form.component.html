@@ -125,30 +125,33 @@
     <!-- Images Tab -->
     @if (activeTab() === 'images') {
       <section class="card">
-        <h4>Images du produit</h4>
-        <p class="section-desc">Ajoutez jusqu'à 6 images. La première sera l'image principale.</p>
+        <h4>Image du produit</h4>
+        <p class="section-desc">Ajoutez l'image principale de votre produit.</p>
 
-        <div class="images-grid">
-          @for (img of imagePreviews(); track $index; let i = $index) {
-            <div class="image-item" [class.image-item--main]="i === 0">
-              <img [src]="img" alt="Image produit" />
-              @if (i === 0) {
-                <span class="image-badge">Principale</span>
-              }
-              <button type="button" class="image-remove" (click)="removeImage(i)">
+        <div class="images-grid images-grid--single">
+          @if (imagePreviews().length > 0) {
+            <div class="image-item image-item--main">
+              <img [src]="imagePreviews()[0]" alt="Image produit" />
+              <span class="image-badge">Principale</span>
+              <button type="button" class="image-remove" (click)="removeImage(0)" [disabled]="isUploading()">
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>
-          }
-
-          @if (imagePreviews().length < 6) {
-            <label class="image-upload">
-              <input type="file" accept="image/*" multiple (change)="onImagesChange($event)" hidden />
+          } @else {
+            <label class="image-upload" [class.disabled]="isUploading()">
+              <input type="file" accept="image/*" (change)="onImagesChange($event)" hidden [disabled]="isUploading()" />
               <span class="material-symbols-outlined">add_photo_alternate</span>
-              <span>Ajouter</span>
+              <span>Ajouter une image</span>
             </label>
           }
         </div>
+
+        @if (isUploading()) {
+          <div class="upload-progress">
+            <span class="material-symbols-outlined">cloud_upload</span>
+            <span>Upload de l'image en cours...</span>
+          </div>
+        }
 
         <div class="image-tips">
           <span class="material-symbols-outlined">info</span>
@@ -156,6 +159,7 @@
             <li>Format: JPG, PNG ou WebP</li>
             <li>Taille recommandée: 800x800px minimum</li>
             <li>Fond blanc pour un meilleur rendu</li>
+            <li>Une image est requise</li>
           </ul>
         </div>
       </section>
@@ -267,10 +271,15 @@
 
     <!-- Form Actions -->
     <div class="form-actions">
-      <a routerLink="/boutique/produits" class="btn btn--outline">Annuler</a>
-      <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
-        <span class="material-symbols-outlined">save</span>
-        {{ stockId ? 'Enregistrer les modifications' : 'Créer le produit' }}
+      <a routerLink="/boutique/produits" class="btn btn--outline" [class.disabled]="isUploading()">Annuler</a>
+      <button type="submit" class="btn btn--primary" [disabled]="form.invalid || imagePreviews().length === 0 || isUploading()">
+        @if (isUploading()) {
+          <span class="material-symbols-outlined spinning">sync</span>
+          <span>Upload en cours...</span>
+        } @else {
+          <span class="material-symbols-outlined">save</span>
+          <span>{{ stockId ? 'Enregistrer les modifications' : 'Créer le produit' }}</span>
+        }
       </button>
     </div>
   </form>
