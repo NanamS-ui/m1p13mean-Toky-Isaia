@@ -225,6 +225,124 @@ const getAdminDashboard = async(startDate, endDate)=>{
         CAParMois12DernierMois
     }
 }
+
+/**
+ * KPI Dashboard – données pré-calculées pour le donut chart et les indicateurs dérivés
+ */
+const getDashboardKPI = async (startDate, endDate) => {
+  const [
+    totalBoutiques,
+    totalCommandes,
+    caParMois,
+    topBoutiquesData,
+    topCategoriesData
+  ] = await Promise.all([
+    getNombreBoutique(startDate, endDate),
+    getNombreCommande(startDate, endDate),
+    getCaParMois12DernierMois(endDate),
+    getTopBoutiquesByCA(startDate, endDate, 5),
+    getTopCategoriesByCA(startDate, endDate, 5)
+  ]);
+
+  // --- Répartition CA par mois (6 derniers mois) ---
+  const last6 = Array.isArray(caParMois) ? caParMois.slice(-6) : [];
+  const totalCA = last6.reduce((sum, m) => sum + Number(m?.total ?? 0), 0);
+
+  const caDistribution = last6.map(m => {
+    const val = Number(m?.total ?? 0);
+    const pct = totalCA > 0 ? Number(((val / totalCA) * 100).toFixed(1)) : 0;
+    return {
+      mois: m._id,           // ex: "2026-01"
+      total: val,
+      pourcentage: pct
+    };
+  });
+
+  // --- CA moyen mensuel ---
+  const caMoyenMensuel = last6.length > 0 ? Number((totalCA / last6.length).toFixed(2)) : 0;
+
+  // --- Variation CA vs mois précédent ---
+  let caVariation = 0;
+  if (last6.length >= 2) {
+    const curr = Number(last6[last6.length - 1]?.total ?? 0);
+    const prev = Number(last6[last6.length - 2]?.total ?? 0);
+    caVariation = prev > 0 ? Number((((curr - prev) / prev) * 100).toFixed(1)) : 0;
+  }
+
+  // --- Commandes par boutique ---
+  const commandesParBoutique = totalBoutiques > 0
+    ? Number((totalCommandes / totalBoutiques).toFixed(1))
+    : 0;
+
+  return {
+    caDistribution,
+    caMoyenMensuel,
+    caVariation,
+    commandesParBoutique,
+    totalCA,
+    topBoutiques: topBoutiquesData,
+    topCategories: topCategoriesData
+  };
+};
+
+/**
+ * Top N boutiques par CA
+ */
+const getTopBoutiquesByCA = async (startDate, endDate, limit = 5) => {
+  const dateMatch = buildDateMatch(startDate, endDate);
+  const result = await OrderItem.aggregate([
+    { $match: { deleted_at: null, ...dateMatch } },
+    { $lookup: { from: "stocks", let: { stockId: "$stock" }, pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$stockId"] } } },
+      { $project: { _id: 1, shop: 1 } }
+    ], as: "stock" } },
+    { $unwind: "$stock" },
+    { $lookup: { from: "shops", let: { shopId: "$stock.shop" }, pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$shopId"] } } },
+      { $project: { _id: 1, name: 1 } }
+    ], as: "shop" } },
+    { $unwind: "$shop" },
+    { $match: { "shop.deleted_at": null } },
+    { $group: {
+      _id: "$shop._id",
+      nom: { $first: "$shop.name" },
+      totalCA: { $sum: { $multiply: ["$quantity", { $multiply: ["$unit_price", { $subtract: [1, { $divide: ["$promotion_percentage", 100] }] }] }] } }
+    } },
+    { $sort: { totalCA: -1 } },
+    { $limit: limit }
+  ]);
+  return result;
+};
+
+/**
+ * Top N catégories de boutique par CA
+ */
+const getTopCategoriesByCA = async (startDate, endDate, limit = 5) => {
+  const dateMatch = buildDateMatch(startDate, endDate);
+  const result = await OrderItem.aggregate([
+    { $match: { deleted_at: null, ...dateMatch } },
+    { $lookup: { from: "stocks", let: { stockId: "$stock" }, pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$stockId"] } } },
+      { $project: { _id: 1, shop: 1 } }
+    ], as: "stock" } },
+    { $unwind: "$stock" },
+    { $lookup: { from: "shops", let: { shopId: "$stock.shop" }, pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$shopId"] } } },
+      { $project: { _id: 1, shop_category: 1 } }
+    ], as: "shop" } },
+    { $unwind: "$shop" },
+    { $lookup: { from: "shop_categories", localField: "shop.shop_category", foreignField: "_id", as: "category" } },
+    { $unwind: "$category" },
+    { $group: {
+      _id: "$category._id",
+      nom: { $first: "$category.value" },
+      totalCA: { $sum: { $multiply: ["$quantity", { $multiply: ["$unit_price", { $subtract: [1, { $divide: ["$promotion_percentage", 100] }] }] }] } }
+    } },
+    { $sort: { totalCA: -1 } },
+    { $limit: limit }
+  ]);
+  return result;
+};
 const getCaParMois12DernierMois = async (endDate) => {
 
     const end = endDate
@@ -274,5 +392,6 @@ const getNombreUserIncrit = async(startDate, endDate) => {
 module.exports = {
     getAdminDashboard,
     getAdminStatistics,
-    getAdminUserStatistics
+    getAdminUserStatistics,
+    getDashboardKPI
 }

@@ -170,6 +170,85 @@ const buildAdminDashboardWorkbook = async (dashboard, options = {}) => {
   });
   seriesSheet.getColumn('ca').numFmt = '#,##0.00';
 
+  // 4) KPI Dashboard (si fourni)
+  const kpi = options.kpi;
+  if (kpi) {
+    // -- Indicateurs KPI --
+    const kpiDashSheet = workbook.addWorksheet('KPI Dashboard');
+    kpiDashSheet.columns = [
+      { header: 'Indicateur', key: 'label', width: 38 },
+      { header: 'Valeur', key: 'value', width: 22 }
+    ];
+    kpiDashSheet.getRow(1).font = { bold: true };
+    kpiDashSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const kpiRows = [
+      { label: 'CA total (6 derniers mois)', value: toNumberOrNull(kpi.totalCA) ?? 0 },
+      { label: 'CA moyen mensuel', value: toNumberOrNull(kpi.caMoyenMensuel) ?? 0 },
+      { label: 'Variation CA vs mois précédent (%)', value: toNumberOrNull(kpi.caVariation) ?? 0 },
+      { label: 'Commandes par boutique', value: toNumberOrNull(kpi.commandesParBoutique) ?? 0 }
+    ];
+    kpiRows.forEach((k) => kpiDashSheet.addRow(k));
+    kpiDashSheet.getColumn('value').numFmt = '#,##0.00';
+
+    // -- Répartition CA par mois --
+    const distSheet = workbook.addWorksheet('Répartition CA mensuel');
+    distSheet.columns = [
+      { header: 'Mois', key: 'mois', width: 14 },
+      { header: 'CA', key: 'ca', width: 20 },
+      { header: '%', key: 'pct', width: 10 }
+    ];
+    distSheet.getRow(1).font = { bold: true };
+    distSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const distribution = Array.isArray(kpi.caDistribution) ? kpi.caDistribution : [];
+    distribution.forEach((d) => {
+      distSheet.addRow({
+        mois: d.mois,
+        ca: toNumberOrNull(d.total) ?? 0,
+        pct: toNumberOrNull(d.pourcentage) ?? 0
+      });
+    });
+    distSheet.getColumn('ca').numFmt = '#,##0.00';
+    distSheet.getColumn('pct').numFmt = '0.0';
+
+    // -- Top Boutiques --
+    const topShopSheet = workbook.addWorksheet('Top Boutiques');
+    topShopSheet.columns = [
+      { header: 'Boutique', key: 'nom', width: 34 },
+      { header: 'CA', key: 'ca', width: 20 }
+    ];
+    topShopSheet.getRow(1).font = { bold: true };
+    topShopSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const topBoutiques = Array.isArray(kpi.topBoutiques) ? kpi.topBoutiques : [];
+    topBoutiques.forEach((b) => {
+      topShopSheet.addRow({
+        nom: b.nom,
+        ca: toNumberOrNull(b.totalCA) ?? 0
+      });
+    });
+    topShopSheet.getColumn('ca').numFmt = '#,##0.00';
+
+    // -- Top Catégories --
+    const topCatSheet = workbook.addWorksheet('Top Catégories');
+    topCatSheet.columns = [
+      { header: 'Catégorie', key: 'nom', width: 34 },
+      { header: 'CA', key: 'ca', width: 20 }
+    ];
+    topCatSheet.getRow(1).font = { bold: true };
+    topCatSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const topCategories = Array.isArray(kpi.topCategories) ? kpi.topCategories : [];
+    topCategories.forEach((c) => {
+      topCatSheet.addRow({
+        nom: c.nom,
+        ca: toNumberOrNull(c.totalCA) ?? 0
+      });
+    });
+    topCatSheet.getColumn('ca').numFmt = '#,##0.00';
+  }
+
   return workbook;
 };
 

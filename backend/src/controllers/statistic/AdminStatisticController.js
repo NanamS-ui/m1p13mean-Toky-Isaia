@@ -50,13 +50,26 @@ exports.getAdminDashboard= async (req,res) => {
     }
 }
 
+exports.getDashboardKPI = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const kpi = await AdminStatisticService.getDashboardKPI(startDate, endDate);
+        res.json(kpi);
+    } catch (error) {
+        res.status(error.status || 400).json({ message: error.message });
+    }
+}
+
 exports.exportAdminDashboardExcel = async (req, res) => {
     try {
         const startDate = req.query.startDate || req.query.dateDebut;
         const endDate = req.query.endDate || req.query.dateFin;
 
-        const dashboard = await AdminStatisticService.getAdminDashboard(startDate, endDate);
-        const workbook = await AdminStatisticExportService.buildAdminDashboardWorkbook(dashboard, { startDate, endDate });
+        const [dashboard, kpi] = await Promise.all([
+            AdminStatisticService.getAdminDashboard(startDate, endDate),
+            AdminStatisticService.getDashboardKPI(startDate, endDate)
+        ]);
+        const workbook = await AdminStatisticExportService.buildAdminDashboardWorkbook(dashboard, { startDate, endDate, kpi });
 
         const safeStart = startDate || 'all';
         const safeEnd = endDate || 'now';

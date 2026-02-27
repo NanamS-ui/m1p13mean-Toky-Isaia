@@ -78,19 +78,56 @@
           </div>
         </div>
       </section>
-      <section class="card card--alerts">
-        <h3><span class="material-symbols-outlined card__icon">notifications_active</span> Alertes récentes</h3>
-        <ul class="alert-list">
-          <li
-            *ngFor="let alert of recentAlerts; trackBy: trackByAlertMessage"
-            class="alert-item"
-            [ngClass]="'alert-item--' + alert.type"
-          >
-            <span class="alert-dot"></span>
-            {{ alert.message }}
-          </li>
-        </ul>
-        <a routerLink="/admin/alertes" class="link-more">Voir toutes les alertes <span class="material-symbols-outlined link-more__icon">arrow_forward</span></a>
+      <section class="card card--donut">
+        <h3><span class="material-symbols-outlined card__icon">donut_large</span> Répartition du CA (6 derniers mois)</h3>
+        <div class="donut-wrapper">
+          <div class="donut-chart">
+            <svg viewBox="0 0 36 36" class="donut-svg">
+              @for (seg of donutSegments; track seg.month; let i = $index) {
+                <circle
+                  class="donut-segment"
+                  cx="18" cy="18" r="15.9155"
+                  fill="none"
+                  [attr.stroke]="seg.color"
+                  stroke-width="3.5"
+                  [attr.stroke-dasharray]="seg.dash"
+                  [attr.stroke-dashoffset]="seg.offset"
+                  stroke-linecap="round"
+                />
+              }
+              <text x="18" y="17" class="donut-center-value">{{ donutCenterLabel }}</text>
+              <text x="18" y="21" class="donut-center-sub">CA moyen/mois</text>
+            </svg>
+          </div>
+          <ul class="donut-legend">
+            @for (seg of donutSegments; track seg.month) {
+              <li class="donut-legend__item">
+                <span class="donut-legend__color" [style.background]="seg.color"></span>
+                <span class="donut-legend__label">{{ seg.month }}</span>
+                <span class="donut-legend__value">{{ seg.display }}</span>
+                <span class="donut-legend__pct">{{ seg.pct }}%</span>
+              </li>
+            }
+          </ul>
+        </div>
+        <div class="donut-kpis">
+          <div class="donut-kpi">
+            <span class="material-symbols-outlined donut-kpi__icon">trending_up</span>
+            <div class="donut-kpi__content">
+              <span class="donut-kpi__value" [class.positive]="caVariation >= 0" [class.negative]="caVariation < 0">
+                {{ caVariation >= 0 ? '+' : '' }}{{ caVariation }}%
+              </span>
+              <span class="donut-kpi__label">vs mois précédent</span>
+            </div>
+          </div>
+          <div class="donut-kpi">
+            <span class="material-symbols-outlined donut-kpi__icon">shopping_cart</span>
+            <div class="donut-kpi__content">
+              <span class="donut-kpi__value">{{ commandesParBoutique }}</span>
+              <span class="donut-kpi__label">Commandes / boutique</span>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
 

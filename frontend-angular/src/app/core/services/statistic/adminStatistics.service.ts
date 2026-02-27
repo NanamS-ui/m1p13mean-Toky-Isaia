@@ -41,6 +41,14 @@ export class AdminStatisticsService {
       responseType: 'blob'
     });
   }
+
+  getDashboardKPI(startDate?: string, endDate?: string): Observable<any> {
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return this.http.get<any>(`${this.apiBaseUrl}/adminStats/dashboard/kpi`, { params });
+  }
+
   getAdminUserStatistics(startDate?: string, endDate?: string): Observable<any> {
     const params: any = {};
     if (startDate) params.startDate = startDate;

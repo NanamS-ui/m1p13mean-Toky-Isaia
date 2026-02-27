@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminStatisticsService } from '../../../core/services/statistic/adminStatistics.service';
-import { retry, timer } from 'rxjs';
+import { retry, timer, forkJoin } from 'rxjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -21,6 +21,16 @@ type AdminDashboardApi = {
   totalCommandes?: number;
   CA12LastMonths?: { total12Months?: number };
   CAParMois12DernierMois?: Array<{ _id: string; total: number }>;
+};
+
+type DashboardKPIApi = {
+  caDistribution?: Array<{ mois: string; total: number; pourcentage: number }>;
+  caMoyenMensuel?: number;
+  caVariation?: number;
+  commandesParBoutique?: number;
+  totalCA?: number;
+  topBoutiques?: Array<{ _id: string; nom: string; totalCA: number }>;
+  topCategories?: Array<{ _id: string; nom: string; totalCA: number }>;
 };
 
 @Component({
@@ -46,19 +56,25 @@ export class AdminDashboardComponent implements OnInit {
     { label: "CA total (12 derniers mois)", value: '—', icon: 'trending_up', link: '/admin/statistiques' }
   ];
 
-  recentAlerts = [
-    { type: 'warning', message: 'Boutique "TechZone" : baisse des ventes (-15 % ce mois)' },
-    { type: 'success', message: 'Produit "Écouteurs X1" en surperformance (+45 % ventes)' },
-    { type: 'info', message: 'Pic de trafic détecté hier 18h-20h' }
-  ];
-
-  trackByAlertMessage(_index: number, alert: { message: string }): string {
-    return alert.message;
-  }
-
   /** Données pour le graphique barres CA (6 derniers mois) */
   chartData: Array<{ month: string; value: number }> = [];
   maxChartValue = 1;
+
+  /** Donut chart – répartition CA par mois */
+  donutSegments: Array<{
+    month: string;
+    value: number;
+    display: string;
+    pct: number;
+    color: string;
+    dash: string;
+    offset: string;
+  }> = [];
+  donutCenterLabel = '—';
+  caVariation = 0;
+  commandesParBoutique = '—';
+
+  private readonly donutColors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
 
   ngOnInit(): void {
     const today = new Date();
@@ -70,26 +86,26 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   fetchDashboard(): void {
-    this.adminStatsService
-      .getAdminDashboard(this.startDate || undefined, this.endDate || undefined)
-      .pipe(
-        // Comportement voulu: comme la page statistiques (chargement auto).
-        // En pratique, le premier appel peut échouer si l'API ou l'auth n'est pas encore prête;
-        // on retente brièvement pour éviter d'obliger l'utilisateur à cliquer sur "Appliquer".
-        retry({
-          count: 5,
-          delay: (_err, retryCount) => timer(500 * retryCount)
-        })
+    const start = this.startDate || undefined;
+    const end = this.endDate || undefined;
+
+    forkJoin({
+      dashboard: this.adminStatsService.getAdminDashboard(start, end).pipe(
+        retry({ count: 5, delay: (_err, retryCount) => timer(500 * retryCount) })
+      ),
+      kpi: this.adminStatsService.getDashboardKPI(start, end).pipe(
+        retry({ count: 5, delay: (_err, retryCount) => timer(500 * retryCount) })
       )
-      .subscribe({
-        next: (data: AdminDashboardApi) => {
-          this.applyDashboard(data);
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Erreur chargement dashboard admin:', err);
-        }
-      });
+    }).subscribe({
+      next: ({ dashboard, kpi }) => {
+        this.applyDashboard(dashboard);
+        this.applyKPI(kpi);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erreur chargement dashboard admin:', err);
+      }
+    });
   }
 
   exportExcel(): void {
@@ -184,6 +200,40 @@ export class AdminDashboardComponent implements OnInit {
       .filter((x) => Boolean(x.month));
 
     this.maxChartValue = Math.max(...this.chartData.map((b) => b.value), 1);
+  }
+
+  /** Applique les données KPI du backend au donut chart */
+  private applyKPI(kpi: DashboardKPIApi): void {
+    const distribution = Array.isArray(kpi?.caDistribution) ? kpi.caDistribution : [];
+    const circumference = 2 * Math.PI * 15.9155; // ~100
+    let cumulativeOffset = 25;
+
+    this.donutSegments = distribution.map((d, i) => {
+      const pct = d.pourcentage;
+      const dashLen = (pct / 100) * circumference;
+      const gapLen = circumference - dashLen;
+      const segment = {
+        month: this.formatYearMonthToShortLabel(d.mois),
+        value: d.total,
+        display: `${this.formatNumber(d.total / 1_000_000, 2)} M`,
+        pct,
+        color: this.donutColors[i % this.donutColors.length],
+        dash: `${dashLen} ${gapLen}`,
+        offset: `${cumulativeOffset}`
+      };
+      cumulativeOffset -= dashLen;
+      return segment;
+    }).filter(s => Boolean(s.month));
+
+    // CA moyen mensuel depuis le backend
+    const avg = Number(kpi?.caMoyenMensuel ?? 0) / 1_000_000;
+    this.donutCenterLabel = `${this.formatNumber(avg, 1)} M`;
+
+    // Variation CA et commandes/boutique depuis le backend
+    this.caVariation = Number(kpi?.caVariation ?? 0);
+    this.commandesParBoutique = kpi?.commandesParBoutique
+      ? this.formatNumber(kpi.commandesParBoutique, 1)
+      : '—';
   }
 
   private formatYearMonthToShortLabel(yearMonth: string): string {
