@@ -90,6 +90,56 @@ const issueVerificationCode = async (user) => {
   await sendVerificationEmail(user.email, code);
 };
 
+const registerVendeur = async (payload) => {
+  const firstName = payload.firstName?.trim();
+  const lastName = payload.lastName?.trim();
+  const email = payload.email?.trim().toLowerCase();
+  const phone = payload.phone?.trim();
+  const password = payload.password;
+  const adresse = payload.adresse?.trim() || "";
+
+  if (!firstName || !lastName || !email || !phone || !password) {
+    throw buildError("Champs obligatoires manquants", 400);
+  }
+
+  const role = await Role.findOne({
+    $or: [{ val: /^boutique$/i }, { val: /^BOUTIQUE$/i }]
+  });
+
+  if (!role) {
+    throw buildError("Role vendeur introuvable", 400);
+  }
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    throw buildError("Email deja utilise", 409);
+  }
+
+  const hashed = await bcrypt.hash(password, 10);
+  const name = `${firstName} ${lastName}`.trim();
+
+  const status = await UserStatus.findOne({ value: "Actif" });
+  
+  if (!status) {
+    throw new Error("Le status 'Actif' n'existe pas en base");
+  }
+
+  const user = await User.create({
+    name,
+    email,
+    phone,
+    adresse,
+    password: hashed,
+    role: role._id,
+    is_verified: false,
+    status : status
+  });
+
+  await issueVerificationCode(user);
+
+  return { userId: user._id, email: user.email };
+};
+
 const registerAcheteur = async (payload) => {
   const firstName = payload.firstName?.trim();
   const lastName = payload.lastName?.trim();
@@ -412,5 +462,6 @@ module.exports = {
   getMe,
   updateMe,
   changePassword,
-  verifyStatus
+  verifyStatus,
+  registerVendeur
 };

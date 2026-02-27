@@ -40,6 +40,15 @@ exports.updateMe = async (req, res) => {
   }
 };
 
+exports.registerVendeur = async (req, res) => {
+  try {
+    const user = await authService.registerVendeur(req.body);
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
 exports.registerAcheteur = async (req, res) => {
   try {
     const user = await authService.registerAcheteur(req.body);

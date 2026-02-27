@@ -3,6 +3,7 @@ const router = express.Router();
 const authCtrl = require("../controllers/AuthController");
 const { requireAuth } = require("../middleware/authMiddleware");
 
+router.post("/register-vendeur", authCtrl.registerVendeur);
 router.post("/register-acheteur", authCtrl.registerAcheteur);
 router.get("/me", requireAuth, authCtrl.getMe);
 router.put("/me", requireAuth, authCtrl.updateMe);

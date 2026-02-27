@@ -35,6 +35,7 @@ export class RegisterComponent implements OnInit {
     this.form = this.fb.nonNullable.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
+      role : ['ACHETEUR',Validators.required],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required, Validators.pattern(/^(\+261|0)[0-9]{9}$/)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -103,13 +104,11 @@ export class RegisterComponent implements OnInit {
     this.error = '';
     this.submitting.set(true);
 
-    this.registration.registerAcheteur({
-      firstName: this.form.value.firstName,
-      lastName: this.form.value.lastName,
-      email: this.form.value.email,
-      phone: this.form.value.phone,
-      password: this.form.value.password
-    }).subscribe({
+    const request$ = this.form.value.role ==='ACHETEUR'
+      ?  this.registration.registerAcheteur({firstName: this.form.value.firstName,lastName: this.form.value.lastName,email: this.form.value.email,phone: this.form.value.phone,password: this.form.value.password})
+      : this.registration.registerVendeur({firstName: this.form.value.firstName,lastName: this.form.value.lastName,email: this.form.value.email,phone: this.form.value.phone,password: this.form.value.password})
+
+    request$.subscribe({
       next: (response) => {
         this.submitting.set(false);
         this.awaitingVerification.set(true);

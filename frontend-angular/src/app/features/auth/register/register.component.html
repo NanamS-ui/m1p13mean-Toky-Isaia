@@ -99,6 +99,22 @@
           </div>
         </div>
 
+        <!-- Role -->
+        <div class="form-group">
+          <label for="role">
+            <span class="material-symbols-outlined">person</span>
+            Votre role
+          </label>
+          <select name="role" id="role" formControlName="role" >
+            <option value="ACHETEUR">Acheteur</option>
+            <option value="BOUTIQUE">Vendeur</option>
+          </select>
+          <!-- <input id="role" type="role" formControlName="role" placeholder="marie.dupont@email.mg" autocomplete="email" /> -->
+          @if (form.get('role')?.invalid && form.get('role')?.touched) {
+            <span class="error-text">role invalide</span>
+          }
+        </div>
+
         <!-- Email -->
         <div class="form-group">
           <label for="email">

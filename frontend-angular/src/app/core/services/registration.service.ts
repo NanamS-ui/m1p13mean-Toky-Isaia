@@ -34,6 +34,16 @@ export class RegistrationService {
 
   constructor(private http: HttpClient) {}
 
+  registerVendeur(payload: RegisterAcheteurPayload): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.apiBaseUrl}/auth/register-vendeur`, {
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      phone: payload.phone,
+      adresse: payload.adresse ?? '',
+      email: payload.email,
+      password: payload.password
+    });
+  }
   registerAcheteur(payload: RegisterAcheteurPayload): Observable<RegisterResponse> {
     return this.http.post<RegisterResponse>(`${this.apiBaseUrl}/auth/register-acheteur`, {
       firstName: payload.firstName,
