@@ -1,16 +1,8 @@
 <div class="accueil-page">
   <!-- Hero Section -->
   <section class="hero">
-    <div class="hero__bg"></div>
-    <div class="hero__overlay"></div>
-    <!-- Particules décoratives -->
-    <div class="hero__particles">
-      <span class="particle particle--1"></span>
-      <span class="particle particle--2"></span>
-      <span class="particle particle--3"></span>
-      <span class="particle particle--4"></span>
-      <span class="particle particle--5"></span>
-    </div>
+    <canvas #heroCanvas class="hero__canvas"></canvas>
+    <div class="hero__overlay hero__overlay--3d"></div>
     <div class="hero__content">
       <span class="hero__badge">
         <span class="material-symbols-outlined">auto_awesome</span>
@@ -33,7 +25,6 @@
         </a>
       </div>
     </div>
-
 
     <!-- Scroll indicator -->
     <div class="hero__scroll">
