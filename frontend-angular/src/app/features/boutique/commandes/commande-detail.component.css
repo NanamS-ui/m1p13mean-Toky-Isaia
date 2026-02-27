@@ -55,6 +55,27 @@
   flex-wrap: wrap;
 }
 
+.page-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn__icon {
+  font-size: 18px;
+}
+
+.btn--secondary {
+  background: white;
+  border: 1px solid var(--korus-border);
+  color: var(--korus-text);
+}
+
+.btn--secondary:hover {
+  border-color: var(--korus-accent);
+  color: var(--korus-accent);
+}
+
 /* Status Badge */
 .status-badge {
   display: inline-flex;
@@ -526,6 +547,7 @@
 @media print {
   .page-header .back-link,
   .header__actions,
+  .page-actions,
   .status-actions,
   .btn {
     display: none !important;

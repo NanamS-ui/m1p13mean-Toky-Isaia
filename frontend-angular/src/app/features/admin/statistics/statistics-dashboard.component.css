@@ -130,6 +130,10 @@
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.4);
 }
 
+.btn__icon {
+  font-size: 1.1rem;
+}
+
 .card h3 {
   font-size: 1.25rem;
   display: flex;

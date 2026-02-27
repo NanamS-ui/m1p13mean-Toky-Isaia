@@ -33,6 +33,16 @@
   display: flex;
   gap: 0.5rem;
 }
+
+.page-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn__icon {
+  font-size: 18px;
+}
+
 .filters-card { 
   margin-bottom: 0.5rem; 
 }

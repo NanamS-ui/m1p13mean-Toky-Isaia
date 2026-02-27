@@ -30,6 +30,37 @@
   color: var(--korus-text-muted);
 }
 
+.page-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn--primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--korus-primary);
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+}
+
+.btn--primary:hover {
+  background: var(--korus-primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.4);
+}
+
+.btn__icon {
+  font-size: 18px;
+}
+
 .btn--outline {
   display: inline-flex;
   align-items: center;

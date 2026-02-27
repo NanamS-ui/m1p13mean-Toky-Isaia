@@ -4,9 +4,10 @@
 .back-link:hover { color: var(--korus-accent); }
 .page-header h2 { margin: 0.5rem 0 0 0; font-size: 1.5rem; font-weight: 600; color: var(--korus-text); }
 .page-actions { display: flex; gap: 0.5rem; }
-.btn--secondary, .btn--primary { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; }
+.btn--secondary, .btn--primary { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; }
 .btn--secondary { background: white; border: 1px solid var(--korus-border); color: var(--korus-text); }
 .btn--primary { background: linear-gradient(135deg, var(--korus-accent), var(--korus-accent-dark)); color: white; }
+.btn__icon { font-size: 1.1rem; }
 .card h3 { margin: 0 0 1rem 0; font-size: 1.1rem; font-weight: 600; color: var(--korus-text); }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
 .stat-row { padding: 0.85rem; background: var(--korus-bg); border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem; }

@@ -127,6 +127,28 @@
   color: var(--korus-text-dark);
 }
 
+.btn--primary {
+  padding: 0.75rem 1.25rem;
+  background: var(--korus-primary);
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s var(--ease-spring);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+}
+
+.btn--primary:hover {
+  background: var(--korus-primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.4);
+}
+
 .btn__icon { font-size: 20px !important; }
 
 /* Stat Cards Premium */
