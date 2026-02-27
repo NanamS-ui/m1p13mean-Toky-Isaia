@@ -4,8 +4,14 @@
     <a routerLink="/admin/statistiques" class="back-link">← Retour au dashboard stats</a>
     <h2>Statistiques utilisateurs</h2>
     <div class="page-actions">
-      <!-- <button type="button" class="btn btn--secondary">Exporter PDF</button> -->
-      <button type="button" class="btn btn--primary" (click)="exportPDF()">Exporter PDF</button>
+      <button type="button" class="btn btn--secondary" (click)="exportExcel()">
+        <span class="material-symbols-outlined btn__icon">table_chart</span>
+        Exporter Excel
+      </button>
+      <button type="button" class="btn btn--primary" (click)="exportPDF()">
+        <span class="material-symbols-outlined btn__icon">picture_as_pdf</span>
+        Exporter PDF
+      </button>
     </div>
   </div>
   <div class="card filters-card" data-html2canvas-ignore="true">

@@ -173,7 +173,74 @@ const buildAdminDashboardWorkbook = async (dashboard, options = {}) => {
   return workbook;
 };
 
+/**
+ * Construit un workbook Excel à partir des statistiques utilisateurs admin.
+ * @param {object} userStats Retour de AdminStatisticService.getAdminUserStatistics
+ * @param {{ startDate?: string, endDate?: string }} options
+ */
+const buildAdminUserStatisticsWorkbook = async (userStats, options = {}) => {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Korus';
+  workbook.created = new Date();
+
+  const startDate = options.startDate || null;
+  const endDate = options.endDate || null;
+
+  // 1) Période / Meta
+  const metaSheet = workbook.addWorksheet('Période');
+  addKeyValueRows(metaSheet, [
+    { key: 'Date de début', value: startDate },
+    { key: 'Date de fin', value: endDate },
+    { key: 'Généré le', value: new Date().toISOString() }
+  ]);
+
+  // 2) Indicateurs utilisateurs
+  const kpiSheet = workbook.addWorksheet('Indicateurs utilisateurs');
+  kpiSheet.columns = [
+    { header: 'Indicateur', key: 'label', width: 42 },
+    { header: 'Valeur', key: 'value', width: 26 }
+  ];
+  kpiSheet.getRow(1).font = { bold: true };
+  kpiSheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+  const orderStats = userStats?.orderStats || {};
+  const orderUserStats = userStats?.orderUserStats || {};
+
+  const kpis = [
+    { label: "Temps moyen sur l'application (min/mois/utilisateur)", value: toNumberOrNull(userStats?.moyenneMensuelleGlobale) ?? 0 },
+    { label: "Nombre d'acheteurs", value: toNumberOrNull(orderStats.totalUsers) ?? 0 },
+    { label: 'Nombre total de commandes', value: toNumberOrNull(orderStats.totalOrders) ?? 0 },
+    { label: 'Total commandes (MGA)', value: toNumberOrNull(orderStats.totalSpentAll) ?? 0 },
+    { label: 'Panier moyen (MGA)', value: toNumberOrNull(orderStats.avgOrderTotal) ?? 0 },
+    { label: 'Acheteurs ayant déjà commandé (%)', value: toNumberOrNull(orderUserStats.percentBuyersOrdered) ?? 0 },
+    { label: 'Réachats (%)', value: toNumberOrNull(orderStats.percentUsersMultipleOrders) ?? 0 }
+  ];
+
+  kpis.forEach((k) => kpiSheet.addRow(k));
+  kpiSheet.getColumn('value').numFmt = '#,##0.00';
+
+  // 3) Heures de pic
+  const hourlySheet = workbook.addWorksheet('Heures de pic');
+  hourlySheet.columns = [
+    { header: 'Heure', key: 'hour', width: 12 },
+    { header: 'Utilisateurs actifs', key: 'activeUsers', width: 20 }
+  ];
+  hourlySheet.getRow(1).font = { bold: true };
+  hourlySheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+  const hourlyData = userStats?.hourlyActiveUsers || [];
+  hourlyData.forEach((h) => {
+    hourlySheet.addRow({
+      hour: h.hour,
+      activeUsers: toNumberOrNull(h.activeUsers) ?? 0
+    });
+  });
+
+  return workbook;
+};
+
 module.exports = {
   buildAdminStatisticsWorkbook,
-  buildAdminDashboardWorkbook
+  buildAdminDashboardWorkbook,
+  buildAdminUserStatisticsWorkbook
 };

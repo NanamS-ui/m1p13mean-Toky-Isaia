@@ -71,3 +71,25 @@ exports.exportAdminDashboardExcel = async (req, res) => {
         res.status(error.status || 400).json({ message: error.message });
     }
 }
+
+exports.exportAdminUserStatisticsExcel = async (req, res) => {
+    try {
+        const startDate = req.query.startDate || req.query.dateDebut;
+        const endDate = req.query.endDate || req.query.dateFin;
+
+        const userStats = await AdminStatisticService.getAdminUserStatistics(startDate, endDate);
+        const workbook = await AdminStatisticExportService.buildAdminUserStatisticsWorkbook(userStats, { startDate, endDate });
+
+        const safeStart = startDate || 'all';
+        const safeEnd = endDate || 'now';
+        const filename = `statistiques-utilisateurs_${safeStart}_${safeEnd}.xlsx`;
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        res.status(error.status || 400).json({ message: error.message });
+    }
+}

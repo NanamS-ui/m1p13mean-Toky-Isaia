@@ -11,6 +11,7 @@ router.get("/dashboard", requireRole("ADMIN"),AdminStatisticController.getAdminD
 router.get("/dashboard/export/excel", requireRole("ADMIN"), AdminStatisticController.exportAdminDashboardExcel);
 router.get("/statistics", requireRole("ADMIN"),AdminStatisticController.getAdminStatistics);
 router.get("/userstatistics", requireRole("ADMIN"),AdminStatisticController.getAdminUserStatistics);
+router.get("/userstatistics/export/excel", requireRole("ADMIN"), AdminStatisticController.exportAdminUserStatisticsExcel);
 router.get("/statistics/export/excel", requireRole("ADMIN"), AdminStatisticController.exportAdminStatisticsExcel);
 
 module.exports = router;

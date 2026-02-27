@@ -1,7 +1,12 @@
 <div class="boutiques-page">
   <div class="page-header">
     <h2>Gestion des boutiques</h2>
-    <a [routerLink]="['/admin/boutiques/nouvelle']" class="btn btn--primary">Créer une boutique</a>
+    <div class="page-actions">
+      <a [routerLink]="['/admin/boutiques/nouvelle']" class="btn btn--primary">
+        <span class="material-symbols-outlined btn__icon">add</span>
+        Créer une boutique
+      </a>
+    </div>
   </div>
 
   <div class="card filters-card">

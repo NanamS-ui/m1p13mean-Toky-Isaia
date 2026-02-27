@@ -2,10 +2,12 @@
   <div class="page-header">
     <h2>Gestion des utilisateurs (acheteurs)</h2>
     <div class="page-actions">
-      <a routerLink="/admin/support" class="btn btn--secondary"
-        >Support client (feedback, réclamations)</a
-      >
-      <button type="button" class="btn btn--secondary" (click)="exportExcel()">
+      <a routerLink="/admin/support" class="btn btn--secondary">
+        <span class="material-symbols-outlined btn__icon">support_agent</span>
+        Support client
+      </a>
+      <button type="button" class="btn btn--primary" (click)="exportExcel()">
+        <span class="material-symbols-outlined btn__icon">table_chart</span>
         Exporter Excel
       </button>
     </div>

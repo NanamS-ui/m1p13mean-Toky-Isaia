@@ -15,17 +15,17 @@
         {{ getStatusInfo2(orderApi?.orderCategory?.value?? '').value }}
       </span>
     </div>
-    <div class="header__actions">
-      <button class="btn btn--outline" (click)="printOrder()">
-        <span class="material-symbols-outlined">print</span>
+    <div class="page-actions">
+      <button type="button" class="btn btn--secondary" (click)="printOrder()">
+        <span class="material-symbols-outlined btn__icon">print</span>
         Imprimer
       </button>
-      <button class="btn btn--outline" (click)="exportReceipt()">
-        <span class="material-symbols-outlined">receipt</span>
+      <button type="button" class="btn btn--secondary" (click)="exportReceipt()">
+        <span class="material-symbols-outlined btn__icon">receipt</span>
         Reçu
       </button>
-      <button class="btn btn--primary" (click)="exportInvoice()">
-        <span class="material-symbols-outlined">description</span>
+      <button type="button" class="btn btn--primary" (click)="exportInvoice()">
+        <span class="material-symbols-outlined btn__icon">description</span>
         Facture PDF
       </button>
     </div>

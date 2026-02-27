@@ -94,6 +94,32 @@ export class StatisticsUsersComponent {
     return peakHours.join(' – ');
   }
   @ViewChild('contentToConvert') contentToConvert!: ElementRef;
+
+  exportExcel(): void {
+    const startDate = this.startDate || undefined;
+    const endDate = this.endDate || undefined;
+
+    const safeStart = startDate || 'all';
+    const safeEnd = endDate || 'now';
+    const filename = `statistiques-utilisateurs_${safeStart}_${safeEnd}.xlsx`;
+
+    this.adminStatisticService.exportAdminUserStatisticsExcel(startDate, endDate).subscribe({
+      next: (blob) => this.saveBlob(blob, filename),
+      error: (err) => {
+        console.error('Erreur export Excel statistiques utilisateurs:', err);
+      }
+    });
+  }
+
+  private saveBlob(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
   exportPDF(): void {
     const data = this.contentToConvert.nativeElement;
 
