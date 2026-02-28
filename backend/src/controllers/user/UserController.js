@@ -18,6 +18,16 @@ exports.getUsers = async (req, res) => {
     res.status(error.status || 500).json({ message: error.message });
   }
 };
+
+exports.searchUsers = async (req, res) => {
+  try {
+    const { q, role, limit } = req.query;
+    const users = await userService.searchUsers({ q, role, limit });
+    res.json(users);
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
 exports.getProprietaire = async (req, res) => {
   try {
     const users = await userService.getProprietaire();

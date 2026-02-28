@@ -13,11 +13,18 @@ import type { Shop } from '../../../core/models/shop/shop.model';
 interface PublicBoutique {
   id: string;
   name: string;
-  category: string;
+  categoryId: string;
+  categoryLabel: string;
   floor: number;
   isOpen: boolean;
   logoUrl?: string;
   description?: string;
+}
+
+interface CategoryOption {
+  _id: string;
+  value: string;
+  label: string;
 }
 
 @Component({
@@ -35,7 +42,7 @@ export class BoutiquesPublicComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
-  categories: Array<{ value: string; label: string }> = [];
+  categories: CategoryOption[] = [];
   floors = signal<Array<{ value: string; label: string }>>([]);
 
   allBoutiques = signal<PublicBoutique[]>([]);
@@ -59,7 +66,7 @@ export class BoutiquesPublicComponent implements OnInit {
       filtered = filtered.filter(b => 
         b.name.toLowerCase().includes(query) ||
         b.description?.toLowerCase().includes(query) ||
-        this.getCategoryLabel(b.category).toLowerCase().includes(query)
+        b.categoryLabel.toLowerCase().includes(query)
       );
     }
 
@@ -89,7 +96,7 @@ export class BoutiquesPublicComponent implements OnInit {
       shops: this.shopService.getActiveShops('ALL', 'ALL').pipe(catchError(() => of([])))
     }).subscribe({
       next: ({ categories, floors, shops }) => {
-        this.categories = (categories || []).map((c) => ({ value: c.value, label: c.value }));
+        this.categories = (categories || []).map((c) => ({ _id: c._id, value: c.value, label: c.value }));
         // Transformer les floors du backend au format attendu
         this.floors.set((floors || []).map((f) => ({ value: f.value, label: `${f.value}` })));
         const mappedBoutiques = (shops || []).map((s) => this.mapShopToPublicBoutique(s));
@@ -125,15 +132,35 @@ export class BoutiquesPublicComponent implements OnInit {
     });
   }
 
-  // Get category label
-  getCategoryLabel(category: string): string {
-    const cat = this.categories.find(c => c.value === category);
-    return cat?.label || category || '';
+  // Get category label from categoryId
+  getCategoryLabel(categoryId: string): string {
+    const cat = this.categories.find(c => c._id === categoryId);
+    return cat?.label || '';
   }
 
-  // Get category icon
-  getCategoryIcon(category: string): string {
-    const key = (category || '').toLowerCase().trim();
+  // Get category label from value (for mapping)
+  getCategoryLabelFromValue(value: string): string {
+    const cat = this.categories.find(c => c.value === value);
+    return cat?.label || value || '';
+  }
+
+  // Get category icon from categoryId
+  getCategoryIcon(categoryId: string): string {
+    const cat = this.categories.find(c => c._id === categoryId);
+    const key = (cat?.value || '').toLowerCase().trim();
+    if (key.includes('mode')) return 'checkroom';
+    if (key.includes('tech') || key.includes('électron') || key.includes('electron')) return 'devices';
+    if (key.includes('beauté') || key.includes('beaute') || key.includes('bien-être') || key.includes('bien etre')) return 'spa';
+    if (key.includes('sport')) return 'sports_soccer';
+    if (key.includes('restaurant') || key.includes('food') || key.includes('restauration') || key.includes('alimentation')) return 'restaurant';
+    if (key.includes('maison') || key.includes('décoration') || key.includes('decoration')) return 'chair';
+    if (key.includes('enfant')) return 'child_care';
+    return 'store';
+  }
+
+  // Get category icon from value
+  getCategoryIconFromValue(value: string): string {
+    const key = (value || '').toLowerCase().trim();
     if (key.includes('mode')) return 'checkroom';
     if (key.includes('tech') || key.includes('électron') || key.includes('electron')) return 'devices';
     if (key.includes('beauté') || key.includes('beaute') || key.includes('bien-être') || key.includes('bien etre')) return 'spa';
@@ -169,16 +196,33 @@ export class BoutiquesPublicComponent implements OnInit {
   private mapShopToPublicBoutique(shop: Shop): PublicBoutique {
     const floorValue = (shop as any)?.door?.floor?.value;
     const floor = this.parseFloorNumber(floorValue);
+    const categoryId = this.extractCategoryId(shop.shop_category);
+    const categoryLabel = this.extractCategoryLabel(shop.shop_category);
 
     return {
       id: shop._id,
       name: shop.name,
-      category: shop.shop_category?.value || '',
+      categoryId,
+      categoryLabel,
       floor,
       isOpen: this.openingHours.isShopOpenNow(shop),
       logoUrl: shop.logo || undefined,
       description: shop.description || undefined
     };
+  }
+
+  private extractCategoryId(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'string') return category;
+    if (typeof category === 'object' && category._id) return category._id;
+    return '';
+  }
+
+  private extractCategoryLabel(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'object' && category.value) return category.value;
+    const found = this.categories.find(c => c._id === category);
+    return found?.value || '';
   }
 
   private parseFloorNumber(raw: unknown): number {
@@ -195,10 +239,10 @@ export class BoutiquesPublicComponent implements OnInit {
 
     const normalized = raw.toLowerCase();
     const match = this.categories.find(
-      (c) => c.value.toLowerCase() === normalized || c.label.toLowerCase() === normalized
+      (c) => c.value.toLowerCase() === normalized || c.label.toLowerCase() === normalized || c._id.toLowerCase() === normalized
     );
     if (match) {
-      this.selectedCategory.set(match.value);
+      this.selectedCategory.set(match._id);
       this.cdr.detectChanges();
     }
   }

@@ -111,12 +111,12 @@
             <span class="header__btn-badge">{{ cartItemsCount() }}</span>
           }
         </a>
-        <button type="button" class="header__btn header__btn--notif">
+        <a routerLink="/acheteur/notifications" class="header__btn header__btn--notif">
           <span class="material-symbols-outlined">notifications</span>
           @if (unreadNotifications() > 0) {
             <span class="header__btn-badge">{{ unreadNotifications() }}</span>
           }
-        </button>
+        </a>
         <div class="user-badge">
           <span class="material-symbols-outlined user-badge__icon">person</span>
           @if (user()) {

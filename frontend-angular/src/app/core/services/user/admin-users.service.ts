@@ -24,6 +24,14 @@ export type AdminUserForGestionAdmin = {
   suspensionEndDate?: string | null;
 };
 
+export type AdminUserSearchItem = {
+  _id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: AdminUserRoleValue;
+};
+
 @Injectable({ providedIn: 'root' })
 export class AdminUsersService {
   private readonly apiBaseUrl = environment.apiBaseUrl;
@@ -32,6 +40,16 @@ export class AdminUsersService {
 
   getUsersForGestionAdmin(): Observable<AdminUserForGestionAdmin[]> {
     return this.http.get<AdminUserForGestionAdmin[]>(`${this.apiBaseUrl}/users/gestion/admin`);
+  }
+
+  searchUsers(q: string, role: 'acheteurs' | 'boutiques', limit = 20): Observable<AdminUserSearchItem[]> {
+    return this.http.get<AdminUserSearchItem[]>(`${this.apiBaseUrl}/users/search`, {
+      params: {
+        q,
+        role,
+        limit: String(limit)
+      }
+    });
   }
 
   exportUsersExcel(): Observable<Blob> {

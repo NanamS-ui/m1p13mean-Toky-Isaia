@@ -1,17 +1,21 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { NotificationService } from '../../../core/services/notification/notification.service';
 
-interface Notification {
-  id: string;
-  type: 'order' | 'promotion' | 'shop' | 'system';
+interface NotificationItem {
+  _id: string;
   title: string;
   message: string;
-  timestamp: Date;
-  isRead: boolean;
-  actionUrl?: string;
-  actionLabel?: string;
-  icon?: string;
+  target: string;
+  sent_by?: any;
+  is_sent: boolean;
+  sent_at: string;
+  created_at: string;
+  read_by: any[];
+  isRead?: boolean;
+  order_id?: string;
+  order_status?: string;
 }
 
 @Component({
@@ -21,103 +25,60 @@ interface Notification {
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.css'
 })
-export class NotificationsComponent {
-  selectedFilter = signal<string>('all');
+export class NotificationsComponent implements OnInit {
+  private notificationService = inject(NotificationService);
 
-  // Mock notifications data
-  notifications = signal<Notification[]>([
-    {
-      id: '1',
-      type: 'order',
-      title: 'Commande expédiée',
-      message: 'Votre commande #ORD-12345 a été expédiée et sera livrée sous 2-3 jours.',
-      timestamp: new Date('2025-02-01T14:30:00'),
-      isRead: false,
-      actionUrl: '/acheteur/commandes/ORD-12345',
-      actionLabel: 'Suivre la commande',
-      icon: 'local_shipping'
-    },
-    {
-      id: '2',
-      type: 'promotion',
-      title: 'Promotion spéciale',
-      message: 'Réduction de 30% sur tous les produits de mode chez Mode & Style. Valable jusqu\'au 5 février.',
-      timestamp: new Date('2025-02-01T10:15:00'),
-      isRead: false,
-      actionUrl: '/acheteur/boutiques/1',
-      actionLabel: 'Voir la boutique',
-      icon: 'local_offer'
-    },
-    {
-      id: '3',
-      type: 'shop',
-      title: 'Nouveau produit disponible',
-      message: 'TechZone a ajouté de nouveaux produits. Découvrez les dernières nouveautés technologiques.',
-      timestamp: new Date('2025-01-31T16:45:00'),
-      isRead: true,
-      actionUrl: '/acheteur/boutiques/2',
-      actionLabel: 'Explorer',
-      icon: 'inventory_2'
-    },
-    {
-      id: '4',
-      type: 'order',
-      title: 'Commande confirmée',
-      message: 'Votre commande #ORD-12340 a été confirmée et est en cours de préparation.',
-      timestamp: new Date('2025-01-31T09:20:00'),
-      isRead: true,
-      actionUrl: '/acheteur/commandes/ORD-12340',
-      actionLabel: 'Voir la commande',
-      icon: 'check_circle'
-    },
-    {
-      id: '5',
-      type: 'promotion',
-      title: 'Flash Sale',
-      message: 'Vente flash chez Beauté & Soins ! Jusqu\'à 50% de réduction sur les produits de beauté.',
-      timestamp: new Date('2025-01-30T12:00:00'),
-      isRead: true,
-      actionUrl: '/acheteur/boutiques/3',
-      actionLabel: 'Profiter de l\'offre',
-      icon: 'flash_on'
-    },
-    {
-      id: '6',
-      type: 'system',
-      title: 'Mise à jour du système',
-      message: 'De nouvelles fonctionnalités sont disponibles sur la plateforme. Découvrez-les maintenant !',
-      timestamp: new Date('2025-01-29T08:00:00'),
-      isRead: true,
-      icon: 'system_update'
-    },
-    {
-      id: '7',
-      type: 'order',
-      title: 'Commande livrée',
-      message: 'Votre commande #ORD-12335 a été livrée avec succès. Merci pour votre achat !',
-      timestamp: new Date('2025-01-28T15:30:00'),
-      isRead: true,
-      actionUrl: '/acheteur/commandes/ORD-12335',
-      actionLabel: 'Laisser un avis',
-      icon: 'delivery_dining'
-    }
-  ]);
+  notifications = signal<NotificationItem[]>([]);
+  loading = signal(false);
+  error = signal('');
+  selectedFilter = signal<string>('all');
 
   filterOptions = [
     { value: 'all', label: 'Toutes', icon: 'notifications' },
-    { value: 'order', label: 'Commandes', icon: 'shopping_bag' },
-    { value: 'promotion', label: 'Promotions', icon: 'local_offer' },
-    { value: 'shop', label: 'Boutiques', icon: 'store' },
-    { value: 'system', label: 'Système', icon: 'settings' }
+    { value: 'order', label: 'Commandes', icon: 'local_shipping' },
+    { value: 'promotion', label: 'Admin', icon: 'campaign' },
+    { value: 'system', label: 'Système', icon: 'info' }
   ];
+
+  ngOnInit(): void {
+    this.loadNotifications();
+  }
+
+  loadNotifications(): void {
+    this.loading.set(true);
+    this.error.set('');
+
+    this.notificationService.getMyNotifications().subscribe({
+      next: (data: any) => {
+        this.notifications.set(data);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des notifications:', err);
+        this.error.set('Erreur lors du chargement des notifications');
+        this.loading.set(false);
+      }
+    });
+  }
 
   // Filtered notifications
   filteredNotifications = computed(() => {
     const all = this.notifications();
-    if (this.selectedFilter() === 'all') {
+    const filter = this.selectedFilter();
+    
+    if (filter === 'all') {
       return all;
+    } else if (filter === 'order') {
+      // Afficher uniquement les notifications liées aux commandes
+      return all.filter(n => n.order_id);
+    } else if (filter === 'promotion') {
+      // Afficher les notifications système envoyées par un administrateur
+      return all.filter(n => !n.order_id && n.sent_by);
+    } else if (filter === 'system') {
+      // Afficher les notifications système sans sender
+      return all.filter(n => !n.order_id && !n.sent_by);
     }
-    return all.filter(n => n.type === this.selectedFilter());
+    return all;
   });
 
   // Unread count
@@ -134,33 +95,64 @@ export class NotificationsComponent {
     return this.notifications().some(n => n.isRead);
   });
 
+  // Get notification type based on order_id and sent_by
+  getNotificationType(notif: NotificationItem): 'order' | 'admin' | 'system' {
+    if (notif.order_id) return 'order';
+    if (notif.sent_by) return 'admin';
+    return 'system';
+  }
+
   // Get notification icon
-  getNotificationIcon(notification: Notification): string {
-    if (notification.icon) {
-      return notification.icon;
+  getNotificationIcon(notif: NotificationItem): string {
+    const type = this.getNotificationType(notif);
+    
+    if (type === 'order' && notif.order_status) {
+      // Icônes par statut de commande
+      switch (notif.order_status) {
+        case 'En attente': return 'hourglass_empty';
+        case 'Confirmée': return 'check_circle';
+        case 'En préparation': return 'inventory_2';
+        case 'Livrée': return 'local_shipping';
+        case 'Annulée': return 'cancel';
+        default: return 'package';
+      }
     }
+    
     const icons: Record<string, string> = {
       order: 'shopping_bag',
-      promotion: 'local_offer',
-      shop: 'store',
-      system: 'settings'
+      admin: 'campaign',
+      system: 'notifications'
     };
-    return icons[notification.type] || 'notifications';
+    return icons[type] || 'notifications';
   }
 
   // Get notification color
-  getNotificationColor(type: string): string {
+  getNotificationColor(notif: NotificationItem): string {
+    const type = this.getNotificationType(notif);
+    
+    if (type === 'order' && notif.order_status) {
+      // Couleurs par statut de commande
+      switch (notif.order_status) {
+        case 'En attente': return '#f59e0b'; // Amber
+        case 'Confirmée': return '#10b981'; // Green
+        case 'En préparation': return '#3b82f6'; // Blue
+        case 'Livrée': return '#8b5cf6'; // Purple
+        case 'Annulée': return '#ef4444'; // Red
+        default: return '#6366f1'; // Indigo
+      }
+    }
+    
     const colors: Record<string, string> = {
       order: '#3b82f6',
-      promotion: '#f59e0b',
-      shop: '#10b981',
-      system: '#8b5cf6'
+      admin: '#f59e0b',
+      system: '#6b7280'
     };
     return colors[type] || '#94a3b8';
   }
 
   // Format timestamp
-  formatTimestamp(date: Date): string {
+  formatTimestamp(dateString: string): string {
+    const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -191,43 +183,68 @@ export class NotificationsComponent {
   }
 
   markAsRead(notificationId: string): void {
-    this.notifications.update(notifications =>
-      notifications.map(n =>
-        n.id === notificationId ? { ...n, isRead: true } : n
-      )
-    );
+    this.notificationService.markAsRead(notificationId).subscribe({
+      next: () => {
+        this.notifications.update(notifs =>
+          notifs.map(n =>
+            n._id === notificationId ? { ...n, isRead: true } : n
+          )
+        );
+      },
+      error: (err) => {
+        console.error('Erreur lors du marquage comme lu:', err);
+      }
+    });
   }
 
   markAsUnread(notificationId: string): void {
-    this.notifications.update(notifications =>
-      notifications.map(n =>
-        n.id === notificationId ? { ...n, isRead: false } : n
+    // Backend doesn't have a markAsUnread endpoint, but we can implement it
+    this.notifications.update(notifs =>
+      notifs.map(n =>
+        n._id === notificationId ? { ...n, isRead: false } : n
       )
     );
   }
 
   markAllAsRead(): void {
-    this.notifications.update(notifications =>
-      notifications.map(n => ({ ...n, isRead: true }))
-    );
+    this.notificationService.markAllAsRead().subscribe({
+      next: () => {
+        this.notifications.update(notifs =>
+          notifs.map(n => ({ ...n, isRead: true }))
+        );
+      },
+      error: (err) => {
+        console.error('Erreur lors du marquage de tous les messages:', err);
+      }
+    });
   }
 
   deleteNotification(notificationId: string): void {
-    this.notifications.update(notifications =>
-      notifications.filter(n => n.id !== notificationId)
+    // Backend doesn't have a delete endpoint yet,
+    // we can implement local deletion or request backend to add it
+    this.notifications.update(notifs =>
+      notifs.filter(n => n._id !== notificationId)
     );
   }
 
   deleteAllRead(): void {
     if (confirm('Supprimer toutes les notifications lues ?')) {
-      this.notifications.update(notifications =>
-        notifications.filter(n => !n.isRead)
+      this.notifications.update(notifs =>
+        notifs.filter(n => !n.isRead)
       );
     }
   }
 
-  // Get unread count by notification type
-  getUnreadCountByType(type: string): number {
-    return this.notifications().filter(n => n.type === type && !n.isRead).length;
+  // Get unread count by filter type
+  getUnreadCountByType(filterType: string): number {
+    const notifs = this.notifications();
+    if (filterType === 'order') {
+      return notifs.filter(n => n.order_id && !n.isRead).length;
+    } else if (filterType === 'promotion') {
+      return notifs.filter(n => !n.order_id && n.sent_by && !n.isRead).length;
+    } else if (filterType === 'system') {
+      return notifs.filter(n => !n.order_id && !n.sent_by && !n.isRead).length;
+    }
+    return notifs.filter(n => !n.isRead).length;
   }
 }

@@ -24,6 +24,43 @@ const createUser = async (payload) => {
 
 const getUsers = async () => User.find();
 
+const searchUsers = async ({ q = "", role = "", limit = 20 }) => {
+  const trimmed = String(q || "").trim();
+  if (!trimmed) return [];
+
+  const maxLimit = Math.min(Number(limit) || 20, 50);
+  const regex = new RegExp(trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+
+  const filter = {
+    is_deleted: null,
+    $or: [
+      { name: regex },
+      { email: regex },
+      { phone: regex }
+    ]
+  };
+
+  if (role) {
+    let roleValue = "";
+    if (role === "acheteurs") roleValue = "ACHETEUR";
+    if (role === "boutiques") roleValue = "PROPRIETAIRE";
+
+    if (roleValue) {
+      let roleDoc = await Role.findOne({ val: roleValue }).select("_id");
+      if (!roleDoc && roleValue === "PROPRIETAIRE") {
+        roleDoc = await Role.findOne({ val: "BOUTIQUE" }).select("_id");
+      }
+      if (roleDoc) filter.role = roleDoc._id;
+    }
+  }
+
+  return User.find(filter)
+    .select("_id name email phone role")
+    .populate("role", "val")
+    .sort({ name: 1 })
+    .limit(maxLimit);
+};
+
 const getUsersForAdminExport = async () => {
   const now = new Date();
   const users = await User.find()
@@ -216,5 +253,6 @@ module.exports = {
   getUserPourGestionAdmin,
   reactiverUser,
   logoutUser,
-  getProprietaire
+  getProprietaire,
+  searchUsers
 };

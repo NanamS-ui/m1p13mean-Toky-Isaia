@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/order/cart.service';
 import { MessengerService } from '../../core/services/messenger/messenger.service';
+import { NotificationService } from '../../core/services/notification/notification.service';
 
 interface NavItem {
   route: string;
@@ -25,12 +26,12 @@ export class AcheteurLayoutComponent implements OnInit {
   user = this.auth.currentUser;
   cartService = inject(CartService);
   messengerService = inject(MessengerService);
+  notificationService = inject(NotificationService);
   
   sidebarOpen = true;
 
-  // Mock data
   cartItemsCount = this.cartService.totalItems;
-  unreadNotifications = signal(5);
+  unreadNotifications = signal(0);
   unreadMessages = signal(0);
   openGroups = signal<Set<string>>(new Set());
 
@@ -38,6 +39,12 @@ export class AcheteurLayoutComponent implements OnInit {
     this.messengerService.getUnreadCount().subscribe({
       next: (res) => this.unreadMessages.set(Number(res?.count || 0)),
       error: () => this.unreadMessages.set(0)
+    });
+
+    this.notificationService.loadUnreadCount();
+    this.notificationService.getUnreadCount$().subscribe({
+      next: (count) => this.unreadNotifications.set(Number(count || 0)),
+      error: () => this.unreadNotifications.set(0)
     });
   }
 

@@ -1,0 +1,117 @@
+<div class="notifications-page">
+  <div class="page-header">
+    <h2>Notifications</h2>
+    <p class="page-subtitle">Consultez les notifications du système</p>
+  </div>
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div class="alert alert--error">
+      <span class="material-symbols-outlined">error</span>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Chargement des notifications...</p>
+    </div>
+  } @else {
+    <!-- Header Actions -->
+    <div class="notifications-header">
+      <div class="filter-tabs">
+        <button type="button"
+                class="filter-tab"
+                [class.filter-tab--active]="filterType() === 'all'"
+                (click)="filterType.set('all')">
+          <span class="material-symbols-outlined">notifications</span>
+          Tous
+        </button>
+        <button type="button"
+                class="filter-tab"
+                [class.filter-tab--active]="filterType() === 'unread'"
+                (click)="filterType.set('unread')">
+          <span class="material-symbols-outlined">mail_outline</span>
+          Non lus
+          @if (unreadCount() > 0) {
+            <span class="badge">{{ unreadCount() }}</span>
+          }
+        </button>
+      </div>
+      @if (unreadCount() > 0) {
+        <button type="button" class="btn--secondary" (click)="markAllAsRead()">
+          <span class="material-symbols-outlined">done_all</span>
+          Marquer comme lus
+        </button>
+      }
+      @if (hasReadNotifications()) {
+        <button type="button" class="btn--secondary" (click)="deleteAllRead()">
+          <span class="material-symbols-outlined">delete_sweep</span>
+          Supprimer les lues
+        </button>
+      }
+    </div>
+
+    <!-- Notifications List -->
+    @if (filteredNotifications().length > 0) {
+      <div class="notifications-list">
+        @for (notif of filteredNotifications(); track notif._id) {
+          <div class="notification-card" [class.notification-card--unread]="!notif.isRead">
+            <div class="notification-card__badge" [style.background-color]="getNotificationColor(notif)">
+              <span class="material-symbols-outlined">{{ getNotificationIcon(notif) }}</span>
+            </div>
+
+            <div class="notification-card__content">
+              <div class="notification-card__header">
+                <div>
+                  <h3 class="notification-card__title">{{ notif.title }}</h3>
+                </div>
+                <span class="notification-card__time">{{ formatDate(notif.created_at) }}</span>
+              </div>
+
+              <p class="notification-card__message">{{ notif.message }}</p>
+
+              <div class="notification-card__meta">
+                <span class="notification-card__target">
+                  <span class="material-symbols-outlined">people</span>
+                  {{ getTargetLabel(notif.target) }}
+                </span>
+                @if (notif.sent_by) {
+                  <span class="notification-card__sender">
+                    <span class="material-symbols-outlined">person</span>
+                    {{ notif.sent_by.name }}
+                  </span>
+                }
+              </div>
+
+              <div class="notification-card__actions">
+                @if (!notif.isRead) {
+                  <button type="button"
+                          class="btn--small"
+                          (click)="markAsRead(notif._id)">
+                    <span class="material-symbols-outlined">done</span>
+                    Marqué comme lu
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">notifications_none</span>
+        <h3>Aucune notification</h3>
+        <p>
+          @if (filterType() === 'unread') {
+            Vous avez lu toutes vos notifications
+          } @else {
+            Vous n'avez pas encore de notification
+          }
+        </p>
+      </div>
+    }
+  }
+</div>

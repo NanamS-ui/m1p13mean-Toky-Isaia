@@ -4,6 +4,7 @@ const Stock = require("../../models/product/Stock");
 const StockMouvement = require("../../models/product/StockMouvement");
 const OrderCategory = require("../../models/order/OrderCategory");
 const Payment = require("../../models/payment/Payment");
+const OrderNotificationService = require("./OrderNotificationService");
 const mongoose = require("mongoose");
 const buildError = (message, status) => {
   const error = new Error(message);
@@ -158,6 +159,10 @@ const getOrderByOwnerId = async (owner) => {
 
 
 const updateOrder = async (id, payload) => {
+  // Récupérer l'ancien statut avant la mise à jour
+  const oldOrder = await Order.findOne({ _id: id, deleted_at: null }).populate("orderCategory");
+  const oldStatus = oldOrder?.orderCategory?.value;
+
   const order = await Order.findOneAndUpdate(
     { _id: id, deleted_at: null },
     payload,
@@ -215,6 +220,19 @@ const updateOrder = async (id, payload) => {
             { runValidators: true }
           );
         }
+      }
+    }
+
+    // Envoyer une notification à l'acheteur si le statut a changé
+    if (oldStatus !== categoryValue && categoryValue) {
+      try {
+        await OrderNotificationService.sendOrderStatusNotification(
+          id,
+          categoryValue
+        );
+      } catch (notifError) {
+        console.error("Erreur lors de l'envoi de la notification:", notifError);
+        // Ne pas lever l'erreur, la commande a été mise à jour correctement
       }
     }
   }

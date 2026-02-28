@@ -6,7 +6,7 @@
         <span class="material-symbols-outlined">storefront</span>
         Nos Boutiques
       </h1>
-      <p>Découvrez plus de 100 boutiques et restaurants au cœur du KORUS Center</p>
+      <!-- <p>Découvrez plus de 100 boutiques et restaurants au cœur du KORUS Center</p> -->
     </div>
   </section>
 
@@ -41,12 +41,12 @@
               (click)="onCategoryChange('ALL')">
               Toutes
             </button>
-            @for (cat of categories; track cat.value) {
+            @for (cat of categories; track cat._id) {
               <button 
                 class="filter-chip"
-                [class.filter-chip--active]="selectedCategory() === cat.value"
-                (click)="onCategoryChange(cat.value)">
-                <span class="material-symbols-outlined">{{ getCategoryIcon(cat.value) }}</span>
+                [class.filter-chip--active]="selectedCategory() === cat._id"
+                (click)="onCategoryChange(cat._id)">
+                <span class="material-symbols-outlined">{{ getCategoryIconFromValue(cat.value) }}</span>
                 {{ cat.label }}
               </button>
             }
@@ -102,7 +102,7 @@
                   @if (boutique.logoUrl) {
                     <img [src]="boutique.logoUrl" [alt]="boutique.name" />
                   } @else {
-                    <span class="material-symbols-outlined">{{ getCategoryIcon(boutique.category) }}</span>
+                    <span class="material-symbols-outlined">{{ getCategoryIcon(boutique.categoryId) }}</span>
                   }
                 </div>
                 <div class="boutique-card__status" [class.boutique-card__status--open]="boutique.isOpen" [class.boutique-card__status--closed]="!boutique.isOpen">
@@ -110,7 +110,7 @@
                 </div>
               </div>
               <div class="boutique-card__content">
-                <span class="boutique-card__category">{{ getCategoryLabel(boutique.category) }}</span>
+                <span class="boutique-card__category">{{ boutique.categoryLabel }}</span>
                 <h3>{{ boutique.name }}</h3>
                 @if (boutique.description) {
                   <p>{{ boutique.description }}</p>

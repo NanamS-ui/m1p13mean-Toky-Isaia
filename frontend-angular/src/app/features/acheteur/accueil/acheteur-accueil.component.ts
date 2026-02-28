@@ -2,11 +2,12 @@ import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { ShopService } from '../../../core/services/shop/shop.service';
+import { ShopService, ShopCategory } from '../../../core/services/shop/shop.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import { NoticeService, type ShopNoticeSummaryDto } from '../../../core/services/notice/notice.service';
-import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
 import type { Shop } from '../../../core/models/shop/shop.model';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 interface FeaturedBoutique {
   id: string;
@@ -19,21 +20,11 @@ interface FeaturedBoutique {
 }
 
 interface CategoryWithCount {
+  _id: string;
+  value: string;
   icon: string;
-  label: string;
-  value: BoutiqueCategory;
   count: number;
 }
-
-const CATEGORY_ICONS: Record<BoutiqueCategory, string> = {
-  MODE: 'checkroom',
-  FOOD: 'restaurant',
-  TECH: 'devices',
-  BEAUTE: 'spa',
-  SPORT: 'sports_soccer',
-  MAISON: 'chair',
-  AUTRE: 'more_horiz'
-};
 
 @Component({
   selector: 'app-acheteur-accueil',
@@ -44,6 +35,7 @@ const CATEGORY_ICONS: Record<BoutiqueCategory, string> = {
 })
 export class AcheteurAccueilComponent implements OnInit {
   boutiques = signal<Shop[]>([]);
+  categories = signal<CategoryWithCount[]>([]);
   private shopSummariesById = signal<Record<string, ShopNoticeSummaryDto>>({});
 
   userName = computed(() => {
@@ -58,16 +50,6 @@ export class AcheteurAccueilComponent implements OnInit {
     return shops.slice(0, 6).map(s => this.mapShopToFeaturedBoutique(s));
   });
 
-  categories = computed<CategoryWithCount[]>(() => {
-    const shops = this.boutiques();
-    return BOUTIQUE_CATEGORIES.map(cat => ({
-      icon: CATEGORY_ICONS[cat.value],
-      label: cat.label,
-      value: cat.value,
-      count: shops.filter(s => this.normalizeCategory(s.shop_category?.value) === cat.value).length
-    }));
-  });
-
   promotionsCount = signal(0);
 
   totalBoutiques = computed(() => this.boutiques().length);
@@ -80,9 +62,21 @@ export class AcheteurAccueilComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.shopService.getActiveShops().subscribe({
-      next: (shops) => {
+    forkJoin({
+      shops: this.shopService.getActiveShops(),
+      categories: this.shopService.getShopCategories().pipe(catchError(() => of([] as ShopCategory[])))
+    }).subscribe({
+      next: ({ shops, categories }) => {
         this.boutiques.set(shops);
+
+        // Compter les boutiques par catégorie
+        const categoriesWithCount: CategoryWithCount[] = (categories || []).map(cat => ({
+          _id: cat._id,
+          value: cat.value,
+          icon: this.getCategoryIcon(cat.value),
+          count: shops.filter(s => this.getCategoryId(s.shop_category) === cat._id).length
+        }));
+        this.categories.set(categoriesWithCount);
 
         const ids = shops.map(s => s._id).filter(Boolean);
         this.noticeService.getShopSummaries(ids).subscribe({
@@ -94,13 +88,15 @@ export class AcheteurAccueilComponent implements OnInit {
           error: () => this.shopSummariesById.set({})
         });
       },
-      error: () => this.boutiques.set([])
+      error: () => {
+        this.boutiques.set([]);
+        this.categories.set([]);
+      }
     });
   }
 
   private mapShopToFeaturedBoutique(shop: Shop): FeaturedBoutique {
-    const category = this.normalizeCategory(shop.shop_category?.value);
-    const label = BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
+    const categoryLabel = this.extractCategoryLabel(shop.shop_category);
     const summary = this.shopSummariesById()[shop._id];
     const rating = summary?.reviewCount ? summary.rating : 0;
     const reviewCount = summary?.reviewCount ?? 0;
@@ -110,7 +106,7 @@ export class AcheteurAccueilComponent implements OnInit {
     return {
       id: shop._id,
       name: shop.name,
-      category: label,
+      category: categoryLabel,
       logo: shop.logo,
       rating,
       reviewCount,
@@ -118,15 +114,34 @@ export class AcheteurAccueilComponent implements OnInit {
     };
   }
 
+  private getCategoryId(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'string') return category;
+    if (typeof category === 'object' && category._id) return category._id;
+    return '';
+  }
+
+  private extractCategoryLabel(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'object' && category.value) return category.value;
+    return '';
+  }
+
+  private getCategoryIcon(value: string): string {
+    const key = (value || '').toLowerCase().trim();
+    if (key.includes('mode')) return 'checkroom';
+    if (key.includes('tech') || key.includes('électron') || key.includes('electron')) return 'devices';
+    if (key.includes('beauté') || key.includes('beaute') || key.includes('bien-être') || key.includes('bien etre')) return 'spa';
+    if (key.includes('sport')) return 'sports_soccer';
+    if (key.includes('restaurant') || key.includes('food') || key.includes('restauration') || key.includes('alimentation')) return 'restaurant';
+    if (key.includes('maison') || key.includes('décoration') || key.includes('decoration')) return 'chair';
+    if (key.includes('enfant')) return 'child_care';
+    return 'more_horiz';
+  }
+
   private isStatusActive(value?: string): boolean {
     if (!value) return false;
     return value.toLowerCase().includes('active');
-  }
-
-  private normalizeCategory(value?: string): BoutiqueCategory {
-    const normalized = (value ?? '').toUpperCase().replace(/\s+/g, '');
-    const match = BOUTIQUE_CATEGORIES.find(c => c.value === normalized);
-    return (match?.value as BoutiqueCategory) ?? 'AUTRE';
   }
 
 }

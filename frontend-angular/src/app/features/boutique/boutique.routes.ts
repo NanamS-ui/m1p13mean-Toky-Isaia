@@ -62,6 +62,10 @@ export const boutiqueRoutes: Routes = [
       { 
         path: 'retours', 
         loadComponent: () => import('./relation-client/retours.component').then(m => m.RetoursComponent)
+      },
+      { 
+        path: 'notifications', 
+        loadComponent: () => import('./notifications/notifications.component').then(m => m.NotificationsBoutiqueComponent)
       }
     ]
   }

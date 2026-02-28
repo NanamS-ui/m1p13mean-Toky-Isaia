@@ -47,6 +47,7 @@ export class BoutiqueLayoutComponent {
       ]
     },
     { route: '/boutique/reclamations', label: 'Réclamations & feedback', icon: 'help' },
+    { route: '/boutique/notifications', label: 'Notifications', icon: 'notifications' },
   ];
   
   boutiqueInfo = signal({
