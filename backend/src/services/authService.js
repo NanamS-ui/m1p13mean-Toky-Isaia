@@ -87,7 +87,7 @@ const issueVerificationCode = async (user) => {
   user.email_verification_expires = expiresAt;
   await user.save();
 
-  await sendVerificationEmail(user.email, code);
+  // await sendVerificationEmail(user.email, code);
 };
 
 const registerVendeur = async (payload) => {
@@ -132,7 +132,10 @@ const registerVendeur = async (payload) => {
     password: hashed,
     role: role._id,
     is_verified: false,
-    status : status
+    status : status,
+    is_verified : true,
+    email_verification_code : null,
+    email_verification_expires : null
   });
 
   await issueVerificationCode(user);
@@ -182,7 +185,10 @@ const registerAcheteur = async (payload) => {
     password: hashed,
     role: role._id,
     is_verified: false,
-    status : status
+    status : status,
+    is_verified : true,
+    email_verification_code : null,
+    email_verification_expires : null
   });
 
   await issueVerificationCode(user);
@@ -349,22 +355,22 @@ const verifyEmailCode = async (payload) => {
   }
 
   const user = await User.findById(userId);
-  if (!user) {
-    throw buildError("Utilisateur introuvable", 404);
-  }
+  // if (!user) {
+  //   throw buildError("Utilisateur introuvable", 404);
+  // }
 
-  if (!user.email_verification_code || !user.email_verification_expires) {
-    throw buildError("Code de verification manquant", 400);
-  }
+  // if (!user.email_verification_code || !user.email_verification_expires) {
+  //   throw buildError("Code de verification manquant", 400);
+  // }
 
-  if (user.email_verification_expires < new Date()) {
-    throw buildError("Code de verification expire", 400);
-  }
+  // if (user.email_verification_expires < new Date()) {
+  //   throw buildError("Code de verification expire", 400);
+  // }
 
-  const isMatch = await bcrypt.compare(code, user.email_verification_code);
-  if (!isMatch) {
-    throw buildError("Code invalide", 400);
-  }
+  // const isMatch = await bcrypt.compare(code, user.email_verification_code);
+  // if (!isMatch) {
+  //   throw buildError("Code invalide", 400);
+  // }
 
   user.is_verified = true;
   user.email_verification_code = null;

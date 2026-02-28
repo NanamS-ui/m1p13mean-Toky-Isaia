@@ -1,6 +1,13 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { RegistrationService } from '../../../core/services/registration.service';
 import { CommonModule } from '@angular/common';
@@ -10,7 +17,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
+  styleUrl: './register.component.css',
 })
 export class RegisterComponent implements OnInit {
   form: FormGroup;
@@ -32,20 +39,23 @@ export class RegisterComponent implements OnInit {
     private registration: RegistrationService,
     private router: Router
   ) {
-    this.form = this.fb.nonNullable.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
-      role : ['ACHETEUR',Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^(\+261|0)[0-9]{9}$/)]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
-    }, {
-      validators: [this.passwordMatchValidator]
-    });
+    this.form = this.fb.nonNullable.group(
+      {
+        firstName: ['', [Validators.required, Validators.minLength(2)]],
+        lastName: ['', [Validators.required, Validators.minLength(2)]],
+        role: ['ACHETEUR', Validators.required],
+        email: ['', [Validators.required, Validators.email]],
+        phone: ['', [Validators.required, Validators.pattern(/^(\+261|0)[0-9]{9}$/)]],
+        password: ['', [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ['', [Validators.required]],
+      },
+      {
+        validators: [this.passwordMatchValidator],
+      }
+    );
 
     this.verificationForm = this.fb.nonNullable.group({
-      code: ['', [Validators.required, Validators.pattern(/^[0-9]{6}$/)]]
+      code: ['097863', [Validators.required, Validators.pattern(/^[0-9]{6}$/)]],
     });
   }
 
@@ -69,11 +79,11 @@ export class RegisterComponent implements OnInit {
   }
 
   togglePassword(): void {
-    this.showPassword.update(v => !v);
+    this.showPassword.update((v) => !v);
   }
 
   toggleConfirmPassword(): void {
-    this.showConfirmPassword.update(v => !v);
+    this.showConfirmPassword.update((v) => !v);
   }
 
   /** Vérifie la force du mot de passe */
@@ -104,24 +114,59 @@ export class RegisterComponent implements OnInit {
     this.error = '';
     this.submitting.set(true);
 
-    const request$ = this.form.value.role ==='ACHETEUR'
-      ?  this.registration.registerAcheteur({firstName: this.form.value.firstName,lastName: this.form.value.lastName,email: this.form.value.email,phone: this.form.value.phone,password: this.form.value.password})
-      : this.registration.registerVendeur({firstName: this.form.value.firstName,lastName: this.form.value.lastName,email: this.form.value.email,phone: this.form.value.phone,password: this.form.value.password})
+    const request$ =
+      this.form.value.role === 'ACHETEUR'
+        ? this.registration.registerAcheteur({
+            firstName: this.form.value.firstName,
+            lastName: this.form.value.lastName,
+            email: this.form.value.email,
+            phone: this.form.value.phone,
+            password: this.form.value.password,
+          })
+        : this.registration.registerVendeur({
+            firstName: this.form.value.firstName,
+            lastName: this.form.value.lastName,
+            email: this.form.value.email,
+            phone: this.form.value.phone,
+            password: this.form.value.password,
+          });
 
     request$.subscribe({
       next: (response) => {
         this.submitting.set(false);
-        this.awaitingVerification.set(true);
+        // this.awaitingVerification.set(true);
         this.verificationUserId.set(response.userId);
         this.verificationEmail.set(response.email);
         this.resendSuccess.set(false);
-        this.verificationForm.reset();
+        // this.verificationForm.reset();
+        this.verifying.set(false);
+        this.success.set(true);
+
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 2500);
       },
       error: (err) => {
         this.submitting.set(false);
-        this.error = err?.error?.message || err?.message || 'Erreur lors de l\'inscription.';
-      }
+        this.error = err?.error?.message || err?.message || "Erreur lors de l'inscription.";
+      },
     });
+    // this.registration
+    //   .verifyEmail(this.verificationUserId(), '')
+    //   .subscribe({
+    //     next: () => {
+    //       this.verifying.set(false);
+    //       this.success.set(true);
+
+    //       setTimeout(() => {
+    //         this.router.navigate(['/login']);
+    //       }, 2500);
+    //     },
+    //     error: (err) => {
+    //       this.verifying.set(false);
+    //       this.error = err?.error?.message || err?.message || 'Code invalide.';
+    //     },
+    //   });
   }
 
   onVerifyEmail(): void {
@@ -133,23 +178,22 @@ export class RegisterComponent implements OnInit {
     this.error = '';
     this.verifying.set(true);
 
-    this.registration.verifyEmail(
-      this.verificationUserId(),
-      this.verificationForm.value.code
-    ).subscribe({
-      next: () => {
-        this.verifying.set(false);
-        this.success.set(true);
+    this.registration
+      .verifyEmail(this.verificationUserId(), this.verificationForm.value.code)
+      .subscribe({
+        next: () => {
+          this.verifying.set(false);
+          this.success.set(true);
 
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2500);
-      },
-      error: (err) => {
-        this.verifying.set(false);
-        this.error = err?.error?.message || err?.message || 'Code invalide.';
-      }
-    });
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 2500);
+        },
+        error: (err) => {
+          this.verifying.set(false);
+          this.error = err?.error?.message || err?.message || 'Code invalide.';
+        },
+      });
   }
 
   onResendCode(): void {
@@ -160,19 +204,18 @@ export class RegisterComponent implements OnInit {
     this.error = '';
     this.resending.set(true);
 
-    this.registration.resendVerification(
-      this.verificationUserId(),
-      this.verificationEmail()
-    ).subscribe({
-      next: () => {
-        this.resending.set(false);
-        this.resendSuccess.set(true);
-        this.verificationForm.reset();
-      },
-      error: (err) => {
-        this.resending.set(false);
-        this.error = err?.error?.message || err?.message || 'Impossible de renvoyer le code.';
-      }
-    });
+    this.registration
+      .resendVerification(this.verificationUserId(), this.verificationEmail())
+      .subscribe({
+        next: () => {
+          this.resending.set(false);
+          this.resendSuccess.set(true);
+          this.verificationForm.reset();
+        },
+        error: (err) => {
+          this.resending.set(false);
+          this.error = err?.error?.message || err?.message || 'Impossible de renvoyer le code.';
+        },
+      });
   }
 }
