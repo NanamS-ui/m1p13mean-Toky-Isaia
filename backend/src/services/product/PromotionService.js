@@ -22,7 +22,7 @@ const createPromotionStock = async(idStock, payload)=>{
 const updatePromotionByProduct = async(payload, stockToUpdate)=>{
   // Si current_promotion n'existe pas, créer une nouvelle promotion si promoPrice est défini
   if(!stockToUpdate.current_promotion) {
-    if(payload.promoPrice && payload.promoPrice !== '') {
+    if(payload.promoPrice!=0 && payload.promoPrice != null) {
       const promotionPayload = {
         percent : payload.promoPrice,
         stock : stockToUpdate._id,
@@ -36,13 +36,29 @@ const updatePromotionByProduct = async(payload, stockToUpdate)=>{
       await Promotion.create(promotionPayload);
     }
     return;
-  }
-  if(payload.promoPrice == stockToUpdate.current_promotion.percent) {
+  }else{
+    if(payload.promoPrice == stockToUpdate.current_promotion.percent && payload.promoPrice !=0 && payload.promoPrice !=null) {
     
-    if(payload.promoStart != stockToUpdate.current_promotion.started_date ||
-      payload.promoEnd != stockToUpdate.current_promotion.end_date
-    ){
-        const promotionPayload = {
+      if(payload.promoStart != stockToUpdate.current_promotion.started_date ||
+        payload.promoEnd != stockToUpdate.current_promotion.end_date
+      ){
+          const promotionPayload = {
+          percent : payload.promoPrice,
+          stock : stockToUpdate._id,
+          started_date : payload.promoStart && payload.promoStart !== ''
+          ? new Date(payload.promoStart)
+          : new Date(),
+          end_date : payload.promoEnd && payload.promoEnd !== ''
+          ? new Date(payload.promoEnd)
+          : new Date(8640000000000000)
+        };
+        await updatePromotion(stockToUpdate.current_promotion._id, promotionPayload);
+        return;
+      }
+    }
+    if(payload.promoPrice != stockToUpdate.current_promotion.percent && payload.promoPrice !=0 && payload.promoPrice !=null){
+      await updatePromotion(stockToUpdate.current_promotion._id, {end_date : new Date()});
+      const promotionPayload = {
         percent : payload.promoPrice,
         stock : stockToUpdate._id,
         started_date : payload.promoStart && payload.promoStart !== ''
@@ -52,24 +68,14 @@ const updatePromotionByProduct = async(payload, stockToUpdate)=>{
         ? new Date(payload.promoEnd)
         : new Date(8640000000000000)
       };
-      await updatePromotion(stockToUpdate.current_promotion._id, promotionPayload);
+      await createPromotion(promotionPayload);
       return;
     }
+    if(payload.promoPrice !=0 || payload.promoPrice !=null){
+      await updatePromotion(stockToUpdate.current_promotion._id, {end_date : new Date()});
+    }
   }
-  else{
-    await updatePromotion(stockToUpdate.current_promotion._id, {end_date : new Date()});
-    const promotionPayload = {
-      percent : payload.promoPrice,
-      stock : stockToUpdate._id,
-      started_date : payload.promoStart && payload.promoStart !== ''
-      ? new Date(payload.promoStart)
-      : new Date(),
-      end_date : payload.promoEnd && payload.promoEnd !== ''
-      ? new Date(payload.promoEnd)
-      : new Date(8640000000000000)
-    };
-    await createPromotion(promotionPayload);
-  }
+  
 }
 
 const createPromotion = async (payload) => {

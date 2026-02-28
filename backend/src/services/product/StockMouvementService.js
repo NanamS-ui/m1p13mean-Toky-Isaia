@@ -26,14 +26,12 @@ const createMouvement = async (payload) => {
   const stock = await Stock.findById(payload.stock);
   if (!stock) throw buildError("Stock introuvable", 404);
 
-  const mouvement = await StockMouvement.create(payload);
-
-  
   const stockIn = payload.in || 0;
   const stockOut = payload.out || 0;
-  stock.reste = stockIn - stockOut;
+  stock.reste =stock.reste+ (stockIn - stockOut);
 
   if (stock.reste < 0) throw buildError("Stock insuffisant", 500);
+  const mouvement = await StockMouvement.create(payload);
 
   await stock.save();
 

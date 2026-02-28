@@ -88,7 +88,6 @@ export class ProduitFormComponent {
   }
   private loadStockForEdit(id : string) : void{
     this.stockService.getStockViewById(id).subscribe(stockResult =>{
-      console.log(stockResult);
       this.stock = stockResult;
       this.form.patchValue({
         name: this.stock.product.name,
@@ -211,6 +210,7 @@ export class ProduitFormComponent {
 
   private submitForm():void{
     const formValue = this.form.getRawValue();
+    console.log(formValue);
     const request$ = this.stockId ? this.productService.updateProductByFormulaire(this.stockId, formValue) :this.productService.createProductStock(formValue);
     // const request$ = this.productService.createProductStock(formValue);
     request$.subscribe({

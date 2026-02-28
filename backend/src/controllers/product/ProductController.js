@@ -56,6 +56,7 @@ exports.updateProductByFormulaire = async (req, res) => {
     );
     res.json(product);
   } catch (error) {
+    console.error(error);
     res.status(error.status || 400).json({ message: error.message });
   }
 };

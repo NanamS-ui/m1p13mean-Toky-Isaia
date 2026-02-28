@@ -64,17 +64,20 @@ const getStockById = async (id) => {
 };
 
 const updateStockByUpdateProduct = async(id, payload, stockToUpdate) =>{
-  if(payload.stock == stockToUpdate.reste && payload.lowStockAlert == stockToUpdate.alerte ) return;
-  let mvtPayload = {
-    in : payload.stock > stockToUpdate.reste? payload.stock: 0,
-    out : payload.stock < stockToUpdate.reste? payload.stock: 0,
-    stock : id
-  };
-  await StockMouvementService.createMouvement(mvtPayload);
-  
+  if(payload.stock == stockToUpdate.reste && payload.lowStockAlert == stockToUpdate.alerte && payload.boutique === stockToUpdate.shop ) return;
+  if(payload.stock != stockToUpdate.reste){
+    let mvtPayload = {
+      in : payload.stock > stockToUpdate.reste? payload.stock -stockToUpdate.reste: 0,
+      out : payload.stock < stockToUpdate.reste? stockToUpdate.reste- payload.stock: 0,
+      stock : id
+    };
+    await StockMouvementService.createMouvement(mvtPayload);
+  }
   const stockPayload = {
-    alerte : payload.lowStockAlert
+    alerte : payload.lowStockAlert,
+    shop : payload.boutique
   };
+  
   await updateStock(id,stockPayload);
 }
 const updateStock = async (id, payload) => {
@@ -84,7 +87,7 @@ const updateStock = async (id, payload) => {
   if (!stock) throw buildError("Stock introuvable", 404);
 
   Object.assign(stock, payload);
-  stock.reste = stock.in - stock.out;
+  // stock.reste = stock.in - stock.out;
 
   await stock.save();
   return stock;

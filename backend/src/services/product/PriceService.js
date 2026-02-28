@@ -95,6 +95,7 @@ const updatePriceByProduct = async(payload, stockToUpdate)=>{
       ? new Date(payload.priceEnd)
       : new Date(8640000000000000)
     };
+    console.log(pricePayload);
     await Price.create(pricePayload);
   }
 }

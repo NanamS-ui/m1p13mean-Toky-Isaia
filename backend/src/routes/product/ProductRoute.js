@@ -12,7 +12,7 @@ router.post("/", requireRole("ADMIN","BOUTIQUE"), ctrl.createProduct);
 router.post("/product/stock", requireRole("ADMIN","BOUTIQUE"), ctrl.createProductStock);
 router.post("/upload-image", requireRole("ADMIN","BOUTIQUE"), ctrl.uploadProductImage);
 router.put("/product/stock/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.updateProductByFormulaire);
-router.put("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.updateProduct);
+router.put("/:id", ctrl.updateProduct);
 router.delete("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.deleteProduct);
 
 router.get("/favorites/ids/my", requireRole("ACHETEUR"), ctrl.getMyFavoriteProductIds);

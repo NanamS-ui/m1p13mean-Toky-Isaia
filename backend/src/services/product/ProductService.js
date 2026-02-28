@@ -11,7 +11,7 @@ const buildError = (message, status) => {
 };
 const updateProductStockByFormulaire = async (idStock, payload) => {
   const stockToUpdate = await StockService.getStockViewById(idStock);
-  console.log(stockToUpdate);
+  
   const productPayload ={
     name : payload.name,
     reference  : payload.sku,
