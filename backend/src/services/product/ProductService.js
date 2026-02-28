@@ -1,7 +1,9 @@
 const Product = require("../../models/product/Product");
+const User = require("../../models/user/User");
 const StockService = require("./StockService");
 const PriceService = require ("./PriceService");
-const PromotionService = require("./PromotionService")
+const PromotionService = require("./PromotionService");
+const mongoose = require("mongoose");
 const buildError = (message, status) => {
   const error = new Error(message);
   error.status = status;
@@ -74,6 +76,64 @@ const deleteProduct = async (id) => {
   return product;
 };
 
+const getFavoriteProductIdsByUser = async (userId) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw buildError("Utilisateur invalide", 400);
+  }
+
+  const user = await User.findById(userId).select("favorite_products");
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  return (user.favorite_products || []).map((id) => id.toString());
+};
+
+const addFavoriteProduct = async (userId, productId) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw buildError("Produit invalide", 400);
+  }
+
+  const product = await Product.findById(productId).select("_id");
+  if (!product) throw buildError("Produit introuvable", 404);
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $addToSet: { favorite_products: product._id } },
+    { new: true }
+  ).select("favorite_products");
+
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  return (user.favorite_products || []).map((id) => id.toString());
+};
+
+const removeFavoriteProduct = async (userId, productId) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw buildError("Produit invalide", 400);
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $pull: { favorite_products: new mongoose.Types.ObjectId(productId) } },
+    { new: true }
+  ).select("favorite_products");
+
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  return (user.favorite_products || []).map((id) => id.toString());
+};
+
+const isFavoriteProduct = async (userId, productId) => {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    throw buildError("Produit invalide", 400);
+  }
+
+  const user = await User.findById(userId).select("favorite_products");
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  const favoriteSet = new Set((user.favorite_products || []).map((id) => id.toString()));
+  return favoriteSet.has(productId.toString());
+};
+
 module.exports = {
   createProduct,
   getProducts,
@@ -81,5 +141,9 @@ module.exports = {
   updateProduct,
   deleteProduct,
   createProductStock,
-  updateProductStockByFormulaire
+  updateProductStockByFormulaire,
+  getFavoriteProductIdsByUser,
+  addFavoriteProduct,
+  removeFavoriteProduct,
+  isFavoriteProduct
 };

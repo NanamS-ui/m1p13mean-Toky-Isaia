@@ -4,6 +4,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Shop } from '../../models/shop/shop.model';
 
+export interface ShopCategory {
+  _id: string;
+  value: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -68,6 +73,10 @@ export class ShopService {
   }
   getShopById(id: string): Observable<Shop> {
     return this.http.get<Shop>(`${this.apiBaseUrl}/shops/${id}`);
+  }
+
+  getShopCategories(): Observable<ShopCategory[]> {
+    return this.http.get<ShopCategory[]>(`${this.apiBaseUrl}/shopCategories`);
   }
 
   createShop(payload: Partial<Shop>): Observable<Shop> {

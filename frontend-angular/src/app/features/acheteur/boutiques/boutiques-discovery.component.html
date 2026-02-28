@@ -42,8 +42,8 @@
           title="Catégorie"
         >
           <option value="">Toutes les catégories</option>
-          @for (cat of categories; track cat.value) {
-            <option [value]="cat.value">{{ cat.label }}</option>
+          @for (cat of categories(); track cat._id) {
+            <option [value]="cat._id">{{ cat.value }}</option>
           }
         </select>
       </div>
@@ -162,7 +162,7 @@
               </span>
             </div>
             <div class="boutique-card__body">
-              <span class="boutique-card__category">{{ getCategoryLabel(boutique.category) }}</span>
+              <span class="boutique-card__category">{{ boutique.categoryLabel }}</span>
               <h3 class="boutique-card__name">{{ boutique.name }}</h3>
               @if (boutique.description) {
                 <p class="boutique-card__description">{{ boutique.description }}</p>

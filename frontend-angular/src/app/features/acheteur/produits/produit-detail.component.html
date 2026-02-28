@@ -139,7 +139,7 @@
 
         <!-- Actions -->
         <div class="product-actions">
-          <button
+          <button 
             class="btn-add-cart"
             [disabled]="!p.inStock"
             (click)="addToCart()"
@@ -148,9 +148,7 @@
             <span class="material-symbols-outlined">add_shopping_cart</span>
             Ajouter au panier
           </button>
-          <button class="btn-wishlist" type="button" title="Ajouter aux favoris" aria-label="Ajouter aux favoris">
-            <span class="material-symbols-outlined">favorite</span>
-          </button>
+        
         </div>
 
         @if (cartFlash()) {

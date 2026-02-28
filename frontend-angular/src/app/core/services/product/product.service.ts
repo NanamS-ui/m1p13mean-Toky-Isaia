@@ -39,4 +39,20 @@ export class ProductService {
   deleteProduct(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiBaseUrl}/products/${id}`);
   }
+
+  getMyFavoriteProductIds(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiBaseUrl}/products/favorites/ids/my`);
+  }
+
+  isFavoriteProduct(productId: string): Observable<{ isFavorite: boolean }> {
+    return this.http.get<{ isFavorite: boolean }>(`${this.apiBaseUrl}/products/${productId}/favorite`);
+  }
+
+  addFavoriteProduct(productId: string): Observable<{ message: string; favoriteProducts: string[] }> {
+    return this.http.post<{ message: string; favoriteProducts: string[] }>(`${this.apiBaseUrl}/products/${productId}/favorite`, {});
+  }
+
+  removeFavoriteProduct(productId: string): Observable<{ message: string; favoriteProducts: string[] }> {
+    return this.http.delete<{ message: string; favoriteProducts: string[] }>(`${this.apiBaseUrl}/products/${productId}/favorite`);
+  }
 }

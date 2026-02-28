@@ -389,6 +389,42 @@
   font-size: 24px;
 }
 
+.btn-favorite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--korus-border);
+  border-radius: 12px;
+  background: white;
+  color: var(--korus-text-dark);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-favorite:hover {
+  border-color: var(--korus-accent);
+  color: var(--korus-accent);
+  transform: translateY(-2px);
+}
+
+.btn-favorite--active {
+  background: var(--korus-accent);
+  border-color: var(--korus-accent);
+  color: white;
+}
+
+.btn-favorite--active .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.btn-favorite .material-symbols-outlined {
+  font-size: 24px;
+}
+
 .btn-wishlist {
   width: 56px;
   height: 56px;

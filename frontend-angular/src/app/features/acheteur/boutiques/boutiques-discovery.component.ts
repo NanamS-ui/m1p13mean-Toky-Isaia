@@ -2,8 +2,7 @@ import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
-import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
-import { ShopService } from '../../../core/services/shop/shop.service';
+import { ShopService, ShopCategory } from '../../../core/services/shop/shop.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import { NoticeService, type ShopNoticeSummaryDto } from '../../../core/services/notice/notice.service';
 import type { Shop } from '../../../core/models/shop/shop.model';
@@ -12,7 +11,8 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 interface BoutiqueDiscovery {
   id: string;
   name: string;
-  category: BoutiqueCategory;
+  categoryId: string;
+  categoryLabel: string;
   logoUrl?: string;
   rating: number;
   reviewCount: number;
@@ -20,7 +20,7 @@ interface BoutiqueDiscovery {
   floor: number;
   zone?: string;
   description: string;
-  popularity: number; // Based on views/clicks
+  popularity: number;
 }
 
 type SortOption = 'name' | 'rating' | 'popularity';
@@ -34,11 +34,11 @@ type ViewMode = 'grid' | 'list';
   styleUrl: './boutiques-discovery.component.css'
 })
 export class BoutiquesDiscoveryComponent implements OnInit {
-  categories = BOUTIQUE_CATEGORIES;
+  categories = signal<ShopCategory[]>([]);
   
   // Search and filters
   searchQuery = signal('');
-  selectedCategory = signal<BoutiqueCategory | ''>('');
+  selectedCategory = signal<string>('');
   selectedFloor = signal<number | ''>('');
   onlyOpen = signal(false);
   onlyFavorites = signal(false);
@@ -58,17 +58,19 @@ export class BoutiquesDiscoveryComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       const cat = params['category'];
-      if (cat && this.categories.some(c => c.value === cat)) {
-        this.selectedCategory.set(cat as BoutiqueCategory);
+      if (cat) {
+        this.selectedCategory.set(cat);
       }
     });
 
     forkJoin({
       shops: this.shopService.getActiveShops(),
-      favoriteIds: this.shopService.getMyFavoriteShopIds().pipe(catchError(() => of([] as string[])))
+      favoriteIds: this.shopService.getMyFavoriteShopIds().pipe(catchError(() => of([] as string[]))),
+      categories: this.shopService.getShopCategories().pipe(catchError(() => of([] as ShopCategory[])))
     })
       .pipe(
-        switchMap(({ shops, favoriteIds }) => {
+        switchMap(({ shops, favoriteIds, categories }) => {
+          this.categories.set(categories);
           const ids = shops.map(s => s._id).filter(Boolean);
           this.favoriteShopIds.set(favoriteIds);
           return this.noticeService.getShopSummaries(ids).pipe(
@@ -96,7 +98,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
     if (query) {
       result = result.filter(b => 
         b.name.toLowerCase().includes(query) ||
-        b.category.toLowerCase().includes(query) ||
+        b.categoryLabel.toLowerCase().includes(query) ||
         b.zone?.toLowerCase().includes(query) ||
         b.description.toLowerCase().includes(query)
       );
@@ -104,7 +106,7 @@ export class BoutiquesDiscoveryComponent implements OnInit {
 
     // Category filter
     if (this.selectedCategory()) {
-      result = result.filter(b => b.category === this.selectedCategory());
+      result = result.filter(b => b.categoryId === this.selectedCategory());
     }
 
     // Floor filter
@@ -164,8 +166,9 @@ export class BoutiquesDiscoveryComponent implements OnInit {
     this.sortBy.set(sort);
   }
 
-  getCategoryLabel(category: BoutiqueCategory): string {
-    return this.categories.find(c => c.value === category)?.label ?? category;
+  getCategoryLabel(categoryId: string): string {
+    const category = this.categories().find(c => c._id === categoryId);
+    return category?.value ?? '—';
   }
 
   getFloorLabel(floor: number): string {
@@ -176,7 +179,8 @@ export class BoutiquesDiscoveryComponent implements OnInit {
   }
 
   private mapShopToDiscovery(shop: Shop, summary?: ShopNoticeSummaryDto): BoutiqueDiscovery {
-    const category = this.normalizeCategory(shop.shop_category?.value);
+    const categoryId = this.extractCategoryId(shop.shop_category);
+    const categoryLabel = this.getCategoryLabelFromShop(shop.shop_category);
     const floor = this.extractFloor(shop.door);
     const rating = summary?.reviewCount ? summary.rating : 0;
     const reviewCount = summary?.reviewCount ?? 0;
@@ -185,7 +189,8 @@ export class BoutiquesDiscoveryComponent implements OnInit {
     return {
       id: shop._id,
       name: shop.name,
-      category,
+      categoryId,
+      categoryLabel,
       logoUrl: shop.logo,
       rating,
       reviewCount,
@@ -197,10 +202,18 @@ export class BoutiquesDiscoveryComponent implements OnInit {
     };
   }
 
-  private normalizeCategory(value?: string): BoutiqueCategory {
-    const normalized = (value ?? '').toUpperCase();
-    const match = this.categories.find(c => c.value === normalized);
-    return (match?.value as BoutiqueCategory) ?? 'AUTRE';
+  private extractCategoryId(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'string') return category;
+    if (typeof category === 'object' && category._id) return category._id;
+    return '';
+  }
+
+  private getCategoryLabelFromShop(category?: any): string {
+    if (!category) return '—';
+    if (typeof category === 'object' && category.value) return category.value;
+    const found = this.categories().find(c => c._id === category);
+    return found?.value ?? '—';
   }
 
   private extractFloor(door: Shop['door']): number {
