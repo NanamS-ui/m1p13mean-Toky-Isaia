@@ -40,6 +40,23 @@ export class ShopService {
       `${this.apiBaseUrl}/shops/top?limit=${limit}`
     );
   }
+
+  getMyFavoriteShopIds(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiBaseUrl}/shops/favorites/ids/my`);
+  }
+
+  isFavoriteShop(shopId: string): Observable<{ isFavorite: boolean }> {
+    return this.http.get<{ isFavorite: boolean }>(`${this.apiBaseUrl}/shops/${shopId}/favorite`);
+  }
+
+  addFavoriteShop(shopId: string): Observable<{ message: string; favoriteShops: string[] }> {
+    return this.http.post<{ message: string; favoriteShops: string[] }>(`${this.apiBaseUrl}/shops/${shopId}/favorite`, {});
+  }
+
+  removeFavoriteShop(shopId: string): Observable<{ message: string; favoriteShops: string[] }> {
+    return this.http.delete<{ message: string; favoriteShops: string[] }>(`${this.apiBaseUrl}/shops/${shopId}/favorite`);
+  }
+
   getShopsByOwner():Observable<Shop[]>{
     return this.http.get<Shop[]>(`${this.apiBaseUrl}/shops/shop/owner`);
   }

@@ -1,4 +1,5 @@
 const Shop = require("../../models/shop/Shop");
+const User = require("../../models/user/User");
 const ShopStatus = require("../../models/shop/ShopStatus")
 const ShopStatusService = require("./ShopStatusService");
 const mongoose = require("mongoose");
@@ -214,6 +215,78 @@ const updateShopStatus = async (status_value, id_shop) => {
   return updatedShop;
 };
 
+const getFavoriteShopIdsByUser = async (userId) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw buildError("Utilisateur invalide", 400);
+  }
+
+  const user = await User.findById(userId).select("favorite_shops");
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  return (user.favorite_shops || []).map((id) => id.toString());
+};
+
+const getFavoriteShopsByUser = async (userId) => {
+  const favoriteIds = await getFavoriteShopIdsByUser(userId);
+  if (favoriteIds.length === 0) return [];
+
+  return Shop.find({
+    _id: { $in: favoriteIds },
+    deleted_at: null
+  })
+    .populate({ path: "door", populate: { path: "floor" } })
+    .populate("shop_status")
+    .populate("owner")
+    .populate("shop_category");
+};
+
+const addFavoriteShop = async (userId, shopId) => {
+  if (!mongoose.Types.ObjectId.isValid(shopId)) {
+    throw buildError("Boutique invalide", 400);
+  }
+
+  const shop = await Shop.findOne({ _id: shopId, deleted_at: null }).select("_id");
+  if (!shop) throw buildError("Boutique introuvable", 404);
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $addToSet: { favorite_shops: shop._id } },
+    { new: true }
+  ).select("favorite_shops");
+
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  return (user.favorite_shops || []).map((id) => id.toString());
+};
+
+const removeFavoriteShop = async (userId, shopId) => {
+  if (!mongoose.Types.ObjectId.isValid(shopId)) {
+    throw buildError("Boutique invalide", 400);
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $pull: { favorite_shops: new mongoose.Types.ObjectId(shopId) } },
+    { new: true }
+  ).select("favorite_shops");
+
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  return (user.favorite_shops || []).map((id) => id.toString());
+};
+
+const isFavoriteShop = async (userId, shopId) => {
+  if (!mongoose.Types.ObjectId.isValid(shopId)) {
+    throw buildError("Boutique invalide", 400);
+  }
+
+  const user = await User.findById(userId).select("favorite_shops");
+  if (!user) throw buildError("Utilisateur introuvable", 404);
+
+  const favoriteSet = new Set((user.favorite_shops || []).map((id) => id.toString()));
+  return favoriteSet.has(shopId.toString());
+};
+
 module.exports = {
   createShop,
   getShops,
@@ -225,5 +298,10 @@ module.exports = {
   addSuspension,
   updateShopStatus,
   getByIdOwner,
-  createShopWithProprietaire
+  createShopWithProprietaire,
+  getFavoriteShopIdsByUser,
+  getFavoriteShopsByUser,
+  addFavoriteShop,
+  removeFavoriteShop,
+  isFavoriteShop
 };

@@ -74,6 +74,11 @@
           <span class="material-symbols-outlined">schedule</span>
           Ouvert maintenant
         </label>
+        <label class="filter-checkbox">
+          <input type="checkbox" [ngModel]="onlyFavorites()" (ngModelChange)="onlyFavorites.set($event)" />
+          <span class="material-symbols-outlined">favorite</span>
+          Mes favoris
+        </label>
       </div>
     </div>
 

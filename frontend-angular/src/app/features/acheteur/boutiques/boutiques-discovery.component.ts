@@ -7,7 +7,7 @@ import { ShopService } from '../../../core/services/shop/shop.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import { NoticeService, type ShopNoticeSummaryDto } from '../../../core/services/notice/notice.service';
 import type { Shop } from '../../../core/models/shop/shop.model';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 interface BoutiqueDiscovery {
   id: string;
@@ -41,10 +41,12 @@ export class BoutiquesDiscoveryComponent implements OnInit {
   selectedCategory = signal<BoutiqueCategory | ''>('');
   selectedFloor = signal<number | ''>('');
   onlyOpen = signal(false);
+  onlyFavorites = signal(false);
   sortBy = signal<SortOption>('popularity');
   viewMode = signal<ViewMode>('grid');
 
   boutiques = signal<BoutiqueDiscovery[]>([]);
+  favoriteShopIds = signal<string[]>([]);
 
   constructor(
     private shopService: ShopService,
@@ -61,10 +63,14 @@ export class BoutiquesDiscoveryComponent implements OnInit {
       }
     });
 
-    this.shopService.getActiveShops()
+    forkJoin({
+      shops: this.shopService.getActiveShops(),
+      favoriteIds: this.shopService.getMyFavoriteShopIds().pipe(catchError(() => of([] as string[])))
+    })
       .pipe(
-        switchMap((shops) => {
+        switchMap(({ shops, favoriteIds }) => {
           const ids = shops.map(s => s._id).filter(Boolean);
+          this.favoriteShopIds.set(favoriteIds);
           return this.noticeService.getShopSummaries(ids).pipe(
             map((summaries) => ({ shops, summaries })),
             catchError(() => of({ shops, summaries: [] as ShopNoticeSummaryDto[] }))
@@ -111,6 +117,11 @@ export class BoutiquesDiscoveryComponent implements OnInit {
     // Open status filter
     if (this.onlyOpen()) {
       result = result.filter(b => b.isOpen);
+    }
+
+    if (this.onlyFavorites()) {
+      const favorites = new Set(this.favoriteShopIds());
+      result = result.filter(b => favorites.has(b.id));
     }
 
     // Sort

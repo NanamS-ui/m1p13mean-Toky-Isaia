@@ -99,12 +99,14 @@ export class BoutiqueDetailComponent implements OnInit {
     forkJoin({
       shop: this.shopService.getShopById(id),
       products: this.stockService.getCatalogForShop(id),
-      notices: this.noticeService.getNoticesByShop(id).pipe(catchError(() => of([] as NoticeDto[])))
+      notices: this.noticeService.getNoticesByShop(id).pipe(catchError(() => of([] as NoticeDto[]))),
+      favoriteStatus: this.shopService.isFavoriteShop(id).pipe(catchError(() => of({ isFavorite: false })))
     }).subscribe({
-      next: ({ shop, products, notices }) => {
+      next: ({ shop, products, notices, favoriteStatus }) => {
         const reviews = this.mapNoticesToReviews(notices);
         const summary = this.computeRatingSummary(notices);
 
+        this.isFavorite.set(Boolean(favoriteStatus?.isFavorite));
         this.reviews.set(reviews);
         this.boutique.set(this.mapShopToDetail(shop, summary));
         this.products.set(this.mapCatalogProducts(products));
@@ -249,8 +251,21 @@ export class BoutiqueDetailComponent implements OnInit {
   }
 
   toggleFavorite(): void {
-    this.isFavorite.update(fav => !fav);
-    // In a real app, save to backend
+    const shopId = this.boutiqueId();
+    if (!shopId) return;
+
+    if (this.isFavorite()) {
+      this.shopService.removeFavoriteShop(shopId).subscribe({
+        next: () => this.isFavorite.set(false),
+        error: (error) => console.error('Erreur lors de la suppression des favoris', error)
+      });
+      return;
+    }
+
+    this.shopService.addFavoriteShop(shopId).subscribe({
+      next: () => this.isFavorite.set(true),
+      error: (error) => console.error('Erreur lors de l\'ajout aux favoris', error)
+    });
   }
 
   formatCurrency(value: number): string {

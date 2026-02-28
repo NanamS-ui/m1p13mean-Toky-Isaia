@@ -49,6 +49,21 @@ const getPriceById = async (id) => {
   return price;
 };
 const updatePriceByProduct = async(payload, stockToUpdate)=>{
+  // Si current_price n'existe pas, créer une nouvelle entrée de prix
+  if(!stockToUpdate.current_price) {
+    const pricePayload = {
+      price : payload.price,
+      stock : stockToUpdate._id,
+      started_date : payload.priceStart && payload.priceStart !== ''
+      ? new Date(payload.priceStart)
+      : new Date(),
+      end_date : payload.priceEnd && payload.priceEnd !== ''
+      ? new Date(payload.priceEnd)
+      : new Date(8640000000000000)
+    };
+    await Price.create(pricePayload);
+    return;
+  }
   if(payload.price == stockToUpdate.current_price.price) {
     
     if(payload.priceStart != stockToUpdate.current_price.started_date ||
@@ -70,7 +85,7 @@ const updatePriceByProduct = async(payload, stockToUpdate)=>{
   }
   else{
     await updatePrice(stockToUpdate.current_price._id, {end_date : new Date()});
-    pricePayload = {
+    const pricePayload = {
       price : payload.price,
       stock : stockToUpdate._id,
       started_date : payload.priceStart && payload.priceStart !== ''

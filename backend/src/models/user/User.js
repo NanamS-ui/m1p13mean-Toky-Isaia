@@ -92,6 +92,13 @@ const UserSchema = new mongoose.Schema(
     login_history: {
       type: [LoginHistorySchema],
       default: []
+    },
+    favorite_shops: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Shop"
+      }],
+      default: []
     }
   },
   {
@@ -102,5 +109,6 @@ const UserSchema = new mongoose.Schema(
 UserSchema.index({ email: 1 }, { unique: true, sparse: true });
 UserSchema.index({ role: 1 });
 UserSchema.index({ phone: 1 });
+UserSchema.index({ favorite_shops: 1 });
 
 module.exports = mongoose.model("Users", UserSchema);
