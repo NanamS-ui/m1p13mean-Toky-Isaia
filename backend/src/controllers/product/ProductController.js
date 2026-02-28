@@ -88,3 +88,39 @@ exports.uploadProductImage = async (req, res) => {
     res.status(error.status || 500).json({ message: error.message });
   }
 };
+
+exports.getMyFavoriteProductIds = async (req, res) => {
+  try {
+    const ids = await ProductService.getFavoriteProductIdsByUser(req.user.id);
+    res.json(ids);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.isFavoriteProduct = async (req, res) => {
+  try {
+    const isFavorite = await ProductService.isFavoriteProduct(req.user.id, req.params.id);
+    res.json({ isFavorite });
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.addFavoriteProduct = async (req, res) => {
+  try {
+    const favoriteProducts = await ProductService.addFavoriteProduct(req.user.id, req.params.id);
+    res.status(200).json({ message: "Produit ajouté aux favoris", favoriteProducts });
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.removeFavoriteProduct = async (req, res) => {
+  try {
+    const favoriteProducts = await ProductService.removeFavoriteProduct(req.user.id, req.params.id);
+    res.status(200).json({ message: "Produit retiré des favoris", favoriteProducts });
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};

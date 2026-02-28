@@ -65,6 +65,51 @@ exports.getShopByIdOwner = async (req, res) => {
     res.status(error.status || 400).json({ message: error.message });
   }
 };
+
+exports.getMyFavoriteShops = async (req, res) => {
+  try {
+    const shops = await ShopService.getFavoriteShopsByUser(req.user.id);
+    res.json(shops);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.getMyFavoriteShopIds = async (req, res) => {
+  try {
+    const ids = await ShopService.getFavoriteShopIdsByUser(req.user.id);
+    res.json(ids);
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.addFavoriteShop = async (req, res) => {
+  try {
+    const favoriteShops = await ShopService.addFavoriteShop(req.user.id, req.params.id);
+    res.status(200).json({ message: "Boutique ajoutée aux favoris", favoriteShops });
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.removeFavoriteShop = async (req, res) => {
+  try {
+    const favoriteShops = await ShopService.removeFavoriteShop(req.user.id, req.params.id);
+    res.status(200).json({ message: "Boutique retirée des favoris", favoriteShops });
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
+
+exports.isFavoriteShop = async (req, res) => {
+  try {
+    const isFavorite = await ShopService.isFavoriteShop(req.user.id, req.params.id);
+    res.json({ isFavorite });
+  } catch (error) {
+    res.status(error.status || 400).json({ message: error.message });
+  }
+};
 exports.updateShop = async (req, res) => {
   console.log(req.user);
   try {

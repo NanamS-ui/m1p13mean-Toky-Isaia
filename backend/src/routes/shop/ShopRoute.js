@@ -21,4 +21,9 @@ router.post("/upload/logo", requireRole("ADMIN", "BOUTIQUE"), ShopCtrl.uploadSho
 router.post("/upload/banner", requireRole("ADMIN", "BOUTIQUE"), ShopCtrl.uploadShopBanner);
 router.put("/shop/status", ShopCtrl.updateShopStatus);
 router.get("/shop/owner", ShopCtrl.getShopByIdOwner);
+router.get("/favorites/my", requireRole("ACHETEUR"), ShopCtrl.getMyFavoriteShops);
+router.get("/favorites/ids/my", requireRole("ACHETEUR"), ShopCtrl.getMyFavoriteShopIds);
+router.get("/:id/favorite", requireRole("ACHETEUR"), ShopCtrl.isFavoriteShop);
+router.post("/:id/favorite", requireRole("ACHETEUR"), ShopCtrl.addFavoriteShop);
+router.delete("/:id/favorite", requireRole("ACHETEUR"), ShopCtrl.removeFavoriteShop);
 module.exports = router;

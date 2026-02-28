@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { StockService } from '../../../core/services/product/stock.service';
+import { ProductService } from '../../../core/services/product/product.service';
 import { CartService } from '../../../core/services/order/cart.service';
 import type { CatalogFilterCriteria, CatalogProduct } from '../../../core/models/product/catalog-product.model';
+import { catchError, of } from 'rxjs';
 
 interface Product {
   id: string;
@@ -37,6 +39,7 @@ interface Product {
 export class ProduitDetailComponent implements OnInit, OnDestroy {
   quantity = signal(1);
   selectedImageIndex = signal(0);
+  isFavorite = signal(false);
 
   cartFlash = signal(false);
   private cartFlashTimer: ReturnType<typeof setTimeout> | null = null;
@@ -48,6 +51,7 @@ export class ProduitDetailComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private stockService: StockService,
+    private productService: ProductService,
     private cartService: CartService
   ) {}
 
@@ -83,6 +87,7 @@ export class ProduitDetailComponent implements OnInit, OnDestroy {
         this.quantity.set(1);
         this.selectedImageIndex.set(0);
 
+        this.loadFavoriteStatus(detail.id);
         this.loadRelated(detail.category, detail.id);
       },
       error: () => {
@@ -90,6 +95,14 @@ export class ProduitDetailComponent implements OnInit, OnDestroy {
         this.relatedProducts.set([]);
       }
     });
+  }
+
+  private loadFavoriteStatus(productId: string): void {
+    this.productService.isFavoriteProduct(productId)
+      .pipe(catchError(() => of({ isFavorite: false })))
+      .subscribe(result => {
+        this.isFavorite.set(Boolean(result?.isFavorite));
+      });
   }
 
   private loadRelated(category: string, currentId: string): void {
@@ -173,6 +186,24 @@ export class ProduitDetailComponent implements OnInit, OnDestroy {
 
   selectImage(index: number): void {
     this.selectedImageIndex.set(index);
+  }
+
+  toggleFavorite(): void {
+    const product = this.product();
+    if (!product) return;
+
+    if (this.isFavorite()) {
+      this.productService.removeFavoriteProduct(product.id).subscribe({
+        next: () => this.isFavorite.set(false),
+        error: (error) => console.error('Erreur lors de la suppression des favoris', error)
+      });
+      return;
+    }
+
+    this.productService.addFavoriteProduct(product.id).subscribe({
+      next: () => this.isFavorite.set(true),
+      error: (error) => console.error('Erreur lors de l\'ajout aux favoris', error)
+    });
   }
 
   getSpecKeys(specs: { [key: string]: string } | undefined): string[] {

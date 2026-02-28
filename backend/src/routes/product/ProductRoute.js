@@ -15,4 +15,9 @@ router.put("/product/stock/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.updatePro
 router.put("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.updateProduct);
 router.delete("/:id", requireRole("ADMIN","BOUTIQUE"), ctrl.deleteProduct);
 
+router.get("/favorites/ids/my", requireRole("ACHETEUR"), ctrl.getMyFavoriteProductIds);
+router.get("/:id/favorite", requireRole("ACHETEUR"), ctrl.isFavoriteProduct);
+router.post("/:id/favorite", requireRole("ACHETEUR"), ctrl.addFavoriteProduct);
+router.delete("/:id/favorite", requireRole("ACHETEUR"), ctrl.removeFavoriteProduct);
+
 module.exports = router;
