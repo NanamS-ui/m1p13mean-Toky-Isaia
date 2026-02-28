@@ -76,9 +76,16 @@
                 <a [routerLink]="['/admin/boutiques', b._id]" class="btn-link">Modifier</a>
                 @if (b.shop_status.value === 'En attente') {
                   <button type="button" class="btn-link btn-link--success" (click)="changeStatus(b._id,'Active')" >Valider</button>
+                  <button type="button" class="btn-link btn-link--success" (click)="changeStatus(b._id,'Refusée')" >Refuser</button>
                 }
                 @if (b.shop_status.value === 'Active') {
                   <button type="button" class="btn-link btn-link--danger" (click)="changeStatus(b._id,'Désactivée')" >Désactiver</button>
+                }
+                @if (b.shop_status.value === 'Désactivée') {
+                  <button type="button" class="btn-link btn-link--danger" (click)="changeStatus(b._id,'Active')" >Réactiver</button>
+                }
+                @if (b.shop_status.value === 'Refusée') {
+                  <button type="button" class="btn-link btn-link--danger" (click)="changeStatus(b._id,'Active')" >Acitver</button>
                 }
               </td>
             </tr>

@@ -68,9 +68,7 @@ export class BoutiquesListComponent {
     this.shopService.updateShopStatus(status, id).subscribe({
       next: (updatedShop) => {
         const index = this.shops.findIndex(b => b._id === id);
-
         if (index !== -1) {
-          
           const newShops = [...this.shops];
           
           newShops[index] = updatedShop;

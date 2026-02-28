@@ -62,8 +62,8 @@ export class ProduitFormComponent {
       priceEnd: [''],
       stock: [0, [Validators.required, Validators.min(0)]],
       lowStockAlert: [5],
-      weight: [null],
-      dimensions: [''],
+      // weight: [null],
+      // dimensions: [''],
       image: [''],
       isActive: [true]
     });

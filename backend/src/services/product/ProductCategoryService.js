@@ -10,7 +10,7 @@ const createProductCategory = async (payload) =>
   ProductCategory.create(payload);
 
 const getProductCategories = async () =>
-  ProductCategory.find();
+   ProductCategory.find().sort({ value: 1 });
 
 const getProductCategoryById = async (id) => {
   const category = await ProductCategory.findById(id);

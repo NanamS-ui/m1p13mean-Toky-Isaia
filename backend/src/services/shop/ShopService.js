@@ -9,7 +9,7 @@ const buildError = (message, status) => {
 };
 
 const createShopWithProprietaire = async (payload) =>{
-  defaultStatus = await ShopStatus.findOne({ value: "En attente"});
+  defaultStatus = await ShopStatus.findOne({ value: "Active"});
   if( !defaultStatus) throw buildError("Status 'En attente' introuvable", 500);
   return Shop.create({
     ...payload,
