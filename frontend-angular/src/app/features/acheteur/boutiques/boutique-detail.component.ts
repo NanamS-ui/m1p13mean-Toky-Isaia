@@ -1,12 +1,22 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
-import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
+import { catchError, forkJoin, of } from 'rxjs';
+import { BOUTIQUE_CATEGORIES } from '../../../core/models/boutique.model';
+import { ShopService } from '../../../core/services/shop/shop.service';
+import { ShopCategoryService } from '../../../core/services/shop/shop-category.service';
+import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
+import type { Shop } from '../../../core/models/shop/shop.model';
+import type { ShopCategory } from '../../../core/models/shop/shopCategory.model';
+import { StockService } from '../../../core/services/product/stock.service';
+import type { CatalogProduct } from '../../../core/models/product/catalog-product.model';
+import { NoticeDto, NoticeService } from '../../../core/services/notice/notice.service';
 
 interface BoutiqueDetail {
   id: string;
   name: string;
-  category: BoutiqueCategory;
+  categoryId?: string;
+  categoryLabel: string;
   logoUrl?: string;
   bannerUrl?: string;
   description: string;
@@ -45,6 +55,8 @@ interface Review {
   date: string;
 }
 
+const FRENCH_DAYS_ORDER = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
+
 @Component({
   selector: 'app-boutique-detail',
   standalone: true,
@@ -52,135 +64,238 @@ interface Review {
   templateUrl: './boutique-detail.component.html',
   styleUrl: './boutique-detail.component.css'
 })
-export class BoutiqueDetailComponent {
+export class BoutiqueDetailComponent implements OnInit {
   boutiqueId = signal<string>('');
   isFavorite = signal(false);
+  loading = signal(true);
+  error = signal<string | null>(null);
 
-  // Mock boutique data
-  boutique = signal<BoutiqueDetail | null>({
-    id: '1',
-    name: 'Mode & Style',
-    category: 'MODE',
-    description: 'Boutique de mode tendance pour hommes et femmes. Nous proposons une large sélection de vêtements, accessoires et chaussures des dernières tendances. Notre équipe passionnée vous conseille pour trouver le style qui vous correspond.',
-    rating: 4.8,
-    reviewCount: 124,
-    isOpen: true,
-    floor: 1,
-    zone: 'Zone A',
-    phone: '+261 34 12 345 67',
-    email: 'contact@mode-style.mg',
-    website: 'www.mode-style.mg',
-    hours: [
-      { day: 'Lundi', open: '09:00', close: '20:00' },
-      { day: 'Mardi', open: '09:00', close: '20:00' },
-      { day: 'Mercredi', open: '09:00', close: '20:00' },
-      { day: 'Jeudi', open: '09:00', close: '20:00' },
-      { day: 'Vendredi', open: '09:00', close: '21:00' },
-      { day: 'Samedi', open: '09:00', close: '21:00' },
-      { day: 'Dimanche', open: '10:00', close: '19:00' }
-    ],
-    isFavorite: false
-  });
+  boutique = signal<BoutiqueDetail | null>(null);
 
-  // Mock products
-  products = signal<Product[]>([
-    {
-      id: '1',
-      name: 'Robe été fleurie',
-      price: 75000,
-      promoPrice: 59000,
-      stock: 15,
-      rating: 4.7
-    },
-    {
-      id: '2',
-      name: 'Jean slim noir',
-      price: 89000,
-      stock: 8,
-      rating: 4.5
-    },
-    {
-      id: '3',
-      name: 'T-shirt basic blanc',
-      price: 25000,
-      stock: 50,
-      rating: 4.6
-    },
-    {
-      id: '4',
-      name: 'Veste en cuir',
-      price: 320000,
-      stock: 3,
-      rating: 4.8
-    },
-    {
-      id: '5',
-      name: 'Sneakers urbaines',
-      price: 145000,
-      promoPrice: 115000,
-      stock: 12,
-      rating: 4.4
-    },
-    {
-      id: '6',
-      name: 'Sac à main cuir',
-      price: 180000,
-      stock: 7,
-      rating: 4.9
-    }
-  ]);
+  products = signal<Product[]>([]);
 
-  // Mock reviews
-  reviews = signal<Review[]>([
-    {
-      id: '1',
-      userName: 'Marie R.',
-      rating: 5,
-      comment: 'Excellente boutique ! Les vêtements sont de très bonne qualité et le service est impeccable. Je recommande vivement.',
-      date: '2026-01-15'
-    },
-    {
-      id: '2',
-      userName: 'Jean P.',
-      rating: 4,
-      comment: 'Bonne sélection de produits, prix raisonnables. Le personnel est accueillant et compétent.',
-      date: '2026-01-10'
-    },
-    {
-      id: '3',
-      userName: 'Sophie L.',
-      rating: 5,
-      comment: 'Ma boutique préférée ! Toujours les dernières tendances et des conseils personnalisés. Parfait !',
-      date: '2026-01-05'
-    },
-    {
-      id: '4',
-      userName: 'Thomas M.',
-      rating: 4,
-      comment: 'Très satisfait de mes achats. La qualité est au rendez-vous et les prix sont compétitifs.',
-      date: '2025-12-28'
-    }
-  ]);
+  reviews = signal<Review[]>([]);
 
-  constructor(private route: ActivatedRoute) {
+  private categoryMap = new Map<string, string>();
+
+  constructor(
+    private route: ActivatedRoute,
+    private shopService: ShopService,
+    private shopCategoryService: ShopCategoryService,
+    private openingHours: OpeningHoursService,
+    private stockService: StockService,
+    private noticeService: NoticeService
+  ) {}
+
+  ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.boutiqueId.set(params['id']);
-      // In a real app, fetch boutique data based on ID
-      this.isFavorite.set(this.boutique()?.isFavorite ?? false);
+      const id = params['id'];
+      this.boutiqueId.set(id);
+      if (id) {
+        this.loadShop(id);
+      } else {
+        this.loading.set(false);
+      }
     });
   }
 
-  getCategoryLabel(category: BoutiqueCategory): string {
-    return BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
+  private loadShop(id: string): void {
+    this.loading.set(true);
+    this.error.set(null);
+    forkJoin({
+      shop: this.shopService.getShopById(id),
+      products: this.stockService.getCatalogForShop(id),
+      categories: this.shopCategoryService.getShopCategories().pipe(catchError(() => of([] as ShopCategory[]))),
+      notices: this.noticeService.getNoticesByShop(id).pipe(catchError(() => of([] as NoticeDto[]))),
+      favoriteStatus: this.shopService.isFavoriteShop(id).pipe(catchError(() => of({ isFavorite: false })))
+    }).subscribe({
+      next: ({ shop, products, categories, notices, favoriteStatus }) => {
+        this.categoryMap = new Map((categories || []).map(cat => [cat._id, cat.value]));
+        const reviews = this.mapNoticesToReviews(notices);
+        const summary = this.computeRatingSummary(notices);
+
+        this.isFavorite.set(Boolean(favoriteStatus?.isFavorite));
+        this.reviews.set(reviews);
+        this.boutique.set(this.mapShopToDetail(shop, summary));
+        this.products.set(this.mapCatalogProducts(products));
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err?.message || 'Boutique introuvable');
+        this.boutique.set(null);
+        this.products.set([]);
+        this.reviews.set([]);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private mapShopToDetail(shop: Shop, ratingInfo?: { rating: number; reviewCount: number }): BoutiqueDetail {
+    const categoryId = this.extractCategoryId(shop.shop_category);
+    const categoryValue = this.extractCategoryValue(shop.shop_category);
+    const categoryLabel = this.getCategoryLabelByIdOrValue(categoryId, categoryValue);
+    const floor = this.extractFloor(shop.door);
+    const zone = this.extractZone(shop.door);
+    const { rating, reviewCount } = ratingInfo ?? { rating: 0, reviewCount: 0 };
+    const hours = this.mapOpeningHours(shop.opening_hours);
+    const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
+
+    return {
+      id: shop._id,
+      name: shop.name,
+      categoryId,
+      categoryLabel,
+      logoUrl: shop.logo,
+      bannerUrl: shop.banner,
+      description: shop.description ?? '',
+      rating,
+      reviewCount,
+      isOpen: isActive && this.openingHours.isShopOpenNow(shop),
+      floor,
+      zone,
+      phone: shop.phone,
+      email: shop.email,
+      website: undefined,
+      hours,
+      isFavorite: this.isFavorite()
+    };
+  }
+
+  private mapNoticesToReviews(notices: NoticeDto[]): Review[] {
+    return (notices || []).map(n => {
+      const user = n.user as any;
+      const userName = (typeof user === 'object' && user)
+        ? (user.name || user.email || 'Utilisateur')
+        : 'Utilisateur';
+
+      return {
+        id: n._id,
+        userName,
+        rating: Number(n.rating) || 0,
+        comment: String(n.comment || ''),
+        date: n.created_at || new Date().toISOString()
+      };
+    });
+  }
+
+  private computeRatingSummary(notices: NoticeDto[]): { rating: number; reviewCount: number } {
+    const list = (notices || []).filter(n => Number.isFinite(Number(n.rating)));
+    const reviewCount = list.length;
+    if (reviewCount === 0) return { rating: 0, reviewCount: 0 };
+
+    const sum = list.reduce((acc, n) => acc + Number(n.rating), 0);
+    const rating = Math.round((sum / reviewCount) * 10) / 10;
+    return { rating, reviewCount };
+  }
+
+  private isStatusActive(value?: string): boolean {
+    if (!value) return false;
+    return value.toLowerCase().includes('active');
+  }
+
+  private mapOpeningHours(openingHours: Shop['opening_hours']): { day: string; open: string; close: string }[] {
+    const order = [...FRENCH_DAYS_ORDER];
+    const byDay = new Map((openingHours || []).map(h => [h.day, h]));
+    return order.map(day => {
+      const h = byDay.get(day);
+      if (!h) return { day, open: '', close: '' };
+      return {
+        day,
+        open: h.isOpen ? h.openTime : '',
+        close: h.isOpen ? h.closeTime : ''
+      };
+    });
+  }
+
+  private extractFloor(door: Shop['door']): number {
+    if (!door || typeof door !== 'object') return 0;
+    const floor = (door as { floor?: unknown }).floor;
+    if (typeof floor === 'string') return this.parseFloorNumber(floor);
+    if (typeof floor === 'object' && floor && 'value' in floor) {
+      return this.parseFloorNumber((floor as { value?: string }).value ?? '');
+    }
+    return 0;
+  }
+
+  private extractZone(door: Shop['door']): string | undefined {
+    if (!door || typeof door !== 'object') return undefined;
+    const value = (door as { value?: unknown }).value;
+    return typeof value === 'string' ? value : undefined;
+  }
+
+  private parseFloorNumber(value: string): number {
+    if (!value || typeof value !== 'string') return 0;
+    const match = value.match(/(-?\d+)/);
+    return match ? Number.parseInt(match[1], 10) : 0;
+  }
+
+  private getCategoryLabelByIdOrValue(id?: string, value?: string): string {
+    if (value) return value;
+    if (!id) return 'Autre';
+    const mapped = this.categoryMap.get(id);
+    if (mapped) return mapped;
+    const match = BOUTIQUE_CATEGORIES.find(c => c.value === id);
+    return match?.label ?? id;
+  }
+
+  private extractCategoryId(category: Shop['shop_category']): string | undefined {
+    if (!category) return undefined;
+    return typeof category === 'string' ? category : category._id;
+  }
+
+  private extractCategoryValue(category: Shop['shop_category']): string | undefined {
+    if (!category || typeof category === 'string') return undefined;
+    return category.value;
+  }
+
+  private mapCatalogProducts(items: CatalogProduct[]): Product[] {
+    return (items || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      promoPrice: item.promoPrice,
+      imageUrl: item.image,
+      stock: item.stockQuantity,
+      rating: this.getMockProductRating(item.id)
+    }));
+  }
+
+  private getMockProductRating(productId: string): number {
+    let hash = 0;
+    for (let i = 0; i < productId.length; i++) {
+      hash = ((hash << 5) - hash) + productId.charCodeAt(i);
+      hash |= 0;
+    }
+    const n = Math.abs(hash);
+    return Math.round((3.5 + (n % 15) / 10) * 10) / 10;
+  }
+
+  getCategoryLabel(category: string): string {
+    return category || 'Autre';
   }
 
   toggleFavorite(): void {
-    this.isFavorite.update(fav => !fav);
-    // In a real app, save to backend
+    const shopId = this.boutiqueId();
+    if (!shopId) return;
+
+    if (this.isFavorite()) {
+      this.shopService.removeFavoriteShop(shopId).subscribe({
+        next: () => this.isFavorite.set(false),
+        error: (error) => console.error('Erreur lors de la suppression des favoris', error)
+      });
+      return;
+    }
+
+    this.shopService.addFavoriteShop(shopId).subscribe({
+      next: () => this.isFavorite.set(true),
+      error: (error) => console.error('Erreur lors de l\'ajout aux favoris', error)
+    });
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(value);
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   formatDate(dateString: string): string {
@@ -190,6 +305,13 @@ export class BoutiqueDetailComponent {
       month: 'long', 
       day: 'numeric' 
     }).format(date);
+  }
+
+  getFloorLabel(floor: number): string {
+    if (floor === undefined || floor === null || Number.isNaN(floor)) return '—';
+    if (floor === 0) return 'Rez-de-chaussée';
+    if (floor === 1) return '1er étage';
+    return `Étage ${floor}`;
   }
 
   getCurrentDay(): string {

@@ -122,7 +122,6 @@
             <li><a routerLink="/boutiques">Nos boutiques</a></li>
             <li><a routerLink="/evenements">Événements</a></li>
             <li><a routerLink="/localisation">Plan du centre</a></li>
-            <li><a routerLink="/contact">Contact</a></li>
           </ul>
         </div>
 
@@ -130,58 +129,23 @@
         <div class="footer__section">
           <h5>Horaires d'ouverture</h5>
           <ul class="footer__hours">
-            <li>
-              <span>Lundi - Vendredi</span>
-              <span>09:00 - 21:00</span>
-            </li>
-            <li>
-              <span>Samedi</span>
-              <span>09:00 - 22:00</span>
-            </li>
-            <li>
-              <span>Dimanche</span>
-              <span>10:00 - 20:00</span>
-            </li>
+            @for (hour of footerHours(); track hour.day) {
+              <li>
+                <span>{{ hour.day }}</span>
+                <span>{{ hour.hours }}</span>
+              </li>
+            }
           </ul>
         </div>
 
-        <!-- Contact -->
-        <div class="footer__section">
-          <h5>Contact</h5>
-          <ul class="footer__contact">
-            <li>
-              <span class="material-symbols-outlined">location_on</span>
-              Ankorondrano, Antananarivo 101
-            </li>
-            <li>
-              <span class="material-symbols-outlined">phone</span>
-              +261 20 22 123 45
-            </li>
-            <li>
-              <span class="material-symbols-outlined">mail</span>
-              contact&#64;korus-center.mg
-            </li>
-          </ul>
-          <div class="footer__social">
-            <a href="#" class="social-link">
-              <span class="material-symbols-outlined">tag</span>
-            </a>
-            <a href="#" class="social-link">
-              <span class="material-symbols-outlined">play_circle</span>
-            </a>
-            <a href="#" class="social-link">
-              <span class="material-symbols-outlined">photo_camera</span>
-            </a>
-          </div>
-        </div>
       </div>
 
       <div class="footer__bottom">
         <p>&copy; 2026 KORUS Center. Tous droits réservés.</p>
         <div class="footer__bottom-links">
-          <a href="#">Mentions légales</a>
+          <!-- <a href="#">Mentions légales</a>
           <a href="#">Politique de confidentialité</a>
-          <a href="#">CGU</a>
+          <a href="#">CGU</a> -->
         </div>
       </div>
     </div>

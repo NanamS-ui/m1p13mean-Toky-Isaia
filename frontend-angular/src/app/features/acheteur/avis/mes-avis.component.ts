@@ -1,7 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NoticeDto, NoticeService } from '../../../core/services/notice/notice.service';
 
 interface Review {
   id: string;
@@ -35,85 +36,24 @@ interface PendingReview {
   styleUrl: './mes-avis.component.css'
 })
 export class MesAvisComponent {
+  private route = inject(ActivatedRoute);
+  private noticeService = inject(NoticeService);
+
   activeTab = signal<'all' | 'shops' | 'products'>('all');
   showReviewModal = signal(false);
   editingReview = signal<Review | null>(null);
   pendingReview = signal<PendingReview | null>(null);
+
+  private handledInitialQuery = false;
 
   // Form data
   formRating = signal(5);
   formComment = signal('');
   formType = signal<'shop' | 'product'>('shop');
 
-  // Mock reviews data
-  reviews = signal<Review[]>([
-    {
-      id: '1',
-      type: 'shop',
-      shopId: '1',
-      shopName: 'Mode & Style',
-      rating: 5,
-      comment: 'Excellente boutique avec un très bon service client. Les produits sont de qualité.',
-      date: new Date('2025-01-15'),
-      status: 'published'
-    },
-    {
-      id: '2',
-      type: 'product',
-      shopId: '1',
-      shopName: 'Mode & Style',
-      productId: '1',
-      productName: 'Robe été fleurie',
-      rating: 4,
-      comment: 'Très belle robe, bonne qualité. Un peu cher mais ça vaut le coup.',
-      date: new Date('2025-01-10'),
-      status: 'published'
-    },
-    {
-      id: '3',
-      type: 'shop',
-      shopId: '2',
-      shopName: 'TechZone',
-      rating: 5,
-      comment: 'Service impeccable, personnel très compétent. Je recommande!',
-      date: new Date('2025-01-05'),
-      status: 'published'
-    },
-    {
-      id: '4',
-      type: 'product',
-      shopId: '2',
-      shopName: 'TechZone',
-      productId: '2',
-      productName: 'Casque Bluetooth Pro',
-      rating: 3,
-      comment: 'Bon produit mais la batterie ne tient pas très longtemps.',
-      date: new Date('2024-12-28'),
-      status: 'published'
-    }
-  ]);
+  reviews = signal<Review[]>([]);
 
-  // Mock pending reviews
-  pendingReviews = signal<PendingReview[]>([
-    {
-      id: 'p1',
-      type: 'shop',
-      shopId: '3',
-      shopName: 'Beauté & Soins',
-      orderId: 'ord-123',
-      orderDate: new Date('2025-01-20')
-    },
-    {
-      id: 'p2',
-      type: 'product',
-      shopId: '3',
-      shopName: 'Beauté & Soins',
-      productId: '10',
-      productName: 'Crème hydratante',
-      orderId: 'ord-123',
-      orderDate: new Date('2025-01-20')
-    }
-  ]);
+  pendingReviews = signal<PendingReview[]>([]);
 
   // Filtered reviews based on active tab
   filteredReviews = computed(() => {
@@ -134,6 +74,66 @@ export class MesAvisComponent {
   // Computed signals for review counts
   shopReviewsCount = computed(() => this.reviews().filter(r => r.type === 'shop').length);
   productReviewsCount = computed(() => this.reviews().filter(r => r.type === 'product').length);
+
+  constructor() {
+    this.loadMyNotices();
+
+    const qp = this.route.snapshot.queryParamMap;
+    const orderId = qp.get('orderId');
+    if (orderId && !this.handledInitialQuery) {
+      this.handledInitialQuery = true;
+
+      const typeParam = qp.get('type');
+      const type: 'shop' | 'product' = typeParam === 'product' ? 'product' : 'shop';
+
+      const orderDateParam = qp.get('orderDate');
+      const parsedDate = orderDateParam ? new Date(orderDateParam) : new Date();
+      const orderDate = Number.isFinite(parsedDate.getTime()) ? parsedDate : new Date();
+
+      const pending: PendingReview = {
+        id: `order-${orderId}-${type}`,
+        type,
+        shopId: qp.get('shopId') || undefined,
+        shopName: qp.get('shopName') || undefined,
+        productId: qp.get('productId') || undefined,
+        productName: qp.get('productName') || undefined,
+        orderId,
+        orderDate
+      };
+
+      this.pendingReviews.set([pending]);
+      this.openReviewModal(pending);
+    }
+  }
+
+  private loadMyNotices(): void {
+    this.noticeService.getMyNotices().subscribe({
+      next: (notices) => {
+        this.reviews.set((notices || []).map(n => this.mapNoticeToReview(n)));
+      },
+      error: () => {
+        this.reviews.set([]);
+      }
+    });
+  }
+
+  private mapNoticeToReview(n: NoticeDto): Review {
+    const shop = n.shop as any;
+    const product = n.product as any;
+
+    return {
+      id: n._id,
+      type: n.type,
+      shopId: typeof shop === 'object' && shop ? (shop._id ?? shop.id) : (typeof shop === 'string' ? shop : undefined),
+      shopName: typeof shop === 'object' && shop ? (shop.name ?? undefined) : undefined,
+      productId: typeof product === 'object' && product ? (product._id ?? product.id) : (typeof product === 'string' ? product : undefined),
+      productName: typeof product === 'object' && product ? (product.name ?? undefined) : undefined,
+      rating: Number(n.rating) || 0,
+      comment: String(n.comment || ''),
+      date: n.created_at ? new Date(n.created_at) : new Date(),
+      status: (n.status || 'published') as any
+    };
+  }
 
   formatDate(date: Date): string {
     return new Intl.DateTimeFormat('fr-FR', {
@@ -186,50 +186,73 @@ export class MesAvisComponent {
       return;
     }
 
-    if (this.editingReview()) {
-      // Update existing review
-      this.reviews.update(reviews =>
-        reviews.map(r =>
-          r.id === this.editingReview()!.id
-            ? {
-                ...r,
-                rating: this.formRating(),
-                comment: this.formComment(),
-                date: new Date()
-              }
-            : r
-        )
-      );
-    } else {
-      // Create new review
-      const pending = this.pendingReview();
-      const newReview: Review = {
-        id: Date.now().toString(),
-        type: this.formType(),
-        shopId: pending?.shopId,
-        shopName: pending?.shopName,
-        productId: pending?.productId,
-        productName: pending?.productName,
-        rating: this.formRating(),
-        comment: this.formComment(),
-        date: new Date(),
-        status: 'published'
-      };
+    const editing = this.editingReview();
+    const pending = this.pendingReview();
 
-      this.reviews.update(reviews => [newReview, ...reviews]);
-
-      // Remove from pending if exists
-      if (pending) {
-        this.pendingReviews.update(pendingList => pendingList.filter(p => p.id !== pending.id));
-      }
+    if (editing) {
+      this.noticeService
+        .updateMyNotice(editing.id, { rating: this.formRating(), comment: this.formComment() })
+        .subscribe({
+          next: (updated) => {
+            this.reviews.update(reviews => reviews.map(r => (r.id === editing.id ? this.mapNoticeToReview(updated) : r)));
+            this.closeReviewModal();
+          },
+          error: (err) => {
+            alert(err?.error?.message || 'Impossible de modifier cet avis');
+          }
+        });
+      return;
     }
 
-    this.closeReviewModal();
+    if (!pending?.orderId || (!pending.shopId && !pending.productId)) {
+      alert("Veuillez donner un avis depuis une commande livrée.");
+      return;
+    }
+
+    this.noticeService
+      .createNotice({
+        type: this.formType(),
+        rating: this.formRating(),
+        comment: this.formComment(),
+        shopId: pending.shopId,
+        productId: pending.productId,
+        orderId: pending.orderId
+      })
+      .subscribe({
+        next: (created) => {
+          this.reviews.update(reviews => [this.mapNoticeToReview(created), ...reviews]);
+          this.pendingReviews.update(pendingList => pendingList.filter(p => p.id !== pending.id));
+          this.closeReviewModal();
+        },
+        error: (err) => {
+          console.error('POST /api/notices a échoué', {
+            backendMessage: err?.error?.message,
+            status: err?.status,
+            payload: {
+              type: this.formType(),
+              rating: this.formRating(),
+              comment: this.formComment(),
+              shopId: pending.shopId,
+              productId: pending.productId,
+              orderId: pending.orderId
+            },
+            raw: err
+          });
+          alert(err?.error?.message || 'Impossible de publier cet avis');
+        }
+      });
   }
 
   deleteReview(reviewId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
-      this.reviews.update(reviews => reviews.filter(r => r.id !== reviewId));
+      this.noticeService.deleteMyNotice(reviewId).subscribe({
+        next: () => {
+          this.reviews.update(reviews => reviews.filter(r => r.id !== reviewId));
+        },
+        error: (err) => {
+          alert(err?.error?.message || 'Impossible de supprimer cet avis');
+        }
+      });
     }
   }
 

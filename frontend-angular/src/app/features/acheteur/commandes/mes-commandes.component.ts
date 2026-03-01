@@ -1,7 +1,13 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
+import { OrdersService } from '../../../core/services/order/order.service';
+import { PaymentService } from '../../../core/services/payment/payment.service';
+import { OrderCategoryService } from '../../../core/services/order/orderCategory.service';
+import { OrderCategory } from '../../../core/models/order/order-category.model';
+import { DocumentService } from '../../../core/services/billing/document.service';
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -16,6 +22,33 @@ export interface Order {
   boutiqueId: string;
 }
 
+interface OrderItemPreview {
+  productName: string;
+  quantity: number;
+}
+
+interface OrderDetails {
+  itemsPreview: OrderItemPreview[];
+}
+
+type PaymentStatus = 'WAITING_CONFIRMATION' | 'CONFIRMED' | 'REJECTED' | string;
+
+interface OrderPayment {
+  _id: string;
+  provider?: string;
+  method?: string;
+  status?: PaymentStatus;
+  bank_details?: {
+    bank_name?: string | null;
+    account_holder?: string | null;
+    account_number?: string | null;
+    note?: string | null;
+  } | null;
+  amount?: number;
+  currency?: string;
+  created_at?: string | Date;
+}
+
 @Component({
   selector: 'app-mes-commandes',
   standalone: true,
@@ -24,72 +57,217 @@ export interface Order {
   styleUrl: './mes-commandes.component.css'
 })
 export class MesCommandesComponent {
-  // Mock orders data
-  private allOrders = signal<Order[]>([
-    {
-      id: '1',
-      orderNumber: 'CMD-2025-001',
-      date: new Date('2025-01-15'),
-      total: 234000,
-      status: 'delivered',
-      itemsCount: 3,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1'
-    },
-    {
-      id: '2',
-      orderNumber: 'CMD-2025-002',
-      date: new Date('2025-01-20'),
-      total: 185000,
-      status: 'shipped',
-      itemsCount: 1,
-      boutiqueName: 'TechZone',
-      boutiqueId: '2'
-    },
-    {
-      id: '3',
-      orderNumber: 'CMD-2025-003',
-      date: new Date('2025-01-25'),
-      total: 590000,
-      status: 'preparing',
-      itemsCount: 4,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1'
-    },
-    {
-      id: '4',
-      orderNumber: 'CMD-2025-004',
-      date: new Date('2025-01-28'),
-      total: 199000,
-      status: 'confirmed',
-      itemsCount: 1,
-      boutiqueName: 'TechZone',
-      boutiqueId: '2'
-    },
-    {
-      id: '5',
-      orderNumber: 'CMD-2025-005',
-      date: new Date('2025-01-30'),
-      total: 140000,
-      status: 'pending',
-      itemsCount: 2,
-      boutiqueName: 'Mode & Style',
-      boutiqueId: '1'
-    },
-    {
-      id: '6',
-      orderNumber: 'CMD-2024-098',
-      date: new Date('2024-12-10'),
-      total: 320000,
-      status: 'cancelled',
-      itemsCount: 2,
-      boutiqueName: 'TechZone',
-      boutiqueId: '2'
-    }
-  ]);
+  private ordersService = inject(OrdersService);
+  private paymentService = inject(PaymentService);
+  private orderCategoryService = inject(OrderCategoryService);
+  private documentService = inject(DocumentService);
+  private router = inject(Router);
+
+  private allOrders = signal<Order[]>([]);
+  private paymentsByOrderId = signal<Record<string, OrderPayment | null>>({});
+  private detailsByOrderId = signal<Record<string, OrderDetails | null>>({});
 
   selectedStatus = signal<OrderStatus | 'all'>('all');
   searchQuery = signal<string>('');
+
+  constructor() {
+    this.loadOrderCategories();
+    this.loadOrders();
+  }
+
+  giveReview(order: Order): void {
+    this.router.navigate(['/acheteur/avis'], {
+      queryParams: {
+        orderId: order.id,
+        shopId: order.boutiqueId || undefined,
+        shopName: order.boutiqueName || undefined,
+        orderDate: order.date?.toISOString?.() || undefined,
+        type: 'shop'
+      }
+    });
+  }
+
+  // Status options (alimentées par les catégories depuis l'API)
+  statusOptions = signal<Array<{ value: OrderStatus | 'all'; label: string }>>([
+    { value: 'all', label: 'Toutes' }
+  ]);
+
+  private mapCategoryToDisplayLabel(value: string | undefined | null): string {
+    const raw = String(value || '').trim();
+    const up = raw.toUpperCase();
+    if (up === 'WAITING_CONFIRMATION') return 'En attente';
+    if (up === 'CONFIRMED') return 'Confirmée';
+    if (up === 'IN_PREPARATION') return 'En préparation';
+    if (up === 'SHIPPED') return 'Expédiée';
+    if (up === 'DELIVERY_EFFECTED') return 'Livrée';
+    if (up === 'REJECTED') return 'Annulée';
+    return raw || '—';
+  }
+
+  private mapCategoryToStatus(value: string | undefined | null): OrderStatus {
+    const raw = String(value || '').trim();
+    const up = raw.toUpperCase();
+
+    // Support des codes backend
+    if (up === 'WAITING_CONFIRMATION') return 'pending';
+    if (up === 'CONFIRMED') return 'confirmed';
+    if (up === 'IN_PREPARATION') return 'preparing';
+    if (up === 'SHIPPED') return 'shipped';
+    if (up === 'DELIVERY_EFFECTED') return 'delivered';
+    if (up === 'REJECTED') return 'cancelled';
+
+    const v = raw.toLowerCase();
+    if (v.includes('attente')) return 'pending';
+    if (v.includes('confirm')) return 'confirmed';
+    if (v.includes('prépar') || v.includes('prepar')) return 'preparing';
+    if (v.includes('expédi') || v.includes('expedi') || v.includes('shipp')) return 'shipped';
+    if (v.includes('livr')) return 'delivered';
+    if (v.includes('annul')) return 'cancelled';
+    return 'pending';
+  }
+
+  private loadOrderCategories(): void {
+    this.orderCategoryService.getOrderCategorys().pipe(
+      catchError((err) => {
+        console.error('Erreur chargement catégories commande', err);
+        return of([] as OrderCategory[]);
+      })
+    ).subscribe((cats) => {
+      const options: Array<{ value: OrderStatus | 'all'; label: string }> = [
+        { value: 'all', label: 'Toutes' }
+      ];
+
+      const seen = new Set<OrderStatus>();
+      for (const c of cats || []) {
+        const rawValue = String(c?.value || '').trim();
+        if (!rawValue) continue;
+        const status = this.mapCategoryToStatus(rawValue);
+        if (seen.has(status)) continue;
+        seen.add(status);
+        options.push({ value: status, label: this.mapCategoryToDisplayLabel(rawValue) });
+      }
+
+      // Fallback si l'API renvoie vide: on garde la liste standard
+      if (options.length === 1) {
+        this.statusOptions.set([
+          { value: 'all', label: 'Toutes' },
+          { value: 'pending', label: 'En attente' },
+          { value: 'confirmed', label: 'Confirmée' },
+          { value: 'preparing', label: 'En préparation' },
+          { value: 'shipped', label: 'Expédiée' },
+          { value: 'delivered', label: 'Livrée' },
+          { value: 'cancelled', label: 'Annulée' }
+        ]);
+        return;
+      }
+
+      this.statusOptions.set(options);
+    });
+  }
+
+  private buildBoutiqueInfo(rawOrder: any): { boutiqueName: string; boutiqueId: string } {
+    const items = rawOrder?.orderItems;
+    const shops: Array<{ id: string; name: string }> = [];
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        const shop = item?.stock?.shop;
+        if (shop?._id && shop?.name) {
+          shops.push({ id: String(shop._id), name: String(shop.name) });
+        }
+      }
+    }
+    const unique = new Map<string, string>();
+    for (const s of shops) unique.set(s.id, s.name);
+    const arr = Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
+    if (arr.length === 0) return { boutiqueName: '-', boutiqueId: '' };
+    if (arr.length === 1) return { boutiqueName: arr[0].name, boutiqueId: arr[0].id };
+    return { boutiqueName: `${arr.length} boutiques`, boutiqueId: arr[0].id };
+  }
+
+  private toOrderVM(raw: any): Order {
+    const id = String(raw?._id || raw?.id || '');
+    const createdAt = raw?.created_at ? new Date(raw.created_at) : new Date();
+    const categoryValue = raw?.orderCategory?.value;
+    const boutique = this.buildBoutiqueInfo(raw);
+    const itemsCount = Array.isArray(raw?.orderItems) ? raw.orderItems.length : 0;
+    return {
+      id,
+      orderNumber: id,
+      date: createdAt,
+      total: Number(raw?.total || 0),
+      status: this.mapCategoryToStatus(categoryValue),
+      itemsCount,
+      boutiqueName: boutique.boutiqueName,
+      boutiqueId: boutique.boutiqueId
+    };
+  }
+
+  private loadOrders(): void {
+    this.ordersService.getMyOrders().subscribe({
+      next: (rawOrders) => {
+        const orders = (rawOrders || []).map((o: any) => this.toOrderVM(o));
+        this.allOrders.set(orders);
+
+        if (!orders.length) {
+          this.paymentsByOrderId.set({});
+          this.detailsByOrderId.set({});
+          return;
+        }
+
+        // Détails commande (produits + quantités)
+        forkJoin(
+          orders.map((o) =>
+            this.ordersService.getOrderByIdAny(o.id).pipe(
+              catchError(() => of(null))
+            )
+          )
+        ).subscribe({
+          next: (details) => {
+            const map: Record<string, OrderDetails | null> = {};
+            for (let i = 0; i < orders.length; i++) {
+              map[orders[i].id] = this.toOrderDetails(details[i]);
+            }
+            this.detailsByOrderId.set(map);
+          }
+        });
+
+        forkJoin(
+          orders.map((o) =>
+            this.paymentService.getLatestPaymentForOrder(o.id).pipe(
+              catchError(() => of(null))
+            )
+          )
+        ).subscribe({
+          next: (payments) => {
+            const map: Record<string, OrderPayment | null> = {};
+            for (let i = 0; i < orders.length; i++) {
+              map[orders[i].id] = payments[i];
+            }
+            this.paymentsByOrderId.set(map);
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Erreur chargement commandes', err);
+        this.allOrders.set([]);
+      }
+    });
+  }
+
+  private toOrderDetails(raw: any): OrderDetails | null {
+    if (!raw) return null;
+    const items = Array.isArray(raw?.orderItems) ? raw.orderItems : [];
+    const previews: OrderItemPreview[] = items
+      .map((it: any) => {
+        const productName = it?.stock?.product?.name || it?.stock?.product?.title || it?.stock?.product?.designation;
+        const quantity = Number(it?.quantity || 0);
+        if (!productName || !Number.isFinite(quantity) || quantity <= 0) return null;
+        return { productName: String(productName), quantity };
+      })
+      .filter(Boolean) as OrderItemPreview[];
+
+    return { itemsPreview: previews };
+  }
 
   // Filtered orders
   filteredOrders = computed(() => {
@@ -113,23 +291,10 @@ export class MesCommandesComponent {
     return orders.sort((a, b) => b.date.getTime() - a.date.getTime());
   });
 
-  // Status options
-  statusOptions: Array<{ value: OrderStatus | 'all'; label: string }> = [
-    { value: 'all', label: 'Toutes' },
-    { value: 'pending', label: 'En attente' },
-    { value: 'confirmed', label: 'Confirmée' },
-    { value: 'preparing', label: 'En préparation' },
-    { value: 'shipped', label: 'Expédiée' },
-    { value: 'delivered', label: 'Livrée' },
-    { value: 'cancelled', label: 'Annulée' }
-  ];
-
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', {
-      style: 'currency',
-      currency: 'MGA',
-      maximumFractionDigits: 0
-    }).format(value);
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   formatDate(date: Date): string {
@@ -173,7 +338,85 @@ export class MesCommandesComponent {
   }
 
   downloadInvoice(orderId: string): void {
-    // TODO: Implement invoice download
-    console.log('Download invoice for order:', orderId);
+    this.documentService.downloadInvoice(orderId).subscribe({
+      next: (blob) => this.saveBlob(blob, `facture-${orderId}.pdf`),
+      error: (err) => {
+        console.error('Erreur téléchargement facture', err);
+      }
+    });
+  }
+
+  downloadReceipt(orderId: string): void {
+    this.documentService.downloadReceipt(orderId).subscribe({
+      next: (blob) => this.saveBlob(blob, `recu-${orderId}.pdf`),
+      error: (err) => {
+        console.error('Erreur téléchargement reçu', err);
+      }
+    });
+  }
+
+  isReceiptAvailable(orderId: string): boolean {
+    const p = this.getPayment(orderId);
+    const s = String(p?.status || '').toUpperCase();
+    return s === 'DELIVERY_EFFECTED' || s === 'CONFIRMED';
+  }
+
+  private saveBlob(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  isPaymentNull(orderId: string): boolean {
+    const map = this.paymentsByOrderId();
+    return Object.prototype.hasOwnProperty.call(map, orderId) && map[orderId] === null;
+  }
+
+  getPayment(orderId: string): OrderPayment | null | undefined {
+    const map = this.paymentsByOrderId();
+    if (!Object.prototype.hasOwnProperty.call(map, orderId)) return undefined; // pas encore chargé
+    return map[orderId];
+  }
+
+  getOrderDetails(orderId: string): OrderDetails | null | undefined {
+    const map = this.detailsByOrderId();
+    if (!Object.prototype.hasOwnProperty.call(map, orderId)) return undefined;
+    return map[orderId];
+  }
+
+  getItemsPreview(orderId: string): OrderItemPreview[] {
+    const details = this.getOrderDetails(orderId);
+    if (!details?.itemsPreview?.length) return [];
+    return details.itemsPreview;
+  }
+
+  getPaymentStatusLabel(status: PaymentStatus | undefined): string {
+    const s = String(status || '').toUpperCase();
+    if (s === 'WAITING_CONFIRMATION') return 'En attente';
+    if (s === 'CONFIRMED') return 'Confirmée';
+    if (s === 'IN_PREPARATION') return 'En préparation';
+    if (s === 'SHIPPED') return 'Expédiée';
+    if (s === 'DELIVERY_EFFECTED') return 'Livrée';
+    if (s === 'REJECTED') return 'Annulée';
+    if (!s) return '—';
+    return s;
+  }
+
+  getPaymentStatusTone(status: PaymentStatus | undefined): 'pending' | 'success' | 'danger' | 'muted' {
+    const s = String(status || '').toUpperCase();
+    if (s === 'CONFIRMED') return 'success';
+    if (s === 'REJECTED') return 'danger';
+    if (s === 'WAITING_CONFIRMATION') return 'pending';
+    if (s === 'IN_PREPARATION' || s === 'SHIPPED' || s === 'DELIVERY_EFFECTED') return 'pending';
+    return 'muted';
+  }
+
+  payOrder(orderId: string): void {
+    this.router.navigate(['/acheteur/checkout'], {
+      queryParams: { orderId }
+    });
   }
 }

@@ -287,6 +287,22 @@
   font-size: 20px;
 }
 
+/* New Address (inline form) */
+.new-address {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 2px dashed var(--korus-border);
+  border-radius: var(--korus-radius-sm);
+  background: var(--korus-bg);
+}
+
+.new-address__actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
 /* Address List */
 .address-list {
   display: flex;

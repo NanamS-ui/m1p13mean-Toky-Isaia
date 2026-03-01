@@ -1,0 +1,86 @@
+<div class="config-page">
+  <div class="config-header">
+    <div>
+      <h1>Service</h1>
+      <p>Gerez les services du centre avec une valeur et une description.</p>
+    </div>
+    <button type="button" class="btn btn--secondary" (click)="startCreate()">
+      <span class="material-symbols-outlined">add</span>
+      Nouveau service
+    </button>
+  </div>
+
+  <div class="config-grid">
+    <section class="config-card">
+      <h2>{{ editingId ? 'Modifier le service' : 'Nouveau service' }}</h2>
+      <form [formGroup]="form" (ngSubmit)="save()" class="config-form">
+        <div class="form-field">
+          <label for="value">Nom du service</label>
+          <input id="value" type="text" formControlName="value" placeholder="Ex: Conciergerie" />
+          @if (form.get('value')?.touched && form.get('value')?.invalid) {
+            <span class="field-error">La valeur est obligatoire (2 caracteres min).</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="description">Description</label>
+          <textarea id="description" rows="3" formControlName="description" placeholder="Ex: Assistance, infos et orientation sur place"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--secondary" [disabled]="loading">
+            <span class="material-symbols-outlined">save</span>
+            {{ editingId ? 'Mettre a jour' : 'Enregistrer' }}
+          </button>
+          @if (editingId) {
+            <button type="button" class="btn btn--ghost" (click)="cancelEdit()">
+              Annuler
+            </button>
+          }
+        </div>
+      </form>
+
+      @if (error) {
+        <div class="form-error">
+          <span class="material-symbols-outlined">error</span>
+          {{ error }}
+        </div>
+      }
+    </section>
+
+    <section class="config-card">
+      <div class="config-card__header">
+        <h2>Services existants</h2>
+        @if (loading) {
+          <span class="loading-pill">Chargement...</span>
+        }
+      </div>
+
+      @if (!loading && configs.length === 0) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined">settings</span>
+          <p>Aucune configuration pour le moment.</p>
+        </div>
+      } @else {
+        <div class="config-list">
+          @for (item of configs; track item._id) {
+            <div class="config-row">
+              <div class="config-row__info">
+                <h3>{{ item.value }}</h3>
+                <p>{{ item.description || 'Aucune description' }}</p>
+              </div>
+              <div class="config-row__actions">
+                <button type="button" class="btn btn--ghost" (click)="startEdit(item)">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button type="button" class="btn btn--danger" (click)="remove(item)">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</div>

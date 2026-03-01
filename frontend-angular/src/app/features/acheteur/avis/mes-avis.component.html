@@ -247,7 +247,8 @@
               id="comment"
               class="form-textarea"
               rows="6"
-              [(ngModel)]="formComment"
+              [ngModel]="formComment()"
+              (ngModelChange)="formComment.set($event)"
               placeholder="Partagez votre expérience..."
             ></textarea>
           </div>

@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { finalize, timeout, catchError, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -15,18 +16,13 @@ import { RouterLink } from '@angular/router';
 export class LoginComponent implements OnInit {
   form: FormGroup;
   error = '';
-
-  // Comptes de démo pour affichage
-  demoAccounts = [
-    { label: 'Admin', email: 'admin@korus.mg', password: 'admin123', icon: 'admin_panel_settings', color: '#ef4444' },
-    { label: 'Boutique', email: 'boutique@korus.mg', password: 'boutique123', icon: 'storefront', color: '#f59e0b' },
-    { label: 'Acheteur', email: 'acheteur@korus.mg', password: 'acheteur123', icon: 'shopping_bag', color: '#3b82f6' }
-  ];
+  isLoading = false;
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.nonNullable.group({
       email: ['', [Validators.required, Validators.email]],
@@ -41,24 +37,56 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  /** Rempli le formulaire avec un compte de démo */
-  fillDemo(email: string, password: string): void {
-    this.form.patchValue({ email, password });
-    this.error = '';
-  }
-
   onSubmit(): void {
+    if (this.isLoading) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     this.error = '';
+    this.isLoading = true;
     const { email, password } = this.form.getRawValue();
-    if (this.auth.login(email, password)) {
-      // Redirection automatique selon le rôle
-      this.router.navigate([this.auth.getRedirectRoute()]);
-    } else {
-      this.error = 'Email ou mot de passe incorrect.';
-    }
+    this.auth.login(email, password).pipe(
+      timeout(5000),
+      catchError((err) => {
+        if (err?.name === 'TimeoutError') {
+          this.error = "La connexion est trop lente. Veuillez réessayer.";
+        } else {
+          this.error = err?.error?.message || 'Email ou mot de passe incorrect.';
+        }
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        return of(null);
+      }),
+      finalize(() => {
+        this.isLoading = false;
+      })
+    ).subscribe({
+      next: (user) => {
+        if (user) {
+          this.router.navigate([this.auth.getRedirectRoute()]);
+        }
+      }
+    });
+  }
+
+  fillCredentials(type: 'admin' | 'vendor' | 'buyer'): void {
+    const presets: Record<string, { email: string; password: string }> = {
+      admin: { email: 'rabenjamandresy@gmail.com', password: '123456M' },
+      vendor: { email: 'gestionticketit@gmail.com', password: '123456M' },
+      buyer: { email: 'rahajamananaralisontoky@gmail.com', password: '123456T' }
+    };
+
+    const preset = presets[type];
+    if (!preset) return;
+
+    this.form.patchValue({
+      email: preset.email,
+      password: preset.password
+    });
+
+    this.form.markAsTouched();
   }
 }

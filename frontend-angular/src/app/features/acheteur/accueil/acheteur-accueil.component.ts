@@ -1,6 +1,13 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { ShopService, ShopCategory } from '../../../core/services/shop/shop.service';
+import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
+import { NoticeService, type ShopNoticeSummaryDto } from '../../../core/services/notice/notice.service';
+import type { Shop } from '../../../core/models/shop/shop.model';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 interface FeaturedBoutique {
   id: string;
@@ -8,24 +15,15 @@ interface FeaturedBoutique {
   category: string;
   logo?: string;
   rating: number;
+  reviewCount: number;
   isOpen: boolean;
 }
 
-interface FeaturedProduct {
-  id: string;
-  name: string;
-  boutique: string;
-  price: number;
-  promoPrice?: number;
-  image?: string;
-}
-
-interface Promotion {
-  id: string;
-  title: string;
-  boutique: string;
-  discount: number;
-  endDate: string;
+interface CategoryWithCount {
+  _id: string;
+  value: string;
+  icon: string;
+  count: number;
 }
 
 @Component({
@@ -35,52 +33,115 @@ interface Promotion {
   templateUrl: './acheteur-accueil.component.html',
   styleUrl: './acheteur-accueil.component.css'
 })
-export class AcheteurAccueilComponent {
-  userName = signal('Jean');
+export class AcheteurAccueilComponent implements OnInit {
+  boutiques = signal<Shop[]>([]);
+  categories = signal<CategoryWithCount[]>([]);
+  private shopSummariesById = signal<Record<string, ShopNoticeSummaryDto>>({});
 
-  featuredBoutiques = signal<FeaturedBoutique[]>([
-    { id: '1', name: 'Mode & Style', category: 'Mode', rating: 4.8, isOpen: true },
-    { id: '2', name: 'TechZone', category: 'Électronique', rating: 4.6, isOpen: true },
-    { id: '3', name: 'Beauty Corner', category: 'Beauté', rating: 4.9, isOpen: false },
-    { id: '4', name: 'Sport Plus', category: 'Sport', rating: 4.5, isOpen: true },
-    { id: '5', name: 'Bijoux Précieux', category: 'Bijouterie', rating: 4.7, isOpen: true },
-    { id: '6', name: 'Home Design', category: 'Maison', rating: 4.4, isOpen: true }
-  ]);
+  userName = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return 'invité';
+    const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    return name || user.email?.split('@')[0] || 'invité';
+  });
 
-  featuredProducts = signal<FeaturedProduct[]>([
-    { id: '1', name: 'Robe été fleurie', boutique: 'Mode & Style', price: 75000, promoPrice: 59000 },
-    { id: '2', name: 'Casque Bluetooth Pro', boutique: 'TechZone', price: 185000 },
-    { id: '3', name: 'Coffret parfum luxe', boutique: 'Beauty Corner', price: 120000, promoPrice: 95000 },
-    { id: '4', name: 'Sneakers urbaines', boutique: 'Sport Plus', price: 145000 },
-    { id: '5', name: 'Montre connectée', boutique: 'TechZone', price: 250000, promoPrice: 199000 },
-    { id: '6', name: 'Collier perles', boutique: 'Bijoux Précieux', price: 85000 }
-  ]);
+  featuredBoutiques = computed(() => {
+    const shops = this.boutiques();
+    return shops.slice(0, 6).map(s => this.mapShopToFeaturedBoutique(s));
+  });
 
-  promotions = signal<Promotion[]>([
-    { id: '1', title: 'Soldes d\'hiver', boutique: 'Mode & Style', discount: 30, endDate: '2026-02-15' },
-    { id: '2', title: 'Flash Sale Tech', boutique: 'TechZone', discount: 20, endDate: '2026-02-05' },
-    { id: '3', title: 'Beauté en fête', boutique: 'Beauty Corner', discount: 25, endDate: '2026-02-10' }
-  ]);
+  promotionsCount = signal(0);
 
-  categories = [
-    { icon: 'checkroom', label: 'Mode', count: 24 },
-    { icon: 'devices', label: 'Électronique', count: 12 },
-    { icon: 'spa', label: 'Beauté', count: 18 },
-    { icon: 'sports_soccer', label: 'Sport', count: 8 },
-    { icon: 'diamond', label: 'Bijouterie', count: 6 },
-    { icon: 'restaurant', label: 'Alimentation', count: 15 },
-    { icon: 'chair', label: 'Maison', count: 10 },
-    { icon: 'more_horiz', label: 'Autres', count: 20 }
-  ];
+  totalBoutiques = computed(() => this.boutiques().length);
 
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(value);
+  constructor(
+    private auth: AuthService,
+    private shopService: ShopService,
+    private openingHours: OpeningHoursService,
+    private noticeService: NoticeService
+  ) {}
+
+  ngOnInit(): void {
+    forkJoin({
+      shops: this.shopService.getActiveShops(),
+      categories: this.shopService.getShopCategories().pipe(catchError(() => of([] as ShopCategory[])))
+    }).subscribe({
+      next: ({ shops, categories }) => {
+        this.boutiques.set(shops);
+
+        // Compter les boutiques par catégorie
+        const categoriesWithCount: CategoryWithCount[] = (categories || []).map(cat => ({
+          _id: cat._id,
+          value: cat.value,
+          icon: this.getCategoryIcon(cat.value),
+          count: shops.filter(s => this.getCategoryId(s.shop_category) === cat._id).length
+        }));
+        this.categories.set(categoriesWithCount);
+
+        const ids = shops.map(s => s._id).filter(Boolean);
+        this.noticeService.getShopSummaries(ids).subscribe({
+          next: (summaries) => {
+            const byId: Record<string, ShopNoticeSummaryDto> = {};
+            for (const s of summaries) byId[s.shopId] = s;
+            this.shopSummariesById.set(byId);
+          },
+          error: () => this.shopSummariesById.set({})
+        });
+      },
+      error: () => {
+        this.boutiques.set([]);
+        this.categories.set([]);
+      }
+    });
   }
 
-  getDaysRemaining(endDate: string): number {
-    const end = new Date(endDate);
-    const now = new Date();
-    const diff = end.getTime() - now.getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  private mapShopToFeaturedBoutique(shop: Shop): FeaturedBoutique {
+    const categoryLabel = this.extractCategoryLabel(shop.shop_category);
+    const summary = this.shopSummariesById()[shop._id];
+    const rating = summary?.reviewCount ? summary.rating : 0;
+    const reviewCount = summary?.reviewCount ?? 0;
+    const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
+    const isOpen = isActive && this.openingHours.isShopOpenNow(shop);
+
+    return {
+      id: shop._id,
+      name: shop.name,
+      category: categoryLabel,
+      logo: shop.logo,
+      rating,
+      reviewCount,
+      isOpen
+    };
   }
+
+  private getCategoryId(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'string') return category;
+    if (typeof category === 'object' && category._id) return category._id;
+    return '';
+  }
+
+  private extractCategoryLabel(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'object' && category.value) return category.value;
+    return '';
+  }
+
+  private getCategoryIcon(value: string): string {
+    const key = (value || '').toLowerCase().trim();
+    if (key.includes('mode')) return 'checkroom';
+    if (key.includes('tech') || key.includes('électron') || key.includes('electron')) return 'devices';
+    if (key.includes('beauté') || key.includes('beaute') || key.includes('bien-être') || key.includes('bien etre')) return 'spa';
+    if (key.includes('sport')) return 'sports_soccer';
+    if (key.includes('restaurant') || key.includes('food') || key.includes('restauration') || key.includes('alimentation')) return 'restaurant';
+    if (key.includes('maison') || key.includes('décoration') || key.includes('decoration')) return 'chair';
+    if (key.includes('enfant')) return 'child_care';
+    return 'more_horiz';
+  }
+
+  private isStatusActive(value?: string): boolean {
+    if (!value) return false;
+    return value.toLowerCase().includes('active');
+  }
+
 }

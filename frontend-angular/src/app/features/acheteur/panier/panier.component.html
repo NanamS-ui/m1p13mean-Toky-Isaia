@@ -47,7 +47,7 @@
 
             <!-- Items List -->
             <div class="group-items">
-              @for (item of group.items; track item.id) {
+              @for (item of group.items; track item.stockId) {
                 <div class="cart-item">
                   <a [routerLink]="['/acheteur/produits', item.productId]" class="item-image">
                     @if (item.productImage) {
@@ -82,7 +82,7 @@
                     <div class="quantity-controls">
                       <button
                         class="quantity-btn"
-                        (click)="decrementQuantity(item.id)"
+                        (click)="decrementQuantity(item.stockId)"
                         [disabled]="item.quantity <= 1"
                       >
                         <span class="material-symbols-outlined">remove</span>
@@ -90,13 +90,13 @@
                       <input
                         type="number"
                         [value]="item.quantity"
-                        (change)="updateQuantity(item.id, +$any($event.target).value)"
+                        (change)="updateQuantity(item.stockId, +$any($event.target).value)"
                         [min]="1"
                         class="quantity-input"
                       />
                       <button
                         class="quantity-btn"
-                        (click)="incrementQuantity(item.id)"
+                        (click)="incrementQuantity(item.stockId)"
                       >
                         <span class="material-symbols-outlined">add</span>
                       </button>
@@ -108,7 +108,7 @@
                     <span class="item-subtotal__value">{{ formatCurrency(getItemSubtotal(item)) }}</span>
                   </div>
 
-                  <button class="item-remove" (click)="removeItem(item.id)" title="Retirer du panier">
+                  <button class="item-remove" (click)="removeItem(item.stockId)" title="Retirer du panier">
                     <span class="material-symbols-outlined">delete</span>
                   </button>
                 </div>

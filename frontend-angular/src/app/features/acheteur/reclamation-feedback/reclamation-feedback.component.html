@@ -1,0 +1,84 @@
+<div class="reclamation-page">
+  <div class="page-header">
+    <h2>Réclamation & feedback</h2>
+    <p>Envoyez une réclamation ou un feedback à l’équipe support.</p>
+  </div>
+
+  <section class="card">
+    <h3>Nouvelle demande</h3>
+
+    @if (error()) {
+      <div class="alert alert--error">{{ error() }}</div>
+    }
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Type</label>
+        <select [(ngModel)]="typeId" [disabled]="loading() || submitting()">
+          @for (t of types(); track t?._id) {
+            <option [value]="t._id">{{ t.value }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group form-group--full">
+        <label>Sujet</label>
+        <textarea
+          rows="4"
+          [(ngModel)]="sujet"
+          placeholder="Décrivez votre demande..."
+          [disabled]="loading() || submitting()"
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="submit()"
+          [disabled]="submitting() || loading() || !typeId || !sujet.trim()"
+        >
+          Envoyer
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="refresh()" [disabled]="submitting()">
+          Actualiser
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Mes demandes</h3>
+
+    @if (loading()) {
+      <div class="muted">Chargement...</div>
+    } @else {
+      @if (supports().length === 0) {
+        <div class="muted">Aucune demande pour le moment.</div>
+      } @else {
+        <div class="supports-list">
+          @for (s of supports(); track s?._id) {
+            <div class="support-item">
+              <div class="support-item__top">
+                <div class="support-item__meta">
+                  <span class="support-item__type">{{ s?.type_support_client?.value }}</span>
+                  <span class="support-item__date">{{ formatDate(s?.created_at) }}</span>
+                </div>
+                <span class="support-item__status">{{ s?.status_support_client?.value }}</span>
+              </div>
+
+              <div class="support-item__subject">{{ s?.sujet }}</div>
+
+              @if (s?.reponse) {
+                <div class="support-item__answer">
+                  <span class="label">Réponse</span>
+                  <div class="answer">{{ s?.reponse }}</div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </section>
+</div>

@@ -2,79 +2,144 @@
   <div class="page-header animate-fade-in">
     <h2><span class="material-symbols-outlined page-header__icon">dashboard</span> Dashboard</h2>
     <div class="page-actions">
-      <button type="button" class="btn btn--secondary">
-        <span class="material-symbols-outlined btn__icon">picture_as_pdf</span>
-        Exporter PDF
-      </button>
-      <button type="button" class="btn btn--secondary">
+      <button type="button" class="btn btn--secondary" (click)="exportExcel()">
         <span class="material-symbols-outlined btn__icon">table_chart</span>
         Exporter Excel
       </button>
+      <button type="button" class="btn btn--primary" (click)="exportPDF()">
+        <span class="material-symbols-outlined btn__icon">picture_as_pdf</span>
+        Exporter PDF
+      </button>
     </div>
   </div>
 
-  <section class="stats-grid stagger-children">
-    @for (stat of stats; track stat.label) {
-      <a [routerLink]="stat.link || '#'" class="stat-card">
-        <div class="stat-card__icon">
-          <span class="material-symbols-outlined">{{ stat.icon }}</span>
-        </div>
-        <div class="stat-card__content">
-          <span class="stat-card__value">{{ stat.value }}</span>
-          <span class="stat-card__label">{{ stat.label }}</span>
-          @if (stat.trend) {
-            <span class="stat-card__trend">{{ stat.trend }}</span>
-          }
-        </div>
-      </a>
-    }
-  </section>
+  <!-- Period Selector -->
+  <div class="card filters-card">
+    <h3>Filtres</h3>
+    <div class="filters">
+      <!-- Date de début -->
+      <div class="form-group">
+        <label for="startDate">Date de début</label>
+        <input id="startDate" type="date" [(ngModel)]="startDate" (change)="onDateChange()" />
+      </div>
 
-  <div class="dashboard-grid stagger-children">
-    <section class="card card--chart">
-      <h3><span class="material-symbols-outlined card__icon">show_chart</span> Chiffre d'affaires du centre (6 derniers mois)</h3>
-      <div class="chart-bar">
-        <div class="chart-bar__bars">
-          @for (bar of chartData; track bar.month) {
-            <div class="chart-bar__group">
-              <div class="chart-bar__bar-wrap">
-                <div class="chart-bar__bar" [style.height.%]="(bar.value / maxChartValue) * 100" [attr.data-value]="bar.value + ' M'"></div>
+      <!-- Date de fin -->
+      <div class="form-group">
+        <label for="endDate">Date de fin</label>
+        <input id="endDate" type="date" [(ngModel)]="endDate" (change)="onDateChange()" />
+      </div>
+
+      <!-- Bouton appliquer -->
+      <div class="form-group">
+        <br>
+        <button class="apply-btn" (click)="loadData()">Appliquer</button>
+      </div>
+    </div>
+  </div>
+
+  <div #contentToConvert>
+    <section class="stats-grid stagger-children">
+      @for (stat of stats; track stat.label) {
+        <a [routerLink]="stat.link || '#'" class="stat-card">
+          <div class="stat-card__icon">
+            <span class="material-symbols-outlined">{{ stat.icon }}</span>
+          </div>
+          <div class="stat-card__content">
+            <span class="stat-card__value">{{ stat.value }}</span>
+            <span class="stat-card__label">{{ stat.label }}</span>
+            @if (stat.trend) {
+              <span class="stat-card__trend">{{ stat.trend }}</span>
+            }
+          </div>
+        </a>
+      }
+    </section>
+
+    <div class="dashboard-grid stagger-children">
+      <section class="card card--chart">
+        <h3><span class="material-symbols-outlined card__icon">show_chart</span> Chiffre d'affaires du centre (6 derniers mois)</h3>
+        <div class="chart-bar">
+          <div class="chart-bar__bars">
+            @for (bar of chartData; track bar.month) {
+              <div class="chart-bar__group">
+                <div class="chart-bar__bar-wrap">
+                  <div class="chart-bar__bar" [style.height.%]="(bar.value / maxChartValue) * 100" [attr.data-value]="bar.value + ' M'"></div>
+                </div>
+                <span class="chart-bar__label">{{ bar.month }}</span>
               </div>
-              <span class="chart-bar__label">{{ bar.month }}</span>
+            }
+          </div>
+          <div class="chart-bar__y-axis">
+            <span>0</span>
+            <span>10</span>
+            <span>20</span>
+            <span>30</span>
+            <span>40 M Ar</span>
+          </div>
+        </div>
+      </section>
+      <section class="card card--donut">
+        <h3><span class="material-symbols-outlined card__icon">donut_large</span> Répartition du CA (6 derniers mois)</h3>
+        <div class="donut-wrapper">
+          <div class="donut-chart">
+            <svg viewBox="0 0 36 36" class="donut-svg">
+              @for (seg of donutSegments; track seg.month; let i = $index) {
+                <circle
+                  class="donut-segment"
+                  cx="18" cy="18" r="15.9155"
+                  fill="none"
+                  [attr.stroke]="seg.color"
+                  stroke-width="3.5"
+                  [attr.stroke-dasharray]="seg.dash"
+                  [attr.stroke-dashoffset]="seg.offset"
+                  stroke-linecap="round"
+                />
+              }
+              <text x="18" y="17" class="donut-center-value">{{ donutCenterLabel }}</text>
+              <text x="18" y="21" class="donut-center-sub">CA moyen/mois</text>
+            </svg>
+          </div>
+          <ul class="donut-legend">
+            @for (seg of donutSegments; track seg.month) {
+              <li class="donut-legend__item">
+                <span class="donut-legend__color" [style.background]="seg.color"></span>
+                <span class="donut-legend__label">{{ seg.month }}</span>
+                <span class="donut-legend__value">{{ seg.display }}</span>
+                <span class="donut-legend__pct">{{ seg.pct }}%</span>
+              </li>
+            }
+          </ul>
+        </div>
+        <div class="donut-kpis">
+          <div class="donut-kpi">
+            <span class="material-symbols-outlined donut-kpi__icon">trending_up</span>
+            <div class="donut-kpi__content">
+              <span class="donut-kpi__value" [class.positive]="caVariation >= 0" [class.negative]="caVariation < 0">
+                {{ caVariation >= 0 ? '+' : '' }}{{ caVariation }}%
+              </span>
+              <span class="donut-kpi__label">vs mois précédent</span>
             </div>
-          }
+          </div>
+          <div class="donut-kpi">
+            <span class="material-symbols-outlined donut-kpi__icon">shopping_cart</span>
+            <div class="donut-kpi__content">
+              <span class="donut-kpi__value">{{ commandesParBoutique }}</span>
+              <span class="donut-kpi__label">Commandes / boutique</span>
+            </div>
+          </div>
         </div>
-        <div class="chart-bar__y-axis">
-          <span>0</span>
-          <span>10</span>
-          <span>20</span>
-          <span>30</span>
-          <span>40 M Ar</span>
-        </div>
+      </section>
+    </div>
+
+    <section class="card card--shortcuts animate-fade-in">
+      <h3><span class="material-symbols-outlined card__icon">link</span> Raccourcis</h3>
+      <div class="shortcuts">
+        <a routerLink="/admin/boutiques" class="shortcut"><span class="material-symbols-outlined shortcut__icon">store</span> Gestion des boutiques</a>
+        <a routerLink="/admin/utilisateurs" class="shortcut"><span class="material-symbols-outlined shortcut__icon">people</span> Utilisateurs & support</a>
+        <a routerLink="/admin/statistiques" class="shortcut"><span class="material-symbols-outlined shortcut__icon">bar_chart</span> Statistiques & rapports</a>
+        <a routerLink="/admin/communication" class="shortcut"><span class="material-symbols-outlined shortcut__icon">campaign</span> Annonces & événements</a>
+        <a routerLink="/admin/roles" class="shortcut"><span class="material-symbols-outlined shortcut__icon">admin_panel_settings</span> Rôles & permissions</a>
       </div>
     </section>
-    <section class="card card--alerts">
-      <h3><span class="material-symbols-outlined card__icon">notifications_active</span> Alertes récentes</h3>
-      <ul class="alert-list">
-        @for (alert of recentAlerts; track alert.message) {
-          <li class="alert-item" [class]="'alert-item--' + alert.type">
-            <span class="alert-dot"></span>
-            {{ alert.message }}
-          </li>
-        }
-      </ul>
-      <a routerLink="/admin/alertes" class="link-more">Voir toutes les alertes <span class="material-symbols-outlined link-more__icon">arrow_forward</span></a>
-    </section>
   </div>
-
-  <section class="card card--shortcuts animate-fade-in">
-    <h3><span class="material-symbols-outlined card__icon">link</span> Raccourcis</h3>
-    <div class="shortcuts">
-      <a routerLink="/admin/boutiques" class="shortcut"><span class="material-symbols-outlined shortcut__icon">store</span> Gestion des boutiques</a>
-      <a routerLink="/admin/utilisateurs" class="shortcut"><span class="material-symbols-outlined shortcut__icon">people</span> Utilisateurs & support</a>
-      <a routerLink="/admin/statistiques" class="shortcut"><span class="material-symbols-outlined shortcut__icon">bar_chart</span> Statistiques & rapports</a>
-      <a routerLink="/admin/communication" class="shortcut"><span class="material-symbols-outlined shortcut__icon">campaign</span> Annonces & événements</a>
-      <a routerLink="/admin/roles" class="shortcut"><span class="material-symbols-outlined shortcut__icon">admin_panel_settings</span> Rôles & permissions</a>
-    </div>
-  </section>
 </div>

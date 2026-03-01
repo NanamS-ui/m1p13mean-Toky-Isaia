@@ -1,10 +1,12 @@
 <div class="communication-page">
   <div class="page-header animate-fade-in">
     <h2><span class="material-symbols-outlined page-header__icon">campaign</span> Communication & Marketing</h2>
-    <a routerLink="/admin/communication/notifications" class="btn btn--secondary">
-      <span class="material-symbols-outlined btn__icon">notifications</span>
-      Notifications push / email
-    </a>
+    <div class="page-actions">
+      <a routerLink="/admin/communication/notifications" class="btn btn--secondary">
+        <span class="material-symbols-outlined btn__icon">notifications</span>
+        Notifications push / email
+      </a>
+    </div>
   </div>
 
   <div class="communication-grid stagger-children">
@@ -34,7 +36,7 @@
             <label for="category">Catégorie</label>
             <select id="category" formControlName="category" class="form-select">
               @for (cat of categories; track cat.value) {
-                <option [value]="cat.value">{{ cat.label }}</option>
+                <option [value]="cat.id">{{ cat.label }}</option>
               }
             </select>
           </div>
@@ -63,11 +65,50 @@
           <label for="description">Description</label>
           <textarea id="description" formControlName="description" rows="3" placeholder="Description de l'événement..."></textarea>
         </div>
+
+        <div class="form-group full-width">
+          <label>Image / Affiche de l'événement</label>
+          <div class="upload-zone"
+               [class.upload-zone--has-file]="selectedFile"
+               [class.upload-zone--dragover]="isDragOver"
+               (dragover)="onDragOver($event)"
+               (dragleave)="onDragLeave($event)"
+               (drop)="onDrop($event)"
+               (click)="fileInput.click()">
+            <input #fileInput type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
+            @if (imagePreview) {
+              <div class="upload-zone__preview">
+                <img [src]="imagePreview" alt="Aperçu" class="upload-zone__img" />
+                <div class="upload-zone__overlay">
+                  <span class="material-symbols-outlined">edit</span>
+                  Changer l'image
+                </div>
+              </div>
+            } @else {
+              <div class="upload-zone__placeholder">
+                <span class="material-symbols-outlined upload-zone__icon">cloud_upload</span>
+                <span class="upload-zone__text">Glissez une image ici ou cliquez pour parcourir</span>
+                <span class="upload-zone__hint">PNG, JPG, WEBP • max 5 Mo</span>
+              </div>
+            }
+          </div>
+          @if (selectedFile) {
+            <div class="upload-zone__file-info">
+              <span class="material-symbols-outlined">image</span>
+              <span class="upload-zone__filename">{{ selectedFile.name }}</span>
+              <span class="upload-zone__filesize">({{ formatFileSize(selectedFile.size) }})</span>
+              <button type="button" class="upload-zone__remove" (click)="removeFile($event)">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          }
+        </div>
         
         <div class="form-actions">
-          <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
-            <span class="material-symbols-outlined btn__icon">add_circle</span>
-            Créer l'événement
+          <button type="submit" class="btn btn--primary" [disabled]="form.invalid || isSubmitting">
+            <span class="material-symbols-outlined btn__icon" *ngIf="!isSubmitting">add_circle</span>
+            <span class="material-symbols-outlined btn__icon" *ngIf="isSubmitting">hourglass_top</span>
+            {{ isSubmitting ? 'Création en cours...' : "Créer l'événement" }}
           </button>
         </div>
       </form>
@@ -75,14 +116,26 @@
 
     <section class="card card--calendar">
       <h3><span class="material-symbols-outlined card__icon">calendar_month</span> Calendrier</h3>
-      <app-calendar [events]="events" [view]="'agenda'" />
+      @if (eventsLoadError && events.length === 0) {
+        <div class="calendar-loading">
+          <span class="material-symbols-outlined">error</span>
+          <span>{{ eventsLoadError }}</span>
+        </div>
+      } @else {
+        <app-calendar [events]="events" [view]="'agenda'"></app-calendar>
+      }
     </section>
   </div>
 
   <section class="card card--events animate-fade-in">
     <h3><span class="material-symbols-outlined card__icon">event_note</span> Tous les événements</h3>
     
-    @if (events.length === 0) {
+    @if (eventsLoadError && events.length === 0) {
+      <div class="events-empty">
+        <span class="material-symbols-outlined events-empty__icon">error</span>
+        <p>{{ eventsLoadError }}</p>
+      </div>
+    } @else if (events.length === 0) {
       <div class="events-empty">
         <span class="material-symbols-outlined events-empty__icon">event_busy</span>
         <p>Aucun événement enregistré</p>
@@ -106,9 +159,17 @@
                 }
               </span>
             </div>
-            <span class="badge" [class.badge--active]="ev.published" [class.badge--pending]="!ev.published">
-              {{ ev.published ? 'Publié' : 'Brouillon' }}
-            </span>
+            <div class="event-item__actions">
+              <span class="badge" [class.badge--active]="ev.published" [class.badge--pending]="!ev.published">
+                {{ ev.published ? 'Publié' : 'Brouillon' }}
+              </span>
+              @if (!ev.published) {
+                <button type="button" class="btn btn--secondary btn--sm" (click)="publishEvent(ev)">
+                  <span class="material-symbols-outlined btn__icon">publish</span>
+                  Publier
+                </button>
+              }
+            </div>
           </div>
         }
       </div>

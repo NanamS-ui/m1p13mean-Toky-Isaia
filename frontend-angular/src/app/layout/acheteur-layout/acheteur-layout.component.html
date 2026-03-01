@@ -4,26 +4,65 @@
     <div class="sidebar__brand">
       <div class="sidebar__logo">K</div>
       @if (sidebarOpen) {
-        <span class="sidebar__title">KORUS Mall</span>
+        <span class="sidebar__title">KORUS Center</span>
       }
     </div>
 
     <!-- Navigation -->
     <nav class="sidebar__nav">
       @for (item of navItems; track item.route) {
-        <a [routerLink]="item.route" 
-           routerLinkActive="active" 
-           [routerLinkActiveOptions]="{ exact: item.route === '/acheteur/accueil' }" 
-           class="nav-item"
-           [attr.data-tooltip]="item.label">
-          <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
-          @if (sidebarOpen) {
-            <span class="nav-item__label">{{ item.label }}</span>
-            @if (item.route === '/acheteur/panier' && cartItemsCount() > 0) {
-              <span class="nav-item__badge">{{ cartItemsCount() }}</span>
+        @if (item.children) {
+          <div class="nav-group" [class.nav-group--open]="sidebarOpen && isGroupOpen(item.route)">
+            <div class="nav-parent">
+              <a [routerLink]="item.children[0].route"
+                 routerLinkActive="active"
+                 [routerLinkActiveOptions]="{ exact: false }"
+                 class="nav-item nav-item--parent"
+                 [attr.data-tooltip]="item.label">
+                <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+                @if (sidebarOpen) {
+                  <span class="nav-item__label">{{ item.label }}</span>
+                  @if (unreadMessages() > 0) {
+                    <span class="nav-item__badge">{{ unreadMessages() }}</span>
+                  }
+                }
+              </a>
+              @if (sidebarOpen) {
+                <button type="button"
+                        class="nav-parent__toggle"
+                        (click)="toggleGroup(item.route, $event)">
+                  <span class="material-symbols-outlined">{{ isGroupOpen(item.route) ? 'expand_less' : 'expand_more' }}</span>
+                </button>
+              }
+            </div>
+            @if (sidebarOpen && isGroupOpen(item.route)) {
+              <div class="nav-children">
+                @for (child of item.children; track child.route) {
+                  <a [routerLink]="child.route"
+                     routerLinkActive="active"
+                     [routerLinkActiveOptions]="{ exact: true }"
+                     class="nav-item nav-item--child">
+                    {{ child.label }}
+                  </a>
+                }
+              </div>
             }
-          }
-        </a>
+          </div>
+        } @else {
+          <a [routerLink]="item.route" 
+             routerLinkActive="active" 
+             [routerLinkActiveOptions]="{ exact: item.route === '/acheteur/accueil' }" 
+             class="nav-item"
+             [attr.data-tooltip]="item.label">
+            <span class="material-symbols-outlined nav-item__icon">{{ item.icon }}</span>
+            @if (sidebarOpen) {
+              <span class="nav-item__label">{{ item.label }}</span>
+              @if (item.route === '/acheteur/panier' && cartItemsCount() > 0) {
+                <span class="nav-item__badge">{{ cartItemsCount() }}</span>
+              }
+            }
+          </a>
+        }
       }
     </nav>
 
@@ -51,11 +90,19 @@
     </button>
   </aside>
 
+  <!-- Backdrop mobile -->
+  <div class="sidebar-backdrop"
+       [class.sidebar-backdrop--visible]="sidebarOpen"
+       (click)="sidebarOpen = false"></div>
+
   <div class="main-wrapper">
     <header class="header">
+      <button type="button" class="hamburger" (click)="sidebarOpen = !sidebarOpen" aria-label="Ouvrir le menu">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
       <div class="header__search">
-        <span class="material-symbols-outlined">search</span>
-        <input type="text" placeholder="Rechercher boutiques, produits..." />
+        <!-- <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Rechercher boutiques, produits..." /> -->
       </div>
       <div class="header__actions">
         <a routerLink="/acheteur/panier" class="header__btn header__btn--cart">
@@ -64,12 +111,12 @@
             <span class="header__btn-badge">{{ cartItemsCount() }}</span>
           }
         </a>
-        <button type="button" class="header__btn header__btn--notif">
+        <a routerLink="/acheteur/notifications" class="header__btn header__btn--notif">
           <span class="material-symbols-outlined">notifications</span>
           @if (unreadNotifications() > 0) {
             <span class="header__btn-badge">{{ unreadNotifications() }}</span>
           }
-        </button>
+        </a>
         <div class="user-badge">
           <span class="material-symbols-outlined user-badge__icon">person</span>
           @if (user()) {

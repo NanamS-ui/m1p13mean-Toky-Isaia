@@ -1,10 +1,16 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { StockService } from '../../../core/services/product/stock.service';
+import { ProductService } from '../../../core/services/product/product.service';
+import { CartService } from '../../../core/services/order/cart.service';
+import type { CatalogFilterCriteria, CatalogProduct } from '../../../core/models/product/catalog-product.model';
+import { catchError, of } from 'rxjs';
 
 interface Product {
   id: string;
+  stockId: string;
   name: string;
   description: string;
   fullDescription: string;
@@ -30,99 +36,98 @@ interface Product {
   templateUrl: './produit-detail.component.html',
   styleUrl: './produit-detail.component.css'
 })
-export class ProduitDetailComponent implements OnInit {
+export class ProduitDetailComponent implements OnInit, OnDestroy {
   quantity = signal(1);
   selectedImageIndex = signal(0);
+  isFavorite = signal(false);
 
-  // Mock product data
+  cartFlash = signal(false);
+  private cartFlashTimer: ReturnType<typeof setTimeout> | null = null;
+
   product = signal<Product | null>(null);
 
-  // Mock related products
-  relatedProducts = signal<Product[]>([
-    {
-      id: '2',
-      name: 'Casque Bluetooth Pro',
-      description: 'Casque sans fil avec réduction de bruit',
-      fullDescription: 'Casque Bluetooth haute qualité avec réduction de bruit active, autonomie de 30h, design confortable.',
-      price: 185000,
-      category: 'Électronique',
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      inStock: true,
-      stockQuantity: 15,
-      onPromo: false,
-      popularity: 88,
-      createdAt: '2026-01-20',
-      specs: { 'Autonomie': '30h', 'Bluetooth': '5.0', 'Poids': '250g' }
-    },
-    {
-      id: '5',
-      name: 'Montre connectée',
-      description: 'Montre intelligente avec suivi fitness',
-      fullDescription: 'Montre connectée avec écran AMOLED, suivi fitness complet, GPS intégré, résistance à l\'eau.',
-      price: 250000,
-      promoPrice: 199000,
-      category: 'Électronique',
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      inStock: true,
-      stockQuantity: 8,
-      onPromo: true,
-      popularity: 90,
-      createdAt: '2026-01-18',
-      specs: { 'Écran': '1.4" AMOLED', 'Autonomie': '7 jours', 'GPS': 'Oui' }
-    },
-    {
-      id: '7',
-      name: 'Téléphone portable',
-      description: 'Smartphone dernière génération',
-      fullDescription: 'Smartphone avec écran 6.7", processeur puissant, 128GB de stockage, triple caméra.',
-      price: 450000,
-      category: 'Électronique',
-      boutiqueId: '2',
-      boutiqueName: 'TechZone',
-      inStock: true,
-      stockQuantity: 5,
-      onPromo: false,
-      popularity: 98,
-      createdAt: '2026-01-28',
-      specs: { 'Écran': '6.7"', 'RAM': '8GB', 'Stockage': '128GB' }
-    }
-  ]);
+  relatedProducts = signal<Product[]>([]);
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(
+    private route: ActivatedRoute,
+    private stockService: StockService,
+    private productService: ProductService,
+    private cartService: CartService
+  ) {}
 
   ngOnInit(): void {
-    // Get product ID from route
     const productId = this.route.snapshot.paramMap.get('id');
-    
-    // Mock product data - in real app, fetch from service
-    const mockProduct: Product = {
-      id: productId || '1',
-      name: 'Robe été fleurie',
-      description: 'Robe légère et élégante pour l\'été',
-      fullDescription: 'Magnifique robe d\'été en coton léger avec motif floral. Parfaite pour les occasions décontractées et les sorties estivales. Matière respirante et confortable.',
-      price: 75000,
-      promoPrice: 59000,
-      category: 'Mode',
-      boutiqueId: '1',
-      boutiqueName: 'Mode & Style',
-      boutiqueLogo: undefined,
-      images: undefined,
-      inStock: true,
-      stockQuantity: 12,
-      onPromo: true,
-      popularity: 95,
-      createdAt: '2026-01-15',
-      specs: {
-        'Matière': 'Coton',
-        'Taille': 'S, M, L, XL',
-        'Couleur': 'Fleurie multicolore',
-        'Entretien': 'Lavage à la main recommandé'
+    if (!productId) {
+      this.product.set(null);
+      return;
+    }
+
+    this.loadProduct(productId);
+  }
+
+  ngOnDestroy(): void {
+    if (this.cartFlashTimer) {
+      clearTimeout(this.cartFlashTimer);
+      this.cartFlashTimer = null;
+    }
+  }
+
+  private loadProduct(productId: string): void {
+    this.stockService.getCatalogByProduct(productId).subscribe({
+      next: (items) => {
+        const item = items?.[0];
+        if (!item) {
+          this.product.set(null);
+          this.relatedProducts.set([]);
+          return;
+        }
+
+        const detail = this.mapCatalogToDetail(item);
+        this.product.set(detail);
+        this.quantity.set(1);
+        this.selectedImageIndex.set(0);
+
+        this.loadFavoriteStatus(detail.id);
+        this.loadRelated(detail.category, detail.id);
+      },
+      error: () => {
+        this.product.set(null);
+        this.relatedProducts.set([]);
       }
+    });
+  }
+
+  private loadFavoriteStatus(productId: string): void {
+    this.productService.isFavoriteProduct(productId)
+      .pipe(catchError(() => of({ isFavorite: false })))
+      .subscribe(result => {
+        this.isFavorite.set(Boolean(result?.isFavorite));
+      });
+  }
+
+  private loadRelated(category: string, currentId: string): void {
+    const criteria: CatalogFilterCriteria = {
+      searchQuery: '',
+      selectedCategory: category,
+      minPrice: null,
+      maxPrice: null,
+      inStockOnly: false,
+      onPromoOnly: false,
+      sortBy: 'popularity'
     };
 
-    this.product.set(mockProduct);
+    this.stockService.getCatalog(criteria).subscribe({
+      next: (items) => {
+        const mapped = (items || [])
+          .filter(item => item.id !== currentId)
+          .slice(0, 6)
+          .map(item => this.mapCatalogToDetail(item));
+        this.relatedProducts.set(mapped);
+      },
+      error: () => {
+        this.relatedProducts.set([]);
+      }
+    });
   }
 
   incrementQuantity(): void {
@@ -141,26 +146,64 @@ export class ProduitDetailComponent implements OnInit {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', {
-      style: 'currency',
-      currency: 'MGA',
-      maximumFractionDigits: 0
-    }).format(value);
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   addToCart(): void {
     const product = this.product();
     if (product && product.inStock) {
-      // TODO: Implement cart service
-      console.log('Add to cart:', {
+      this.cartService.addItem({
+        stockId: product.stockId,
         productId: product.id,
-        quantity: this.quantity()
-      });
+        productName: product.name,
+        productImage: product.images?.[0],
+        price: product.price,
+        promoPrice: product.promoPrice,
+        quantity: this.quantity(),
+        boutiqueId: product.boutiqueId,
+        boutiqueName: product.boutiqueName,
+        inStock: product.inStock
+      }, this.quantity());
+
+      this.showCartFlash();
     }
+  }
+
+  private showCartFlash(): void {
+    this.cartFlash.set(true);
+
+    if (this.cartFlashTimer) {
+      clearTimeout(this.cartFlashTimer);
+    }
+
+    this.cartFlashTimer = setTimeout(() => {
+      this.cartFlash.set(false);
+      this.cartFlashTimer = null;
+    }, 1500);
   }
 
   selectImage(index: number): void {
     this.selectedImageIndex.set(index);
+  }
+
+  toggleFavorite(): void {
+    const product = this.product();
+    if (!product) return;
+
+    if (this.isFavorite()) {
+      this.productService.removeFavoriteProduct(product.id).subscribe({
+        next: () => this.isFavorite.set(false),
+        error: (error) => console.error('Erreur lors de la suppression des favoris', error)
+      });
+      return;
+    }
+
+    this.productService.addFavoriteProduct(product.id).subscribe({
+      next: () => this.isFavorite.set(true),
+      error: (error) => console.error('Erreur lors de l\'ajout aux favoris', error)
+    });
   }
 
   getSpecKeys(specs: { [key: string]: string } | undefined): string[] {
@@ -175,5 +218,28 @@ export class ProduitDetailComponent implements OnInit {
       return [];
     }
     return Object.entries(specs);
+  }
+
+  private mapCatalogToDetail(item: CatalogProduct): Product {
+    return {
+      id: item.id,
+      stockId: item.stockId,
+      name: item.name,
+      description: item.description,
+      fullDescription: item.description,
+      price: item.price,
+      promoPrice: item.promoPrice,
+      category: item.category,
+      boutiqueId: item.boutiqueId,
+      boutiqueName: item.boutiqueName,
+      boutiqueLogo: item.boutiqueLogo,
+      images: item.image ? [item.image] : [],
+      inStock: item.inStock,
+      stockQuantity: item.stockQuantity,
+      onPromo: item.onPromo,
+      popularity: item.popularity,
+      createdAt: item.createdAt,
+      specs: {}
+    };
   }
 }

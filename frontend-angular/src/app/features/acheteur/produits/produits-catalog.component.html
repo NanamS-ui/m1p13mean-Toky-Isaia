@@ -1,4 +1,10 @@
 <div class="catalog-page">
+  @if (loading()) {
+    <div class="loading-state">
+      <span class="material-symbols-outlined animate-spin">progress_activity</span>
+      <p>Chargement du catalogue...</p>
+    </div>
+  } @else {
   <!-- Header -->
   <div class="catalog-header">
     <h1>
@@ -81,10 +87,15 @@
           <span class="material-symbols-outlined">local_offer</span>
           En promotion
         </label>
+        <label class="filter-checkbox">
+          <input type="checkbox" [ngModel]="onlyFavorites()" (ngModelChange)="onlyFavorites.set($event)" />
+          <span class="material-symbols-outlined">favorite</span>
+          Mes favoris
+        </label>
       </div>
 
       <!-- Clear Filters -->
-      @if (selectedCategory() || minPrice() || maxPrice() || inStockOnly() || onPromoOnly()) {
+      @if (hasActiveFilters()) {
         <button class="btn-clear-filters" (click)="clearFilters()">
           <span class="material-symbols-outlined">filter_alt_off</span>
           Réinitialiser
@@ -150,9 +161,6 @@
             @if (product.onPromo) {
               <span class="product-card__promo">Promo</span>
             }
-            @if (!product.inStock) {
-              <span class="product-card__out-of-stock">Rupture</span>
-            }
           </div>
           <div class="product-card__content">
             <span class="product-card__boutique">{{ product.boutiqueName }}</span>
@@ -168,6 +176,13 @@
             </div>
             <div class="product-card__meta">
               <span class="product-card__category">{{ product.category }}</span>
+              @if (product.tags.length > 0) {
+                <div class="product-card__tags">
+                  @for (tag of product.tags.slice(0, 3); track tag) {
+                    <span class="product-tag">{{ tag }}</span>
+                  }
+                </div>
+              }
               <span class="product-card__popularity">
                 <span class="material-symbols-outlined">trending_up</span>
                 {{ product.popularity }}
@@ -176,10 +191,19 @@
           </div>
           <button
             class="product-card__cart"
-            [disabled]="!product.inStock"
-            (click)="addToCart(product.id, $event)"
+            type="button"
           >
             <span class="material-symbols-outlined">add_shopping_cart</span>
+          </button>
+          <button
+            class="product-card__favorite"
+            [class.product-card__favorite--active]="isFavorite(product.id)"
+            (click)="toggleFavorite($event, product.id)"
+            type="button"
+            [title]="isFavorite(product.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+            [attr.aria-label]="isFavorite(product.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+          >
+            <span class="material-symbols-outlined">{{ isFavorite(product.id) ? 'favorite' : 'favorite_border' }}</span>
           </button>
         </a>
       }
@@ -191,5 +215,6 @@
       <p>Essayez de modifier vos critères de recherche</p>
       <button class="btn-primary" (click)="clearFilters()">Réinitialiser les filtres</button>
     </div>
+  }
   }
 </div>

@@ -1,5 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { InfoCenterService } from '../../../core/services/config/info-center.service';
+import type { InfoCenter } from '../../../core/models/config/info-center.model';
 
 interface FloorPlan {
   id: string;
@@ -14,7 +16,8 @@ interface FloorPlan {
   templateUrl: './localisation.component.html',
   styleUrl: './localisation.component.css'
 })
-export class LocalisationComponent {
+export class LocalisationComponent implements OnInit {
+  private infoCenterService = inject(InfoCenterService);
   selectedFloor = signal<string>('floor-1');
 
   floorPlans = signal<FloorPlan[]>([
@@ -49,6 +52,36 @@ export class LocalisationComponent {
       'Navettes gratuites depuis le centre-ville'
     ]
   };
+
+  ngOnInit(): void {
+    this.infoCenterService.getAll().subscribe({
+      next: (items: InfoCenter[]) => {
+        const info = items?.[0];
+        if (!info) return;
+
+        this.address = {
+          street: info.address?.street || this.address.street,
+          city: info.address?.city || this.address.city,
+          country: info.address?.country || this.address.country,
+          full: info.address?.full || this.address.full
+        };
+
+        this.contact = {
+          phone: info.contact?.phone || this.contact.phone,
+          email: info.contact?.email || this.contact.email
+        };
+
+        this.openingHours = info.openingHours?.length
+          ? info.openingHours.map(h => ({ day: h.day, hours: h.hours }))
+          : this.openingHours;
+
+        this.accessInfo = {
+          parking: info.parkingInfo || this.accessInfo.parking,
+          transport: info.transportInfo?.length ? info.transportInfo : this.accessInfo.transport
+        };
+      }
+    });
+  }
 
   selectFloor(floorId: string): void {
     this.selectedFloor.set(floorId);

@@ -1,13 +1,18 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
+import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ShopService, ShopCategory } from '../../../core/services/shop/shop.service';
+import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
+import { NoticeService, type ShopNoticeSummaryDto } from '../../../core/services/notice/notice.service';
+import type { Shop } from '../../../core/models/shop/shop.model';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 interface BoutiqueDiscovery {
   id: string;
   name: string;
-  category: BoutiqueCategory;
+  categoryId: string;
+  categoryLabel: string;
   logoUrl?: string;
   rating: number;
   reviewCount: number;
@@ -15,7 +20,7 @@ interface BoutiqueDiscovery {
   floor: number;
   zone?: string;
   description: string;
-  popularity: number; // Based on views/clicks
+  popularity: number;
 }
 
 type SortOption = 'name' | 'rating' | 'popularity';
@@ -28,164 +33,61 @@ type ViewMode = 'grid' | 'list';
   templateUrl: './boutiques-discovery.component.html',
   styleUrl: './boutiques-discovery.component.css'
 })
-export class BoutiquesDiscoveryComponent {
-  categories = BOUTIQUE_CATEGORIES;
+export class BoutiquesDiscoveryComponent implements OnInit {
+  categories = signal<ShopCategory[]>([]);
   
   // Search and filters
   searchQuery = signal('');
-  selectedCategory = signal<BoutiqueCategory | ''>('');
+  selectedCategory = signal<string>('');
   selectedFloor = signal<number | ''>('');
   onlyOpen = signal(false);
+  onlyFavorites = signal(false);
   sortBy = signal<SortOption>('popularity');
   viewMode = signal<ViewMode>('grid');
 
-  // Mock data
-  boutiques = signal<BoutiqueDiscovery[]>([
-    {
-      id: '1',
-      name: 'Mode & Style',
-      category: 'MODE',
-      rating: 4.8,
-      reviewCount: 124,
-      isOpen: true,
-      floor: 1,
-      zone: 'Zone A',
-      description: 'Boutique de mode tendance pour hommes et femmes',
-      popularity: 950
-    },
-    {
-      id: '2',
-      name: 'TechZone',
-      category: 'TECH',
-      rating: 4.6,
-      reviewCount: 89,
-      isOpen: true,
-      floor: 2,
-      zone: 'Zone B',
-      description: 'Électronique et gadgets high-tech',
-      popularity: 820
-    },
-    {
-      id: '3',
-      name: 'Beauty Corner',
-      category: 'BEAUTE',
-      rating: 4.9,
-      reviewCount: 156,
-      isOpen: false,
-      floor: 1,
-      zone: 'Zone C',
-      description: 'Produits de beauté et bien-être',
-      popularity: 1100
-    },
-    {
-      id: '4',
-      name: 'Sport Plus',
-      category: 'SPORT',
-      rating: 4.5,
-      reviewCount: 67,
-      isOpen: true,
-      floor: 2,
-      zone: 'Zone A',
-      description: 'Équipements et vêtements de sport',
-      popularity: 650
-    },
-    {
-      id: '5',
-      name: 'Bijoux Précieux',
-      category: 'AUTRE',
-      rating: 4.7,
-      reviewCount: 43,
-      isOpen: true,
-      floor: 1,
-      zone: 'Zone D',
-      description: 'Bijouterie et accessoires précieux',
-      popularity: 580
-    },
-    {
-      id: '6',
-      name: 'Home Design',
-      category: 'MAISON',
-      rating: 4.4,
-      reviewCount: 92,
-      isOpen: true,
-      floor: 2,
-      zone: 'Zone C',
-      description: 'Décoration et mobilier pour la maison',
-      popularity: 720
-    },
-    {
-      id: '7',
-      name: 'Sushi Express',
-      category: 'FOOD',
-      rating: 4.3,
-      reviewCount: 201,
-      isOpen: true,
-      floor: 1,
-      zone: 'Zone E',
-      description: 'Restaurant japonais et cuisine asiatique',
-      popularity: 1300
-    },
-    {
-      id: '8',
-      name: 'Fashion House',
-      category: 'MODE',
-      rating: 4.6,
-      reviewCount: 78,
-      isOpen: true,
-      floor: 1,
-      zone: 'Zone A',
-      description: 'Prêt-à-porter de luxe',
-      popularity: 890
-    },
-    {
-      id: '9',
-      name: 'Gaming Hub',
-      category: 'TECH',
-      rating: 4.7,
-      reviewCount: 112,
-      isOpen: true,
-      floor: 2,
-      zone: 'Zone B',
-      description: 'Jeux vidéo et consoles',
-      popularity: 1050
-    },
-    {
-      id: '10',
-      name: 'Wellness Spa',
-      category: 'BEAUTE',
-      rating: 4.8,
-      reviewCount: 95,
-      isOpen: false,
-      floor: 1,
-      zone: 'Zone C',
-      description: 'Soins du corps et relaxation',
-      popularity: 750
-    },
-    {
-      id: '11',
-      name: 'Fit Zone',
-      category: 'SPORT',
-      rating: 4.5,
-      reviewCount: 54,
-      isOpen: true,
-      floor: 2,
-      zone: 'Zone A',
-      description: 'Équipements de fitness',
-      popularity: 620
-    },
-    {
-      id: '12',
-      name: 'Coffee Corner',
-      category: 'FOOD',
-      rating: 4.6,
-      reviewCount: 167,
-      isOpen: true,
-      floor: 1,
-      zone: 'Zone E',
-      description: 'Café et pâtisseries artisanales',
-      popularity: 980
-    }
-  ]);
+  boutiques = signal<BoutiqueDiscovery[]>([]);
+  favoriteShopIds = signal<string[]>([]);
+
+  constructor(
+    private shopService: ShopService,
+    private openingHours: OpeningHoursService,
+    private noticeService: NoticeService,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      const cat = params['category'];
+      if (cat) {
+        this.selectedCategory.set(cat);
+      }
+    });
+
+    forkJoin({
+      shops: this.shopService.getActiveShops(),
+      favoriteIds: this.shopService.getMyFavoriteShopIds().pipe(catchError(() => of([] as string[]))),
+      categories: this.shopService.getShopCategories().pipe(catchError(() => of([] as ShopCategory[])))
+    })
+      .pipe(
+        switchMap(({ shops, favoriteIds, categories }) => {
+          this.categories.set(categories);
+          const ids = shops.map(s => s._id).filter(Boolean);
+          this.favoriteShopIds.set(favoriteIds);
+          return this.noticeService.getShopSummaries(ids).pipe(
+            map((summaries) => ({ shops, summaries })),
+            catchError(() => of({ shops, summaries: [] as ShopNoticeSummaryDto[] }))
+          );
+        })
+      )
+      .subscribe({
+        next: ({ shops, summaries }) => {
+          const byId: Record<string, ShopNoticeSummaryDto> = {};
+          for (const s of summaries) byId[s.shopId] = s;
+          this.boutiques.set(shops.map(shop => this.mapShopToDiscovery(shop, byId[shop._id])));
+        },
+        error: () => this.boutiques.set([])
+      });
+  }
 
   // Filtered and sorted boutiques
   filteredBoutiques = computed(() => {
@@ -196,7 +98,7 @@ export class BoutiquesDiscoveryComponent {
     if (query) {
       result = result.filter(b => 
         b.name.toLowerCase().includes(query) ||
-        b.category.toLowerCase().includes(query) ||
+        b.categoryLabel.toLowerCase().includes(query) ||
         b.zone?.toLowerCase().includes(query) ||
         b.description.toLowerCase().includes(query)
       );
@@ -204,17 +106,24 @@ export class BoutiquesDiscoveryComponent {
 
     // Category filter
     if (this.selectedCategory()) {
-      result = result.filter(b => b.category === this.selectedCategory());
+      result = result.filter(b => b.categoryId === this.selectedCategory());
     }
 
     // Floor filter
-    if (this.selectedFloor() !== '') {
-      result = result.filter(b => b.floor === this.selectedFloor());
+    const floorFilter = this.selectedFloor();
+    if (floorFilter !== '' && floorFilter !== null && floorFilter !== undefined) {
+      const floorNum = typeof floorFilter === 'string' ? Number(floorFilter) : floorFilter;
+      result = result.filter(b => b.floor === floorNum);
     }
 
     // Open status filter
     if (this.onlyOpen()) {
       result = result.filter(b => b.isOpen);
+    }
+
+    if (this.onlyFavorites()) {
+      const favorites = new Set(this.favoriteShopIds());
+      result = result.filter(b => favorites.has(b.id));
     }
 
     // Sort
@@ -235,11 +144,19 @@ export class BoutiquesDiscoveryComponent {
     return result;
   });
 
-  // Available floors
+  // Étages disponibles (triage : RDC en premier, puis 1, 2, 3...)
   floors = computed(() => {
-    const uniqueFloors = new Set(this.boutiques().map(b => b.floor));
-    return Array.from(uniqueFloors).sort();
+    const unique = new Set(this.boutiques().map(b => b.floor).filter(f => !Number.isNaN(f)));
+    return Array.from(unique).sort((a, b) => a - b);
   });
+
+  onFloorChange(value: string | number | ''): void {
+    if (value === '' || value === null || value === undefined) {
+      this.selectedFloor.set('');
+    } else {
+      this.selectedFloor.set(typeof value === 'string' ? Number(value) : value);
+    }
+  }
 
   setViewMode(mode: ViewMode): void {
     this.viewMode.set(mode);
@@ -249,7 +166,80 @@ export class BoutiquesDiscoveryComponent {
     this.sortBy.set(sort);
   }
 
-  getCategoryLabel(category: BoutiqueCategory): string {
-    return this.categories.find(c => c.value === category)?.label ?? category;
+  getCategoryLabel(categoryId: string): string {
+    const category = this.categories().find(c => c._id === categoryId);
+    return category?.value ?? '—';
+  }
+
+  getFloorLabel(floor: number): string {
+    if (floor === undefined || floor === null || Number.isNaN(floor)) return '—';
+    if (floor === 0) return 'Rez-de-chaussée';
+    if (floor === 1) return '1er étage';
+    return `Étage ${floor}`;
+  }
+
+  private mapShopToDiscovery(shop: Shop, summary?: ShopNoticeSummaryDto): BoutiqueDiscovery {
+    const categoryId = this.extractCategoryId(shop.shop_category);
+    const categoryLabel = this.getCategoryLabelFromShop(shop.shop_category);
+    const floor = this.extractFloor(shop.door);
+    const rating = summary?.reviewCount ? summary.rating : 0;
+    const reviewCount = summary?.reviewCount ?? 0;
+    const isActive = this.isStatusActive(shop.shop_status?.value) || shop.is_accepted === true;
+
+    return {
+      id: shop._id,
+      name: shop.name,
+      categoryId,
+      categoryLabel,
+      logoUrl: shop.logo,
+      rating,
+      reviewCount,
+      isOpen: isActive && this.openingHours.isShopOpenNow(shop),
+      floor,
+      zone: this.extractZone(shop.door),
+      description: shop.description ?? '',
+      popularity: reviewCount
+    };
+  }
+
+  private extractCategoryId(category?: any): string {
+    if (!category) return '';
+    if (typeof category === 'string') return category;
+    if (typeof category === 'object' && category._id) return category._id;
+    return '';
+  }
+
+  private getCategoryLabelFromShop(category?: any): string {
+    if (!category) return '—';
+    if (typeof category === 'object' && category.value) return category.value;
+    const found = this.categories().find(c => c._id === category);
+    return found?.value ?? '—';
+  }
+
+  private extractFloor(door: Shop['door']): number {
+    if (!door || typeof door !== 'object') return 0;
+    const floor = (door as { floor?: unknown }).floor;
+    if (typeof floor === 'string') return this.parseFloorNumber(floor);
+    if (typeof floor === 'object' && floor && 'value' in floor) {
+      return this.parseFloorNumber((floor as { value?: string }).value ?? '');
+    }
+    return 0;
+  }
+
+  private extractZone(door: Shop['door']): string | undefined {
+    if (!door || typeof door !== 'object') return undefined;
+    const value = (door as { value?: unknown }).value;
+    return typeof value === 'string' ? value : undefined;
+  }
+
+  private parseFloorNumber(value: string): number {
+    if (!value || typeof value !== 'string') return 0;
+    const match = value.match(/(-?\d+)/);
+    return match ? Number.parseInt(match[1], 10) : 0;
+  }
+
+  private isStatusActive(value?: string): boolean {
+    if (!value) return false;
+    return value.toLowerCase().includes('active');
   }
 }
