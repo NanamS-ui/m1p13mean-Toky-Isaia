@@ -48,23 +48,14 @@ export class PublicLayoutComponent implements OnInit {
     { route: '/accueil', label: 'Accueil', icon: 'home' },
     { route: '/boutiques', label: 'Boutiques', icon: 'storefront' },
     { route: '/evenements', label: 'Événements', icon: 'event' },
-    { route: '/localisation', label: 'Nous trouver', icon: 'location_on' },
-    { route: '/contact', label: 'Contact', icon: 'mail' }
+    { route: '/localisation', label: 'Nous trouver', icon: 'location_on' }
   ];
-
-  infoCenter = signal<InfoCenter | null>(null);
 
   footerHours = signal<InfoCenterHour[]>([
     { day: 'Lundi - Vendredi', hours: '09:00 - 21:00' },
     { day: 'Samedi', hours: '09:00 - 22:00' },
     { day: 'Dimanche', hours: '10:00 - 20:00' }
   ]);
-
-  footerContact = signal({
-    address: 'Ankorondrano, Antananarivo 101',
-    phone: '+261 20 22 123 45',
-    email: 'contact@korus-center.mg'
-  });
 
   constructor() {
     this.router.events
@@ -81,19 +72,11 @@ export class PublicLayoutComponent implements OnInit {
         const info = items?.[0];
         if (!info) return;
 
-        this.infoCenter.set(info);
-
         this.footerHours.set(
           info.footerHours?.length
             ? info.footerHours.map(h => ({ day: h.day, hours: h.hours }))
             : this.footerHours()
         );
-
-        this.footerContact.set({
-          address: info.address?.full || this.footerContact().address,
-          phone: info.contact?.phone || this.footerContact().phone,
-          email: info.contact?.email || this.footerContact().email
-        });
       }
     });
   }
