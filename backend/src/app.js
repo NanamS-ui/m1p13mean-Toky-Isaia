@@ -1,15 +1,22 @@
 const express = require("express");
 const cors = require("cors");
-const connectDB = require("./config/db");
+const mongoose = require("mongoose");
 
 require("dotenv").config();
-connectDB();
 
 const app = express();
 app.use(cors());
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+app.get("/api/health", (req, res) => {
+	res.status(200).json({
+		ok: true,
+		dbReadyState: mongoose.connection.readyState,
+		hasMongoUri: Boolean(process.env.MONGO_URI)
+	});
+});
 
 // Définition des routes
 app.use("/api/users", require("./routes/user/UserRoute"));
