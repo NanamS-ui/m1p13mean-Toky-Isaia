@@ -21,24 +21,27 @@ export class StatisticsDashboardComponent implements OnInit {
   maxBoutiqueValue = 0;
   private adminStatsService = inject(AdminStatisticsService);
   private cdr = inject(ChangeDetectorRef);
-  startDate: string | null = null;
-  endDate: string | null = null;
+  startDate!: string;
+  endDate!: string;
 
   @ViewChild('contentToConvert') contentToConvert!: ElementRef;
 
   ngOnInit(): void {
-    const todayStr = this.formatDateLocal(new Date());
-    this.startDate = todayStr;
-    this.endDate = todayStr;
-    this.fetchStats();
+    this.startDate = '';
+    this.endDate = '';
+    this.loadData();
   }
 
-  fetchStats(): void {
+  loadData(): void {
     this.adminStatsService.getAdminStatistics(this.startDate || undefined, this.endDate || undefined)
       .subscribe((stats: any) => {
         this.applyStats(stats);
         this.cdr.detectChanges();
       });
+  }
+
+  onDateChange(): void {
+    this.loadData();
   }
 
   exportExcel(): void {
@@ -105,16 +108,9 @@ export class StatisticsDashboardComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.startDate = null;
-    this.endDate = null;
-    this.fetchStats();
-  }
-
-  private formatDateLocal(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    this.startDate = '';
+    this.endDate = '';
+    this.loadData();
   }
 
   private applyStats(stats: any) {

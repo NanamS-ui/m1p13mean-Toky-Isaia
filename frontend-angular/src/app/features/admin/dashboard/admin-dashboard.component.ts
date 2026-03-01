@@ -44,8 +44,8 @@ export class AdminDashboardComponent implements OnInit {
   private adminStatsService = inject(AdminStatisticsService);
   private cdr = inject(ChangeDetectorRef);
 
-  startDate: string | null = null;
-  endDate: string | null = null;
+  startDate!: string;
+  endDate!: string;
 
   @ViewChild('contentToConvert') contentToConvert!: ElementRef;
 
@@ -77,15 +77,12 @@ export class AdminDashboardComponent implements OnInit {
   private readonly donutColors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
 
   ngOnInit(): void {
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    this.startDate = this.formatDateLocal(startOfMonth);
-    this.endDate = this.formatDateLocal(today);
-    this.fetchDashboard();
+    this.startDate = '';
+    this.endDate = '';
+    this.loadData();
   }
 
-  fetchDashboard(): void {
+  loadData(): void {
     const start = this.startDate || undefined;
     const end = this.endDate || undefined;
 
@@ -106,6 +103,16 @@ export class AdminDashboardComponent implements OnInit {
         console.error('Erreur chargement dashboard admin:', err);
       }
     });
+  }
+
+  onDateChange(): void {
+    this.loadData();
+  }
+
+  resetFilters(): void {
+    this.startDate = '';
+    this.endDate = '';
+    this.loadData();
   }
 
   exportExcel(): void {
@@ -252,13 +259,6 @@ export class AdminDashboardComponent implements OnInit {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
     });
-  }
-
-  private formatDateLocal(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   }
 
   private saveBlob(blob: Blob, fileName: string): void {

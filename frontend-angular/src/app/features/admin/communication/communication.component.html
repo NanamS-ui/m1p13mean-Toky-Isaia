@@ -36,7 +36,7 @@
             <label for="category">Catégorie</label>
             <select id="category" formControlName="category" class="form-select">
               @for (cat of categories; track cat.value) {
-                <option [value]="cat.value">{{ cat.label }}</option>
+                <option [value]="cat.id">{{ cat.label }}</option>
               }
             </select>
           </div>

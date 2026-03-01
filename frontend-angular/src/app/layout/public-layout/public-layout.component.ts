@@ -1,7 +1,8 @@
 import { Component, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, NavigationEnd, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-public-layout',
@@ -12,6 +13,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class PublicLayoutComponent {
   auth = inject(AuthService);
+  private router = inject(Router);
   mobileMenuOpen = signal(false);
 
   isLoggedIn = this.auth.isAuthenticated;
@@ -46,6 +48,15 @@ export class PublicLayoutComponent {
     { route: '/localisation', label: 'Nous trouver', icon: 'location_on' },
     { route: '/contact', label: 'Contact', icon: 'mail' }
   ];
+
+  constructor() {
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.mobileMenuOpen.set(false);
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      });
+  }
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen.update(v => !v);

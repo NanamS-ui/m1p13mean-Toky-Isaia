@@ -11,6 +11,22 @@
       <p>Connectez-vous à votre espace</p>
     </div>
 
+    <div class="login-presets">
+      <span class="login-presets__label">Acces rapide:</span>
+      <button type="button" class="login-preset" (click)="fillCredentials('admin')">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+        Administration
+      </button>
+      <button type="button" class="login-preset" (click)="fillCredentials('vendor')">
+        <span class="material-symbols-outlined">storefront</span>
+        Vendeur
+      </button>
+      <button type="button" class="login-preset" (click)="fillCredentials('buyer')">
+        <span class="material-symbols-outlined">person</span>
+        Acheteur
+      </button>
+    </div>
+
     <!-- Formulaire -->
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">

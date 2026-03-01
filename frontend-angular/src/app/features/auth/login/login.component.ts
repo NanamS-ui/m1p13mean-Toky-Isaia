@@ -71,4 +71,22 @@ export class LoginComponent implements OnInit {
       }
     });
   }
+
+  fillCredentials(type: 'admin' | 'vendor' | 'buyer'): void {
+    const presets: Record<string, { email: string; password: string }> = {
+      admin: { email: 'rabenjamandresy@gmail.com', password: '123456M' },
+      vendor: { email: 'gestionticketit@gmail.com', password: '123456M' },
+      buyer: { email: 'rahajamananaralisontoky@gmail.com', password: '123456T' }
+    };
+
+    const preset = presets[type];
+    if (!preset) return;
+
+    this.form.patchValue({
+      email: preset.email,
+      password: preset.password
+    });
+
+    this.form.markAsTouched();
+  }
 }

@@ -30,7 +30,7 @@ export class CommunicationComponent implements OnInit {
     reminder: '#10b981'
   };
 
-  categories: { value: string; label: string; color: string }[] = [];
+  categories: { id: string; value: string; label: string; color: string }[] = [];
 
   events: CalendarEvent[] = [];
 
@@ -58,6 +58,7 @@ export class CommunicationComponent implements OnInit {
         if (!cats || cats.length === 0) return;
         this.categories = cats.map((c) => ({
           // on accepte à la fois { value, label } et { name, color, icon }
+          id: (c._id || c.value || c.name || '').toString(),
           value: (c.value || c.name || '').toString(),
           label: (c.label ?? c.name ?? c.value ?? '').toString(),
           color:
@@ -67,7 +68,7 @@ export class CommunicationComponent implements OnInit {
         }));
 
         if (this.categories.length > 0) {
-          this.form.patchValue({ category: this.categories[0].value });
+          this.form.patchValue({ category: this.categories[0].id });
         }
         this.cdr.detectChanges();
       },
@@ -106,11 +107,7 @@ export class CommunicationComponent implements OnInit {
   }
 
   private mapEntityToCalendarEvent(entity: EventEntity): CalendarEvent {
-    const rawCategoryValue = entity.category?.value ?? 'event';
-    const allowedCategories = ['event', 'promo', 'meeting', 'reminder'] as const;
-    const categoryValue = allowedCategories.includes(rawCategoryValue as any)
-      ? (rawCategoryValue as (typeof allowedCategories)[number])
-      : 'event';
+    const categoryValue = (entity.category?.value || entity.category?.name || 'event').toString();
     const date = this.toYmd(entity.started_date);
     const endDate = this.toYmd(entity.end_date ?? entity.started_date);
 
@@ -231,7 +228,16 @@ export class CommunicationComponent implements OnInit {
 
   getCategoryColor(category?: string): string {
     const found = this.categories.find(c => c.value === category);
-    return found?.color || '#8b5cf6';
+    return found?.color || this.hashToColor((category || 'event').toString());
+  }
+
+  private hashToColor(value: string): string {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+      hash = value.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 55%)`;
   }
 
   formatDateRange(event: CalendarEvent): string {

@@ -14,6 +14,7 @@ export interface Event {
   time: string;
   type: EventType;
   categoryValue: string;
+  categoryId?: string;
   image?: string;
   featured?: boolean;
 }
@@ -32,12 +33,12 @@ interface FilterOption {
   styleUrl: './evenements.component.css'
 })
 export class EvenementsComponent implements OnInit {
-  selectedFilter = signal<string>('Tous');
+  selectedFilter = signal<string>('all');
 
   allEvents = signal<Event[]>([]);
 
   eventTypes: FilterOption[] = [
-    { value: 'Tous', label: 'Tous', icon: 'apps' }
+    { value: 'all', label: 'Tous', icon: 'apps' }
   ];
 
   constructor(
@@ -50,21 +51,21 @@ export class EvenementsComponent implements OnInit {
       next: (cats) => {
         const options: FilterOption[] = (cats || [])
           .map((c) => {
-            const value = (c.value || c.name || '').toString();
+            const value = (c._id || c.value || c.name || '').toString();
             const label = (c.label ?? c.name ?? c.value ?? '').toString();
             return {
               value,
               label: label || value,
-              icon: this.getCategoryIcon(value)
+              icon: this.getCategoryIcon(c.value || c.name || '')
             };
           })
           .filter((o) => Boolean(o.value));
 
-        this.eventTypes = [{ value: 'Tous', label: 'Tous', icon: 'apps' }, ...options];
+        this.eventTypes = [{ value: 'all', label: 'Tous', icon: 'apps' }, ...options];
       },
       error: () => {
         // garde uniquement "Tous"
-        this.eventTypes = [{ value: 'Tous', label: 'Tous', icon: 'apps' }];
+        this.eventTypes = [{ value: 'all', label: 'Tous', icon: 'apps' }];
       }
     });
 
@@ -111,8 +112,9 @@ export class EvenementsComponent implements OnInit {
   private mapEntityToPublicEvent(entity: EventEntity): Event {
     const date = this.toYmd(entity.started_date);
     const time = entity.all_day ? 'Journée entière' : ((entity.start_time || '').toString());
-    const categoryValue = (entity.category?.value || 'event').toString();
-    const type = (entity.category?.label || entity.category?.value || 'Événement').toString();
+    const categoryValue = (entity.category?.value || entity.category?.name || 'event').toString();
+    const categoryId = (entity.category?._id || '').toString();
+    const type = (entity.category?.label || entity.category?.name || entity.category?.value || 'Événement').toString();
 
     return {
       id: entity._id,
@@ -122,6 +124,7 @@ export class EvenementsComponent implements OnInit {
       time,
       type,
       categoryValue,
+      categoryId: categoryId || undefined,
       image: entity.image_url || undefined
     };
   }
@@ -132,10 +135,10 @@ export class EvenementsComponent implements OnInit {
 
   filteredEvents = computed(() => {
     const filter = this.selectedFilter();
-    if (filter === 'Tous') {
+    if (filter === 'all') {
       return this.allEvents();
     }
-    return this.allEvents().filter(event => event.type === filter);
+    return this.allEvents().filter(event => event.categoryId === filter);
   });
 
   upcomingEvents = computed(() => {

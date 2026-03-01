@@ -20,19 +20,19 @@
       <!-- Date de début -->
       <div class="form-group">
         <label for="startDate">Date de début</label>
-        <input id="startDate" type="date" [(ngModel)]="startDate" />
+        <input id="startDate" type="date" [(ngModel)]="startDate" (change)="onDateChange()" />
       </div>
 
       <!-- Date de fin -->
       <div class="form-group">
         <label for="endDate">Date de fin</label>
-        <input id="endDate" type="date" [(ngModel)]="endDate" />
+        <input id="endDate" type="date" [(ngModel)]="endDate" (change)="onDateChange()" />
       </div>
 
       <!-- Bouton appliquer -->
       <div class="form-group">
         <br>
-        <button class="apply-btn" (click)="fetchDashboard()">Appliquer</button>
+        <button class="apply-btn" (click)="loadData()">Appliquer</button>
       </div>
     </div>
   </div>
