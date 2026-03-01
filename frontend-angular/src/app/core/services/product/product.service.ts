@@ -1,0 +1,58 @@
+import { Injectable } from '@angular/core';
+import { environment } from '../../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Product } from '../../models/product/product.model';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ProductService {
+
+  private readonly apiBaseUrl = environment.apiBaseUrl;
+
+  constructor(private http: HttpClient) {}
+
+  getProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.apiBaseUrl}/products`);
+  }
+
+  getProductById(id: string): Observable<Product> {
+    return this.http.get<Product>(`${this.apiBaseUrl}/products/${id}`);
+  }
+
+  createProductStock(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiBaseUrl}/products/product/stock`, payload);
+  }
+
+  createProduct(payload: Partial<Product>): Observable<Product> {
+    return this.http.post<Product>(`${this.apiBaseUrl}/products`, payload);
+  }
+
+  updateProduct(id: string, payload: Partial<Product>): Observable<Product> {
+    return this.http.put<Product>(`${this.apiBaseUrl}/products/${id}`, payload);
+  }
+  updateProductByFormulaire(id: string, payload: Partial<any>): Observable<any> {
+    return this.http.put<any>(`${this.apiBaseUrl}/products/product/stock/${id}`, payload);
+  }
+
+  deleteProduct(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiBaseUrl}/products/${id}`);
+  }
+
+  getMyFavoriteProductIds(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiBaseUrl}/products/favorites/ids/my`);
+  }
+
+  isFavoriteProduct(productId: string): Observable<{ isFavorite: boolean }> {
+    return this.http.get<{ isFavorite: boolean }>(`${this.apiBaseUrl}/products/${productId}/favorite`);
+  }
+
+  addFavoriteProduct(productId: string): Observable<{ message: string; favoriteProducts: string[] }> {
+    return this.http.post<{ message: string; favoriteProducts: string[] }>(`${this.apiBaseUrl}/products/${productId}/favorite`, {});
+  }
+
+  removeFavoriteProduct(productId: string): Observable<{ message: string; favoriteProducts: string[] }> {
+    return this.http.delete<{ message: string; favoriteProducts: string[] }>(`${this.apiBaseUrl}/products/${productId}/favorite`);
+  }
+}

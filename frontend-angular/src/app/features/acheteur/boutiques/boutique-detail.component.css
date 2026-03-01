@@ -2,6 +2,56 @@
    Boutique Detail Component
    ============================================ */
 
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  text-align: center;
+}
+
+.loading-state .material-symbols-outlined,
+.error-state .material-symbols-outlined {
+  font-size: 48px;
+}
+
+.loading-state .material-symbols-outlined {
+  color: var(--korus-accent);
+}
+
+.error-state .material-symbols-outlined {
+  color: #dc2626;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--korus-accent);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 0.5rem;
+}
+
+.btn-back:hover {
+  opacity: 0.9;
+}
+
 .boutique-detail-page {
   display: flex;
   flex-direction: column;
@@ -296,6 +346,12 @@
 .contact-item .material-symbols-outlined {
   font-size: 22px;
   color: var(--korus-accent);
+}
+
+.contact-empty {
+  margin: 0;
+  color: var(--korus-text-muted);
+  font-style: italic;
 }
 
 .contact-link {

@@ -11,7 +11,7 @@ export interface CalendarEvent {
   description?: string;
   time?: string; // HH:MM
   endTime?: string;
-  category?: 'event' | 'promo' | 'meeting' | 'reminder';
+  category?: string;
 }
 
 type CalendarViewMode = 'month' | 'week' | 'agenda';
@@ -203,22 +203,39 @@ export class CalendarComponent implements OnDestroy {
 
   getCategoryColor(category?: string): string {
     const colors: Record<string, string> = {
-      'event': '#8b5cf6',
-      'promo': '#f59e0b',
-      'meeting': '#3b82f6',
-      'reminder': '#10b981'
+      event: '#8b5cf6',
+      promo: '#f59e0b',
+      meeting: '#3b82f6',
+      reminder: '#10b981'
     };
-    return colors[category || 'event'] || colors['event'];
+    const key = (category || 'event').toLowerCase();
+    return colors[key] || this.hashToColor(key);
   }
 
   getCategoryLabel(category?: string): string {
     const labels: Record<string, string> = {
-      'event': 'Événement',
-      'promo': 'Promotion',
-      'meeting': 'Réunion',
-      'reminder': 'Rappel'
+      event: 'Événement',
+      promo: 'Promotion',
+      meeting: 'Réunion',
+      reminder: 'Rappel'
     };
-    return labels[category || 'event'] || labels['event'];
+    const key = (category || 'event').toLowerCase();
+    return labels[key] || this.formatCategoryLabel(key);
+  }
+
+  private formatCategoryLabel(value: string): string {
+    if (!value) return 'Événement';
+    const cleaned = value.replace(/[_-]+/g, ' ').trim();
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+
+  private hashToColor(value: string): string {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+      hash = value.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 55%)`;
   }
 
   formatEventRange(event: CalendarEvent): string {

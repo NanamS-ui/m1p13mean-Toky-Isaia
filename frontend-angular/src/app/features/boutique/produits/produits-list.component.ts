@@ -1,7 +1,13 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ProductCategory } from '../../../core/models/product/product-category.model';
+import { Stock, StockView } from '../../../core/models/product/stock.model';
+import { ProductCategoryService } from '../../../core/services/product/product-category.service';
+import { StockService } from '../../../core/services/product/stock.service';
+import { forkJoin } from 'rxjs';
+import { Shop } from '../../../core/models/shop/shop.model';
 
 interface Product {
   id: string;
@@ -29,6 +35,31 @@ export class ProduitsListComponent {
   selectedCategory = '';
   selectedStatus = '';
   viewMode = signal<'grid' | 'list'>('grid');
+
+  productCategories : ProductCategory[] = [];
+  stockViews : Stock[] =[];
+  shops : Shop[] = [];
+  constructor(private productCategoryService: ProductCategoryService, 
+    private stockService : StockService, private cdr : ChangeDetectorRef
+  ){}
+  ngOnInit(): void {
+    forkJoin({
+      categories : this.productCategoryService.getProductCategories(),
+      stocks : this.stockService.getStockPricePromotion()
+    }).subscribe(({categories,stocks})=>{
+      this.productCategories = categories;
+      this.stockViews = stocks;
+      const shopMap: Record<string, Shop> = {};
+      stocks.forEach(stock => {
+        if (stock.shop && !shopMap[stock.shop._id]) {
+          shopMap[stock.shop._id] = stock.shop;
+        }
+      });
+    this.shops = Object.values(shopMap);
+      this.cdr.detectChanges();
+    })
+  }
+
 
   categories = [
     'Vêtements Femme',
@@ -126,6 +157,23 @@ export class ProduitsListComponent {
       createdAt: '2025-06-15'
     }
   ]);
+  get filteredStocks(): Stock[] {
+    const query = this.searchQuery?.toLowerCase() || '';
+
+    return this.stockViews.filter(stock => {
+      const product = stock.product;
+
+      const matchName = !query || product.name.toLowerCase().includes(query);
+
+      const matchReference = !product.reference || !query || product.reference.toLowerCase().includes(query);
+
+      const matchCategory = !this.selectedCategory || product.product_category._id === this.selectedCategory;
+      const matchBoutique = !this.selectedStatus || stock.shop._id === this.selectedStatus;
+
+      return matchName && matchReference && matchCategory && matchBoutique;
+    });
+  }
+
 
   filteredProducts = computed(() => {
     let result = this.products();
@@ -149,22 +197,26 @@ export class ProduitsListComponent {
     return result;
   });
 
-  stats = computed(() => {
-    const all = this.products();
+  
+  get stats()  {
+    const all = this.stockViews;
+    const shops = this.shops;
     return {
       total: all.length,
-      active: all.filter(p => p.status === 'active').length,
-      outOfStock: all.filter(p => p.stock === 0).length,
-      lowStock: all.filter(p => p.stock > 0 && p.stock <= 5).length
+      shop: shops.length,
+      outOfStock: all.filter(p => p.reste === 0).length,
+      lowStock: all.filter(p => p.reste > 0 && p.reste <= p.alerte).length
     };
-  });
+  }
 
   setViewMode(mode: 'grid' | 'list'): void {
     this.viewMode.set(mode);
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-MG', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(value);
+    const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
+    const dotted = formatted.replace(/\u202f|\u00a0| /g, '.');
+    return `${dotted} MGA`;
   }
 
   getStatusLabel(status: string): string {
@@ -188,10 +240,27 @@ export class ProduitsListComponent {
       products.map(p => p.id === product.id ? { ...p, status: newStatus } : p)
     );
   }
+  
 
-  deleteProduct(product: Product): void {
-    if (confirm(`Supprimer "${product.name}" ?`)) {
-      this.products.update(products => products.filter(p => p.id !== product.id));
+  deleteProductStock(stock: Stock): void {
+    if (!confirm(`Vous êtes sûre de supprimer "${stock.product?.name}" ?`)) {
+      return;
     }
+
+    this.stockService.deleteStock(stock._id).subscribe({
+      next: () => {
+
+        this.stockViews = this.stockViews.filter(
+          s => s._id !== stock._id
+        );
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
   }
+
+
 }

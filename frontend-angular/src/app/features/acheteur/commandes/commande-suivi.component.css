@@ -170,6 +170,37 @@
   gap: 0.5rem;
 }
 
+.section-title--toggle {
+  width: 100%;
+  justify-content: space-between;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.section-title--toggle:focus-visible {
+  outline: 2px solid var(--korus-accent);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+.section-title__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-title__chevron {
+  color: var(--korus-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.section-title--expanded .section-title__chevron {
+  transform: rotate(180deg);
+}
+
 .section-title .material-symbols-outlined {
   font-size: 24px;
   color: var(--korus-accent);

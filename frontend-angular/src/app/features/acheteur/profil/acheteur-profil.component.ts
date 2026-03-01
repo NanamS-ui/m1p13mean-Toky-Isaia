@@ -1,16 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray, AbstractControl, ValidationErrors } from '@angular/forms';
-
-interface Address {
-  id: string;
-  label: string;
-  street: string;
-  city: string;
-  postalCode: string;
-  country: string;
-  isDefault: boolean;
-}
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-acheteur-profil',
@@ -19,69 +10,109 @@ interface Address {
   templateUrl: './acheteur-profil.component.html',
   styleUrl: './acheteur-profil.component.css'
 })
-export class AcheteurProfilComponent {
+export class AcheteurProfilComponent implements OnInit {
+  private readonly auth = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
+
   activeTab = signal<'personal' | 'addresses' | 'security'>('personal');
-  
-  // Sample user data
-  userProfile = signal({
-    firstName: 'Jean',
-    lastName: 'Dupont',
-    email: 'jean.dupont@example.mg',
-    phone: '+261 34 12 345 67',
+
+  /** Profil de l'utilisateur connecté */
+  userProfile = signal<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    adresse: string;
+    avatar: string;
+  }>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    adresse: '',
     avatar: ''
   });
 
-  addresses = signal<Address[]>([
-    {
-      id: '1',
-      label: 'Domicile',
-      street: 'Lot II M 12 Bis Ambohimanarina',
-      city: 'Antananarivo',
-      postalCode: '101',
-      country: 'Madagascar',
-      isDefault: true
-    },
-    {
-      id: '2',
-      label: 'Bureau',
-      street: 'Immeuble KORUS, Ankorondrano',
-      city: 'Antananarivo',
-      postalCode: '101',
-      country: 'Madagascar',
-      isDefault: false
-    }
-  ]);
+  loading = signal(false);
+  saveSuccess = signal(false);
+  saveError = signal<string | null>(null);
+  addressSaveSuccess = signal(false);
+  addressSaveError = signal<string | null>(null);
+  passwordSaveSuccess = signal(false);
+  passwordSaveError = signal<string | null>(null);
 
   // Forms
   personalInfoForm: FormGroup;
   passwordForm: FormGroup;
-  addressForm: FormGroup;
-  editingAddressId = signal<string | null>(null);
+  adresseForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
-    // Personal info form
+  constructor() {
+    // Personal info form - valeurs initiales mises à jour dans ngOnInit
     this.personalInfoForm = this.fb.nonNullable.group({
-      firstName: [this.userProfile().firstName, [Validators.required, Validators.minLength(2)]],
-      lastName: [this.userProfile().lastName, [Validators.required, Validators.minLength(2)]],
-      email: [this.userProfile().email, [Validators.required, Validators.email]],
-      phone: [this.userProfile().phone, [Validators.required]]
+      firstName: ['', [Validators.required, Validators.minLength(2)]],
+      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required]]
     });
 
-    // Password form
     this.passwordForm = this.fb.nonNullable.group({
       currentPassword: ['', [Validators.required]],
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
-    // Address form
-    this.addressForm = this.fb.nonNullable.group({
-      label: ['', [Validators.required]],
-      street: ['', [Validators.required]],
-      city: ['', [Validators.required]],
-      postalCode: ['', [Validators.required]],
-      country: ['Madagascar', [Validators.required]],
-      isDefault: [false]
+    this.adresseForm = this.fb.nonNullable.group({
+      adresse: ['']
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadProfile();
+  }
+
+  loadProfile(): void {
+    const user = this.auth.currentUser();
+    if (user) {
+      this.userProfile.set({
+        firstName: user.firstName ?? '',
+        lastName: user.lastName ?? '',
+        email: user.email ?? '',
+        phone: user.phone ?? '',
+        adresse: user.adresse ?? '',
+        avatar: ''
+      });
+      this.personalInfoForm.patchValue({
+        firstName: user.firstName ?? '',
+        lastName: user.lastName ?? '',
+        email: user.email ?? '',
+        phone: user.phone ?? ''
+      });
+      this.adresseForm.patchValue({ adresse: user.adresse ?? '' });
+    }
+
+    this.loading.set(true);
+    this.auth.getProfile().subscribe({
+      next: (profile) => {
+        this.userProfile.set({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          phone: profile.phone ?? '',
+          adresse: profile.adresse ?? '',
+          avatar: ''
+        });
+        this.personalInfoForm.patchValue({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          phone: profile.phone ?? ''
+        });
+        this.adresseForm.patchValue({ adresse: profile.adresse ?? '' });
+      },
+      error: () => {
+        // En cas d'erreur, on garde les données du currentUser
+      },
+      complete: () => this.loading.set(false)
     });
   }
 
@@ -98,116 +129,44 @@ export class AcheteurProfilComponent {
       this.personalInfoForm.markAllAsTouched();
       return;
     }
+    this.saveError.set(null);
+    this.saveSuccess.set(false);
     const formValue = this.personalInfoForm.getRawValue();
-    this.userProfile.update(profile => ({ ...profile, ...formValue }));
-    console.log('Profil mis à jour:', formValue);
-    // In real app, call API here
-  }
 
-  // Address methods
-  onAddAddress(): void {
-    if (this.addressForm.invalid) {
-      this.addressForm.markAllAsTouched();
-      return;
-    }
-    const formValue = this.addressForm.getRawValue();
-    
-    // If this is set as default, unset others
-    if (formValue.isDefault) {
-      this.addresses.update(addrs => 
-        addrs.map(addr => ({ ...addr, isDefault: false }))
-      );
-    }
-
-    const newAddress: Address = {
-      id: Date.now().toString(),
-      ...formValue
-    };
-
-    this.addresses.update(addrs => [...addrs, newAddress]);
-    this.addressForm.reset({
-      label: '',
-      street: '',
-      city: '',
-      postalCode: '',
-      country: 'Madagascar',
-      isDefault: false
-    });
-    console.log('Adresse ajoutée:', newAddress);
-  }
-
-  onEditAddress(address: Address): void {
-    this.editingAddressId.set(address.id);
-    this.addressForm.patchValue({
-      label: address.label,
-      street: address.street,
-      city: address.city,
-      postalCode: address.postalCode,
-      country: address.country,
-      isDefault: address.isDefault
+    this.auth.updateProfile(formValue).subscribe({
+      next: (profile) => {
+        this.userProfile.set({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          phone: profile.phone ?? '',
+          adresse: profile.adresse ?? this.userProfile().adresse,
+          avatar: ''
+        });
+        this.saveSuccess.set(true);
+        setTimeout(() => this.saveSuccess.set(false), 3000);
+      },
+      error: (err) => {
+        this.saveError.set(err.error?.message ?? 'Erreur lors de la mise à jour du profil');
+      }
     });
   }
 
-  onUpdateAddress(): void {
-    if (this.addressForm.invalid || !this.editingAddressId()) {
-      return;
-    }
-    const formValue = this.addressForm.getRawValue();
-    const addressId = this.editingAddressId()!;
+  onSaveAdresse(): void {
+    this.addressSaveError.set(null);
+    this.addressSaveSuccess.set(false);
+    const adresse = this.adresseForm.get('adresse')?.value ?? '';
 
-    // If this is set as default, unset others
-    if (formValue.isDefault) {
-      this.addresses.update(addrs => 
-        addrs.map(addr => 
-          addr.id === addressId ? { ...addr, ...formValue } : { ...addr, isDefault: false }
-        )
-      );
-    } else {
-      this.addresses.update(addrs => 
-        addrs.map(addr => 
-          addr.id === addressId ? { ...addr, ...formValue } : addr
-        )
-      );
-    }
-
-    this.addressForm.reset({
-      label: '',
-      street: '',
-      city: '',
-      postalCode: '',
-      country: 'Madagascar',
-      isDefault: false
+    this.auth.updateProfile({ adresse }).subscribe({
+      next: (profile) => {
+        this.userProfile.update(p => ({ ...p, adresse: profile.adresse ?? '' }));
+        this.addressSaveSuccess.set(true);
+        setTimeout(() => this.addressSaveSuccess.set(false), 3000);
+      },
+      error: (err) => {
+        this.addressSaveError.set(err.error?.message ?? 'Erreur lors de la mise à jour de l\'adresse');
+      }
     });
-    this.editingAddressId.set(null);
-    console.log('Adresse mise à jour:', formValue);
-  }
-
-  onDeleteAddress(id: string): void {
-    this.addresses.update(addrs => addrs.filter(addr => addr.id !== id));
-    if (this.editingAddressId() === id) {
-      this.editingAddressId.set(null);
-      this.addressForm.reset();
-    }
-    console.log('Adresse supprimée:', id);
-  }
-
-  onCancelEdit(): void {
-    this.editingAddressId.set(null);
-    this.addressForm.reset({
-      label: '',
-      street: '',
-      city: '',
-      postalCode: '',
-      country: 'Madagascar',
-      isDefault: false
-    });
-  }
-
-  onSetDefaultAddress(id: string): void {
-    this.addresses.update(addrs => 
-      addrs.map(addr => ({ ...addr, isDefault: addr.id === id }))
-    );
-    console.log('Adresse par défaut:', id);
   }
 
   // Password methods
@@ -216,19 +175,27 @@ export class AcheteurProfilComponent {
       this.passwordForm.markAllAsTouched();
       return;
     }
+    this.passwordSaveError.set(null);
+    this.passwordSaveSuccess.set(false);
     const { currentPassword, newPassword } = this.passwordForm.getRawValue();
-    console.log('Changement de mot de passe demandé');
-    // In real app, call API here
-    this.passwordForm.reset();
-  }
 
-  // Computed
-  defaultAddress = computed(() => 
-    this.addresses().find(addr => addr.isDefault) || this.addresses()[0]
-  );
+    this.auth.changePassword({ currentPassword, newPassword }).subscribe({
+      next: () => {
+        this.passwordForm.reset();
+        this.passwordSaveSuccess.set(true);
+        setTimeout(() => this.passwordSaveSuccess.set(false), 3000);
+      },
+      error: (err) => {
+        const msg = err?.error?.message ?? err?.message ?? 'Erreur lors du changement de mot de passe';
+        this.passwordSaveError.set(msg);
+      }
+    });
+  }
 
   getInitials(): string {
     const { firstName, lastName } = this.userProfile();
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    const f = firstName?.charAt(0) ?? '';
+    const l = lastName?.charAt(0) ?? '';
+    return (f + l || '?').toUpperCase();
   }
 }

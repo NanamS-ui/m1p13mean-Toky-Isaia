@@ -29,6 +29,15 @@
   color: var(--korus-text-muted);
 }
 
+.page-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn__icon {
+  font-size: 18px;
+}
+
 /* Stats */
 .stats-row {
   display: grid;

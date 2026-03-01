@@ -70,60 +70,72 @@
 
       <!-- Order Details -->
       <div class="order-details-section">
-        <h2 class="section-title">
-          <span class="material-symbols-outlined">shopping_bag</span>
-          Détails de la commande
-        </h2>
+        <button
+          type="button"
+          class="section-title section-title--toggle"
+          [class.section-title--expanded]="showOrderDetails()"
+          (click)="toggleOrderDetails()"
+        >
+          <span class="section-title__left">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            Détails de la commande
+          </span>
+          <span class="material-symbols-outlined section-title__chevron">
+            {{ showOrderDetails() ? 'expand_less' : 'expand_more' }}
+          </span>
+        </button>
 
-        <!-- Items List -->
-        <div class="items-list">
-          @for (item of order()!.items; track item.id) {
-            <div class="order-item">
-              <div class="item-image">
-                @if (item.productImage) {
-                  <img [src]="item.productImage" [alt]="item.productName" />
-                } @else {
-                  <span class="material-symbols-outlined">image</span>
-                }
-              </div>
-              <div class="item-info">
-                <h3 class="item-name">{{ item.productName }}</h3>
-                <div class="item-price-info">
-                  <span class="item-quantity">Quantité: {{ item.quantity }}</span>
-                  <div class="item-price">
-                    @if (item.promoPrice) {
-                      <span class="price-promo">{{ formatCurrency(item.promoPrice) }}</span>
-                      <span class="price-original">{{ formatCurrency(item.price) }}</span>
-                    } @else {
-                      <span class="price-current">{{ formatCurrency(item.price) }}</span>
-                    }
+        @if (showOrderDetails()) {
+          <!-- Items List -->
+          <div class="items-list">
+            @for (item of order()!.items; track item.id) {
+              <div class="order-item">
+                <div class="item-image">
+                  @if (item.productImage) {
+                    <img [src]="item.productImage" alt="{{ item.productName }}" title="{{ item.productName }}" />
+                  } @else {
+                    <span class="material-symbols-outlined">image</span>
+                  }
+                </div>
+                <div class="item-info">
+                  <h3 class="item-name">{{ item.productName }}</h3>
+                  <div class="item-price-info">
+                    <span class="item-quantity">Quantité: {{ item.quantity }}</span>
+                    <div class="item-price">
+                      @if (item.promoPrice) {
+                        <span class="price-promo">{{ formatCurrency(item.promoPrice) }}</span>
+                        <span class="price-original">{{ formatCurrency(item.price) }}</span>
+                      } @else {
+                        <span class="price-current">{{ formatCurrency(item.price) }}</span>
+                      }
+                    </div>
                   </div>
                 </div>
+                <div class="item-subtotal">
+                  <span class="subtotal-label">Sous-total</span>
+                  <span class="subtotal-value">{{ formatCurrency(getItemSubtotal(item)) }}</span>
+                </div>
               </div>
-              <div class="item-subtotal">
-                <span class="subtotal-label">Sous-total</span>
-                <span class="subtotal-value">{{ formatCurrency(getItemSubtotal(item)) }}</span>
-              </div>
-            </div>
-          }
-        </div>
+            }
+          </div>
 
-        <!-- Order Summary -->
-        <div class="order-summary">
-          <div class="summary-row">
-            <span class="summary-label">Sous-total</span>
-            <span class="summary-value">{{ formatCurrency(order()!.total) }}</span>
+          <!-- Order Summary -->
+          <div class="order-summary">
+            <div class="summary-row">
+              <span class="summary-label">Sous-total</span>
+              <span class="summary-value">{{ formatCurrency(order()!.total) }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Livraison</span>
+              <span class="summary-value">Gratuite</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-row summary-row--total">
+              <span class="summary-label">Total</span>
+              <span class="summary-value">{{ formatCurrency(order()!.total) }}</span>
+            </div>
           </div>
-          <div class="summary-row">
-            <span class="summary-label">Livraison</span>
-            <span class="summary-value">Gratuite</span>
-          </div>
-          <div class="summary-divider"></div>
-          <div class="summary-row summary-row--total">
-            <span class="summary-label">Total</span>
-            <span class="summary-value">{{ formatCurrency(order()!.total) }}</span>
-          </div>
-        </div>
+        }
       </div>
 
       <!-- Delivery/Pickup Info -->
@@ -192,8 +204,8 @@
               <span class="material-symbols-outlined">check_circle</span>
               Statut du paiement
             </span>
-            <span class="info-value payment-status" [class.payment-status--paid]="order()!.paymentStatus === 'paid'">
-              {{ order()!.paymentStatus === 'paid' ? 'Payé' : order()!.paymentStatus === 'pending' ? 'En attente' : 'Remboursé' }}
+            <span class="info-value payment-status" [class.payment-status--paid]="isReceiptAvailable(order()!.paymentStatus)">
+              {{ getPaymentStatusLabel(order()!.paymentStatus) }}
             </span>
           </div>
         </div>
@@ -206,6 +218,12 @@
           Télécharger la facture
         </button>
         @if (order()!.status === 'delivered') {
+          <button class="btn-download" (click)="giveReview()" title="Donner un avis">
+            <span class="material-symbols-outlined">rate_review</span>
+            Donner avis
+          </button>
+        }
+        @if (isReceiptAvailable(order()!.paymentStatus)) {
           <button class="btn-download" (click)="downloadReceipt()">
             <span class="material-symbols-outlined">receipt</span>
             Télécharger le reçu

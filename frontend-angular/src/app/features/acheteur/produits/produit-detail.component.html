@@ -14,7 +14,7 @@
       <div class="product-gallery">
         <div class="gallery-main">
           @if (p.images && p.images.length > 0) {
-            <img [src]="p.images[selectedImageIndex()]" [alt]="p.name" />
+            <img [src]="p.images[selectedImageIndex()]" alt="{{ p.name }}" title="{{ p.name }}" />
           } @else {
             <div class="gallery-placeholder">
               <span class="material-symbols-outlined">image</span>
@@ -32,8 +32,11 @@
                 class="thumbnail"
                 [class.thumbnail--active]="selectedImageIndex() === $index"
                 (click)="selectImage($index)"
+                type="button"
+                title="Voir l'image {{ $index + 1 }}"
+                aria-label="Voir l'image {{ $index + 1 }}"
               >
-                <img [src]="img" [alt]="p.name + ' ' + ($index + 1)" />
+                <img [src]="img" alt="{{ p.name }} {{ $index + 1 }}" title="{{ p.name }} {{ $index + 1 }}" />
               </button>
             }
           </div>
@@ -60,7 +63,7 @@
             <div class="price-promo">{{ formatCurrency(p.promoPrice) }}</div>
             <div class="price-original">{{ formatCurrency(p.price) }}</div>
             <div class="price-discount">
-              Économisez {{ formatCurrency(p.price - p.promoPrice) }}
+              Économisez  {{ formatCurrency(p.price - p.promoPrice) }}
             </div>
           } @else {
             <div class="price-current">{{ formatCurrency(p.price) }}</div>
@@ -121,6 +124,8 @@
               [max]="p.stockQuantity"
               class="quantity-input"
               readonly
+              title="Quantité"
+              aria-label="Quantité"
             />
             <button
               class="quantity-btn"
@@ -134,25 +139,31 @@
 
         <!-- Actions -->
         <div class="product-actions">
-          <button
+          <button 
             class="btn-add-cart"
             [disabled]="!p.inStock"
             (click)="addToCart()"
+            type="button"
           >
             <span class="material-symbols-outlined">add_shopping_cart</span>
             Ajouter au panier
           </button>
-          <button class="btn-wishlist">
-            <span class="material-symbols-outlined">favorite</span>
-          </button>
+        
         </div>
+
+        @if (cartFlash()) {
+          <div class="cart-flash" role="status" aria-live="polite">
+            <span class="material-symbols-outlined">check_circle</span>
+            Ajouté au panier
+          </div>
+        }
 
         <!-- Shop Info -->
         <div class="product-shop">
           <h3>Boutique</h3>
           <a [routerLink]="['/acheteur/boutiques', p.boutiqueId]" class="shop-card">
             @if (p.boutiqueLogo) {
-              <img [src]="p.boutiqueLogo" [alt]="p.boutiqueName" class="shop-logo" />
+              <img [src]="p.boutiqueLogo" alt="{{ p.boutiqueName }}" title="{{ p.boutiqueName }}" class="shop-logo" />
             } @else {
               <div class="shop-logo-placeholder">
                 <span class="material-symbols-outlined">store</span>
@@ -180,7 +191,7 @@
             <a [routerLink]="['/acheteur/produits', related.id]" class="related-card">
               <div class="related-card__image">
                 @if (related.images && related.images[0]) {
-                  <img [src]="related.images[0]" [alt]="related.name" />
+                  <img [src]="related.images[0]" alt="{{ related.name }}" title="{{ related.name }}" />
                 } @else {
                   <span class="material-symbols-outlined">image</span>
                 }

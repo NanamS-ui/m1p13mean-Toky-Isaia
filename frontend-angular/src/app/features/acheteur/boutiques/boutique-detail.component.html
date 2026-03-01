@@ -1,4 +1,15 @@
-@if (boutique(); as b) {
+@if (loading()) {
+  <div class="loading-state">
+    <span class="material-symbols-outlined animate-spin">progress_activity</span>
+    <p>Chargement de la boutique...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-state">
+    <span class="material-symbols-outlined">error</span>
+    <h3>{{ error() }}</h3>
+    <a routerLink="/acheteur/boutiques" class="btn-back">Retour aux boutiques</a>
+  </div>
+} @else if (boutique(); as b) {
   <div class="boutique-detail-page">
     <!-- Back Button -->
     <nav class="breadcrumb">
@@ -25,7 +36,7 @@
             <div class="banner-info">
               <h1 class="boutique-name">{{ b.name }}</h1>
               <div class="boutique-meta">
-                <span class="boutique-category">{{ getCategoryLabel(b.category) }}</span>
+                  <span class="boutique-category">{{ getCategoryLabel(b.categoryLabel) }}</span>
                 <span class="boutique-rating">
                   <span class="material-symbols-outlined">star</span>
                   <span class="rating-value">{{ b.rating }}</span>
@@ -65,7 +76,7 @@
           <p class="boutique-description">{{ b.description }}</p>
         </div>
 
-        <!-- Contact Info Section -->
+        <!-- Contact Info Section (phone & email depuis Shop) -->
         <div class="info-card">
           <h2 class="info-card__title">
             <span class="material-symbols-outlined">contact_support</span>
@@ -90,6 +101,9 @@
                 <a [href]="'https://' + b.website" target="_blank" rel="noopener noreferrer" class="contact-link">{{ b.website }}</a>
               </div>
             }
+            @if (!b.phone && !b.email && !b.website) {
+              <p class="contact-empty">Aucune information de contact disponible</p>
+            }
           </div>
         </div>
 
@@ -102,7 +116,7 @@
           <div class="location-info">
             <div class="location-item">
               <span class="material-symbols-outlined">layers</span>
-              <span>Étage {{ b.floor }}</span>
+              <span>{{ getFloorLabel(b.floor) }}</span>
             </div>
             @if (b.zone) {
               <div class="location-item">
@@ -243,5 +257,11 @@
         </div>
       </div>
     </div>
+  </div>
+} @else {
+  <div class="error-state">
+    <span class="material-symbols-outlined">store</span>
+    <h3>Boutique introuvable</h3>
+    <a routerLink="/acheteur/boutiques" class="btn-back">Retour aux boutiques</a>
   </div>
 }

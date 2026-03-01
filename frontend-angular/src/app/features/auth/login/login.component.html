@@ -11,24 +11,20 @@
       <p>Connectez-vous à votre espace</p>
     </div>
 
-    <!-- Sélecteur de compte démo -->
-    <div class="demo-accounts">
-      <span class="demo-accounts__label">Comptes de démonstration :</span>
-      <div class="demo-accounts__grid">
-        @for (account of demoAccounts; track account.email) {
-          <button 
-            type="button"
-            class="demo-btn"
-            [style.--btn-color]="account.color"
-            (click)="fillDemo(account.email, account.password)">
-            <span class="material-symbols-outlined">{{ account.icon }}</span>
-            <div class="demo-btn__info">
-              <strong>{{ account.label }}</strong>
-              <small>{{ account.email }}</small>
-            </div>
-          </button>
-        }
-      </div>
+    <div class="login-presets">
+      <span class="login-presets__label">Acces rapide:</span>
+      <button type="button" class="login-preset" (click)="fillCredentials('admin')">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+        Administration
+      </button>
+      <button type="button" class="login-preset" (click)="fillCredentials('vendor')">
+        <span class="material-symbols-outlined">storefront</span>
+        Vendeur
+      </button>
+      <button type="button" class="login-preset" (click)="fillCredentials('buyer')">
+        <span class="material-symbols-outlined">person</span>
+        Acheteur
+      </button>
     </div>
 
     <!-- Formulaire -->
@@ -56,15 +52,25 @@
       </div>
 
       @if (error) {
-        <div class="alert alert--error">
+        <div class="alert alert--error" aria-live="polite">
           <span class="material-symbols-outlined">error</span>
           {{ error }}
         </div>
       }
 
-      <button type="submit" class="btn btn--submit" [disabled]="form.invalid">
-        <span class="material-symbols-outlined">login</span>
-        Se connecter
+      <button
+        type="submit"
+        class="btn btn--submit"
+        [disabled]="form.invalid || isLoading"
+        [attr.aria-busy]="isLoading"
+      >
+        @if (isLoading) {
+          <span class="spinner" aria-hidden="true"></span>
+          Connexion...
+        } @else {
+          <span class="material-symbols-outlined">login</span>
+          Se connecter
+        }
       </button>
     </form>
 

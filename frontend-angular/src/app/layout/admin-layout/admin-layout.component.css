@@ -2,6 +2,29 @@
    Admin Layout - Premium Modern Design
    ============================================ */
 
+/* --- Hamburger (mobile only) --- */
+.hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.hamburger:active { transform: scale(0.92); }
+
+/* --- Sidebar backdrop (mobile) --- */
+.sidebar-backdrop {
+  display: none;
+}
+
 .admin-layout {
   display: flex;
   min-height: 100vh;
@@ -519,28 +542,51 @@
 }
 
 @media (max-width: 640px) {
+  /* Hamburger visible */
+  .hamburger {
+    display: flex;
+  }
+
+  /* Sidebar: slide-in overlay */
   .sidebar {
     --sidebar-collapsed: 0px;
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
   }
-  
+
   .sidebar--collapsed {
     transform: translateX(-100%);
   }
-  
+
+  /* Backdrop */
+  .sidebar-backdrop--visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: rgba(0, 0, 0, 0.45);
+    animation: fadeIn 0.25s ease;
+  }
+
   .main-wrapper {
     margin-left: 0;
   }
-  
+
   .header__title {
     font-size: 1.15rem;
   }
-  
+
   .user-badge span:not(.user-badge__icon):not(.material-symbols-outlined) {
     display: none;
   }
-  
+
   .user-badge {
     padding: 0.35rem;
     border-radius: 50%;
   }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

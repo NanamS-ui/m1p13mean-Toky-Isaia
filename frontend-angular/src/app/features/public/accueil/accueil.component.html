@@ -1,16 +1,8 @@
 <div class="accueil-page">
   <!-- Hero Section -->
   <section class="hero">
-    <div class="hero__bg"></div>
-    <div class="hero__overlay"></div>
-    <!-- Particules décoratives -->
-    <div class="hero__particles">
-      <span class="particle particle--1"></span>
-      <span class="particle particle--2"></span>
-      <span class="particle particle--3"></span>
-      <span class="particle particle--4"></span>
-      <span class="particle particle--5"></span>
-    </div>
+    <canvas #heroCanvas class="hero__canvas"></canvas>
+    <div class="hero__overlay hero__overlay--3d"></div>
     <div class="hero__content">
       <span class="hero__badge">
         <span class="material-symbols-outlined">auto_awesome</span>
@@ -18,10 +10,6 @@
       </span>
       <h1 class="hero__title">KORUS Center</h1>
       <p class="hero__tagline">L'expérience shopping réinventée</p>
-      <p class="hero__subtitle">
-        Plus de 100 boutiques, restaurants et espaces de loisirs<br>
-        au cœur d'Antananarivo
-      </p>
       <div class="hero__actions">
         <a routerLink="/boutiques" class="btn btn--primary btn--lg btn--glow">
           <span class="material-symbols-outlined">storefront</span>
@@ -33,7 +21,6 @@
         </a>
       </div>
     </div>
-
 
     <!-- Scroll indicator -->
     <div class="hero__scroll">
@@ -69,8 +56,8 @@
       <div class="section__header">
         <div>
           <span class="section__badge">A découvrir</span>
-          <h2>Boutiques populaires</h2>
-          <p>Les enseignes préférées de nos visiteurs</p>
+          <h2>Top 10 meilleures boutiques</h2>
+          <p>Les boutiques les mieux notées par nos visiteurs</p>
         </div>
         <a routerLink="/boutiques" class="btn btn--outline">
           Voir toutes les boutiques
@@ -82,7 +69,7 @@
           <a [routerLink]="['/boutiques', boutique.id]" class="boutique-card">
             <div class="boutique-card__logo">
               @if (boutique.logo) {
-                <img [src]="boutique.logo" [alt]="boutique.name" />
+                <img [src]="boutique.logo" alt="{{ boutique.name }}" title="{{ boutique.name }}" />
               } @else {
                 <span class="material-symbols-outlined">store</span>
               }
@@ -90,6 +77,15 @@
             <div class="boutique-card__content">
               <span class="boutique-card__category">{{ boutique.category }}</span>
               <h4>{{ boutique.name }}</h4>
+              <div class="boutique-card__rating">
+                @if (boutique.ratingCount > 0) {
+                  <span class="material-symbols-outlined boutique-card__rating-star">star</span>
+                  <span class="boutique-card__rating-value">{{ boutique.ratingAvg | number:'1.1-1' }}</span>
+                  <span class="boutique-card__rating-count">({{ boutique.ratingCount }} avis)</span>
+                } @else {
+                  <span class="boutique-card__rating-empty">Aucun avis</span>
+                }
+              </div>
               <p>{{ boutique.description }}</p>
             </div>
             <span class="material-symbols-outlined boutique-card__arrow">arrow_forward</span>
@@ -118,9 +114,9 @@
           <article class="event-card">
             <div class="event-card__image">
               @if (event.image) {
-                <img [src]="event.image" [alt]="event.title" />
+                <img [src]="event.image" alt="{{ event.title }}" title="{{ event.title }}" />
               } @else {
-                <span class="material-symbols-outlined">celebration</span>
+                <span class="material-symbols-outlined">{{ getCategoryIcon(event.categoryValue) }}</span>
               }
               <div class="event-card__date">
                 <span class="day">{{ event.date | date:'dd' }}</span>
@@ -196,48 +192,4 @@
     </div>
   </section>
 
-  <!-- Location Preview -->
-  <section class="section section--location">
-    <div class="container">
-      <div class="location-card">
-        <div class="location-card__map">
-          <div class="map-placeholder">
-            <span class="material-symbols-outlined">map</span>
-            <span>Carte interactive</span>
-          </div>
-        </div>
-        <div class="location-card__info">
-          <span class="section__badge">Nous trouver</span>
-          <h2>Venez nous rendre visite</h2>
-          <div class="location-details">
-            <div class="location-detail">
-              <span class="material-symbols-outlined">location_on</span>
-              <div>
-                <strong>Adresse</strong>
-                <p>Ankorondrano, Antananarivo 101, Madagascar</p>
-              </div>
-            </div>
-            <div class="location-detail">
-              <span class="material-symbols-outlined">schedule</span>
-              <div>
-                <strong>Horaires</strong>
-                <p>Lun-Sam: 09h-21h | Dim: 10h-20h</p>
-              </div>
-            </div>
-            <div class="location-detail">
-              <span class="material-symbols-outlined">phone</span>
-              <div>
-                <strong>Téléphone</strong>
-                <p>+261 20 22 123 45</p>
-              </div>
-            </div>
-          </div>
-          <a routerLink="/localisation" class="btn btn--primary">
-            <span class="material-symbols-outlined">directions</span>
-            Itinéraire et plan
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
 </div>

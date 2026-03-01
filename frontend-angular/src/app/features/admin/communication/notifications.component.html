@@ -1,39 +1,163 @@
 <div class="notifications-page">
   <div class="page-header">
     <a routerLink="/admin/communication" class="back-link">← Retour à Communication</a>
-    <h2>Notifications push / email</h2>
+    <h2>Notifications push</h2>
   </div>
 
   <section class="card">
     <h3>Envoyer une notification</h3>
+    
+    @if (successMessage()) {
+      <div class="alert alert--success">
+        <span class="material-symbols-outlined">check_circle</span>
+        {{ successMessage() }}
+      </div>
+    }
+    @if (errorMessage()) {
+      <div class="alert alert--error">
+        <span class="material-symbols-outlined">error</span>
+        {{ errorMessage() }}
+      </div>
+    }
+    
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="notif-form">
       <div class="form-group">
         <label for="title">Titre *</label>
-        <input id="title" type="text" formControlName="title" placeholder="Ex: Soldes ce week-end" />
+        <input 
+          id="title" 
+          type="text" 
+          formControlName="title" 
+          placeholder="Ex: Soldes ce week-end"
+          [disabled]="loading()"
+        />
+        @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
+          <span class="form-error">Le titre est requis</span>
+        }
       </div>
+      
       <div class="form-group">
         <label for="message">Message *</label>
-        <textarea id="message" formControlName="message" rows="4" placeholder="Contenu de la notification"></textarea>
+        <textarea 
+          id="message" 
+          formControlName="message" 
+          rows="4" 
+          placeholder="Contenu de la notification (minimum 10 caractères)"
+          [disabled]="loading()"
+        ></textarea>
+        @if (form.get('message')?.hasError('required') && form.get('message')?.touched) {
+          <span class="form-error">Le message est requis</span>
+        }
+        @if (form.get('message')?.hasError('minlength') && form.get('message')?.touched) {
+          <span class="form-error">Le message doit contenir au moins 10 caractères</span>
+        }
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Canal</label>
-          <select formControlName="channel">
-            <option value="push">Push (application)</option>
-            <option value="email">Email</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Cible</label>
-          <select formControlName="target">
-            <option value="all">Tous les utilisateurs</option>
-            <option value="acheteurs">Acheteurs uniquement</option>
-            <option value="boutiques">Boutiques uniquement</option>
-          </select>
-        </div>
+      
+      <div class="form-group">
+        <label for="target">Cible *</label>
+        <select 
+          id="target"
+          formControlName="target"
+          [disabled]="loading()"
+        >
+          <option value="all">Tous les utilisateurs</option>
+          <option value="acheteurs">Acheteurs uniquement</option>
+          <option value="boutiques">Propriétaires de boutiques</option>
+          <option value="custom">Sélection manuelle</option>
+        </select>
       </div>
+
+      @if (form.get('target')?.value === 'custom') {
+        <div class="form-group">
+          <label>Recherche utilisateurs</label>
+          <div class="search-row">
+            <select
+              [disabled]="loading()"
+              [value]="searchRole()"
+              (change)="searchRole.set($any($event.target).value)"
+              aria-label="Type d'utilisateurs"
+            >
+              <option value="acheteurs">Acheteurs</option>
+              <option value="boutiques">Boutiques</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Rechercher par nom, email ou telephone"
+              [value]="searchQuery()"
+              (input)="searchQuery.set($any($event.target).value)"
+              [disabled]="loading()"
+              aria-label="Recherche utilisateur"
+            />
+            <button type="button" class="btn btn--secondary" (click)="searchUsers()" [disabled]="loading()">
+              <span class="material-symbols-outlined">search</span>
+              Rechercher
+            </button>
+          </div>
+          <span class="form-hint">Saisissez au moins 2 caracteres.</span>
+        </div>
+
+        <div class="form-group">
+          <label>Resultats</label>
+          <div class="results-list">
+            @if (searching()) {
+              <div class="result-empty">Recherche en cours...</div>
+            } @else if (searchResults().length === 0) {
+              <div class="result-empty">Aucun utilisateur</div>
+            } @else {
+              @for (user of searchResults(); track user._id) {
+                <button type="button"
+                        class="result-item"
+                        [class.result-item--selected]="isSelected(user._id)"
+                        (click)="toggleRecipient(user)">
+                  <span class="material-symbols-outlined">person</span>
+                  <div class="result-info">
+                    <span class="result-name">{{ user.name || 'Sans nom' }}</span>
+                    <span class="result-meta">{{ user.email || 'Email non defini' }} · {{ user.phone || 'Tel non defini' }}</span>
+                  </div>
+                  <span class="material-symbols-outlined">
+                    @if (isSelected(user._id)) { check_circle } @else { add_circle }
+                  </span>
+                </button>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Selection</label>
+          <div class="selected-list">
+            @if (selectedRecipients().length === 0) {
+              <div class="result-empty">Aucun utilisateur selectionne</div>
+            } @else {
+              @for (user of selectedRecipients(); track user._id) {
+                <div class="selected-item">
+                  <span>{{ user.name || user.email || user.phone }}</span>
+                  <button type="button" (click)="toggleRecipient(user)">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+              }
+              <button type="button" class="btn btn--ghost" (click)="clearSelectedRecipients()">
+                Vider la selection
+              </button>
+            }
+          </div>
+        </div>
+      }
+      
       <div class="form-actions">
-        <button type="submit" class="btn btn--primary" [disabled]="form.invalid">Envoyer</button>
+        <button 
+          type="submit" 
+          class="btn btn--primary" 
+          [disabled]="form.invalid || loading()"
+        >
+          @if (loading()) {
+            <span class="material-symbols-outlined animate-spin">hourglass_empty</span>
+            Envoi en cours...
+          } @else {
+            <span class="material-symbols-outlined">send</span>
+            Envoyer la notification
+          }
+        </button>
       </div>
     </form>
   </section>

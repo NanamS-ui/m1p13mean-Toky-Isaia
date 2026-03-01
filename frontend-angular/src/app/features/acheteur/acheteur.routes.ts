@@ -15,6 +15,10 @@ export const acheteurRoutes: Routes = [
         loadComponent: () => import('./profil/acheteur-profil.component').then(m => m.AcheteurProfilComponent)
       },
       { 
+        path: 'profil', 
+        loadComponent: () => import('./profil/acheteur-profil.component').then(m => m.AcheteurProfilComponent)
+      },
+      { 
         path: 'boutiques', 
         loadComponent: () => import('./boutiques/boutiques-discovery.component').then(m => m.BoutiquesDiscoveryComponent)
       },
@@ -57,6 +61,14 @@ export const acheteurRoutes: Routes = [
       { 
         path: 'notifications', 
         loadComponent: () => import('./notifications/notifications.component').then(m => m.NotificationsComponent)
+      },
+      { 
+        path: 'messagerie', 
+        loadComponent: () => import('./messagerie/messagerie.component').then(m => m.MessagerieComponent)
+      },
+      {
+        path: 'reclamation-feedback',
+        loadComponent: () => import('./reclamation-feedback/reclamation-feedback.component').then(m => m.ReclamationFeedbackComponent)
       }
     ]
   }

@@ -36,6 +36,9 @@ export const routes: Routes = [
       { path: 'alertes', loadComponent: () => import('./features/admin/alerts/alerts.component').then(m => m.AlertsComponent) },
       { path: 'communication', loadComponent: () => import('./features/admin/communication/communication.component').then(m => m.CommunicationComponent) },
       { path: 'communication/notifications', loadComponent: () => import('./features/admin/communication/notifications.component').then(m => m.NotificationsComponent) },
+      { path: 'configuration', redirectTo: 'configuration/service', pathMatch: 'full' },
+      { path: 'configuration/service', loadComponent: () => import('./features/admin/configuration/service/service-center-config.component').then(m => m.ServiceCenterConfigComponent) },
+      { path: 'configuration/info-center', loadComponent: () => import('./features/admin/configuration/info-center/info-center-config.component').then(m => m.InfoCenterConfigComponent) },
       { path: 'support', loadComponent: () => import('./features/admin/support/support.component').then(m => m.SupportComponent) },
       { path: 'roles', loadComponent: () => import('./features/admin/roles/roles.component').then(m => m.RolesComponent) }
     ]

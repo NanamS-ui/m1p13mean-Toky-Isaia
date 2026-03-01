@@ -25,10 +25,6 @@ export const publicRoutes: Routes = [
       { 
         path: 'localisation', 
         loadComponent: () => import('./localisation/localisation.component').then(m => m.LocalisationComponent)
-      },
-      { 
-        path: 'contact', 
-        loadComponent: () => import('./contact/contact.component').then(m => m.ContactComponent)
       }
     ]
   }

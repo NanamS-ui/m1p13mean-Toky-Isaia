@@ -21,7 +21,7 @@ interface NavItem {
 export class BoutiqueLayoutComponent {
   auth = inject(AuthService);
   user = this.auth.currentUser;
-  
+  // console.log(this.auth.currentUser);
   sidebarOpen = true;
   openGroups = signal<Set<string>>(new Set(['/boutique/relation-client']));
 
@@ -32,9 +32,10 @@ export class BoutiqueLayoutComponent {
 
   navItems: NavItem[] = [
     { route: '/boutique/dashboard', label: 'Tableau de bord', icon: 'dashboard' },
-    { route: '/boutique/profil', label: 'Ma boutique', icon: 'store' },
+    // { route: '/boutique/profil', label: 'Ma boutique', icon: 'store' },
+    { route: '/boutique/profil/list', label: 'Mes boutiques', icon: 'store' },
     { route: '/boutique/produits', label: 'Produits', icon: 'inventory_2' },
-    { route: '/boutique/commandes', label: 'Commandes', icon: 'shopping_bag', badge: this.pendingOrders },
+    { route: '/boutique/commandes', label: 'Commandes', icon: 'shopping_bag'},
     { route: '/boutique/statistiques', label: 'Statistiques', icon: 'analytics' },
     { 
       route: '/boutique/relation-client', 
@@ -43,11 +44,12 @@ export class BoutiqueLayoutComponent {
       children: [
         { route: '/boutique/messagerie', label: 'Messagerie' },
         { route: '/boutique/avis', label: 'Avis clients' },
-        { route: '/boutique/retours', label: 'Retours' }
       ]
-    }
+    },
+    { route: '/boutique/reclamations', label: 'Réclamations & feedback', icon: 'help' },
+    { route: '/boutique/notifications', label: 'Notifications', icon: 'notifications' },
   ];
-
+  
   boutiqueInfo = signal({
     name: 'Ma Boutique Mode',
     logo: null as string | null,
