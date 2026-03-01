@@ -130,18 +130,12 @@
         <div class="footer__section">
           <h5>Horaires d'ouverture</h5>
           <ul class="footer__hours">
-            <li>
-              <span>Lundi - Vendredi</span>
-              <span>09:00 - 21:00</span>
-            </li>
-            <li>
-              <span>Samedi</span>
-              <span>09:00 - 22:00</span>
-            </li>
-            <li>
-              <span>Dimanche</span>
-              <span>10:00 - 20:00</span>
-            </li>
+            @for (hour of footerHours(); track hour.day) {
+              <li>
+                <span>{{ hour.day }}</span>
+                <span>{{ hour.hours }}</span>
+              </li>
+            }
           </ul>
         </div>
 
@@ -151,15 +145,15 @@
           <ul class="footer__contact">
             <li>
               <span class="material-symbols-outlined">location_on</span>
-              Ankorondrano, Antananarivo 101
+              {{ footerContact().address }}
             </li>
             <li>
               <span class="material-symbols-outlined">phone</span>
-              +261 20 22 123 45
+              {{ footerContact().phone }}
             </li>
             <li>
               <span class="material-symbols-outlined">mail</span>
-              contact&#64;korus-center.mg
+              {{ footerContact().email }}
             </li>
           </ul>
           <div class="footer__social">

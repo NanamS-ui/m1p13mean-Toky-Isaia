@@ -20,6 +20,8 @@ app.use("/api/floors", require("./routes/shop/FloorRoute"));
 app.use("/api/doors", require("./routes/shop/DoorRoute"));
 app.use("/api/shops", require("./routes/shop/ShopRoute"));
 app.use("/api/shopStatus", require("./routes/shop/ShopStatusRoute"));
+app.use("/api/serviceCenters", require("./routes/config/ServiceCenterRoute"));
+app.use("/api/infoCenter", require("./routes/config/InfoCenterRoute"));
 app.use("/api/productCategories", require("./routes/product/ProductCategoryRoute"));
 app.use("/api/products", require("./routes/product/ProductRoute"));
 app.use("/api/stocks", require("./routes/product/StockRoute"));

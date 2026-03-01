@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { InfoCenterService } from '../../../core/services/config/info-center.service';
+import type { InfoCenter } from '../../../core/models/config/info-center.model';
 
 interface FAQ {
   id: string;
@@ -16,7 +18,8 @@ interface FAQ {
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.css'
 })
-export class ContactComponent {
+export class ContactComponent implements OnInit {
+  private infoCenterService = inject(InfoCenterService);
   contactForm: FormGroup;
   submitted = signal<boolean>(false);
   submitSuccess = signal<boolean>(false);
@@ -73,6 +76,22 @@ export class ContactComponent {
       email: ['', [Validators.required, Validators.email]],
       subject: ['', [Validators.required, Validators.minLength(5)]],
       message: ['', [Validators.required, Validators.minLength(10)]]
+    });
+  }
+
+  ngOnInit(): void {
+    this.infoCenterService.getAll().subscribe({
+      next: (items: InfoCenter[]) => {
+        const info = items?.[0];
+        if (!info) return;
+
+        this.contactInfo = {
+          phone: info.contact?.phone || this.contactInfo.phone,
+          email: info.contact?.email || this.contactInfo.email,
+          address: info.address?.full || this.contactInfo.address,
+          hours: info.hoursSummary || this.contactInfo.hours
+        };
+      }
     });
   }
 

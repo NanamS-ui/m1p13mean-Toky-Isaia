@@ -1,0 +1,138 @@
+<div class="info-center-page">
+  <div class="info-center-header">
+    <div>
+      <h1>Information</h1>
+      <p>Gerez les informations du centre pour l'accueil, la localisation et le footer.</p>
+    </div>
+    <button type="button" class="btn btn--secondary" (click)="save()" [disabled]="loading">
+      <span class="material-symbols-outlined">save</span>
+      Enregistrer
+    </button>
+  </div>
+
+  <form class="info-center-form" [formGroup]="form" (ngSubmit)="save()">
+    <section class="info-card">
+      <h2>Identification</h2>
+      <div class="field-grid">
+        <div class="form-field">
+          <label for="name">Nom du centre</label>
+          <input id="name" type="text" formControlName="name" />
+        </div>
+        <div class="form-field">
+          <label for="hoursSummary">Resume des horaires</label>
+          <input id="hoursSummary" type="text" formControlName="hoursSummary" />
+        </div>
+      </div>
+    </section>
+
+    <section class="info-card" formGroupName="address">
+      <h2>Adresse</h2>
+      <div class="field-grid">
+        <div class="form-field">
+          <label for="street">Quartier / Rue</label>
+          <input id="street" type="text" formControlName="street" />
+        </div>
+        <div class="form-field">
+          <label for="city">Ville</label>
+          <input id="city" type="text" formControlName="city" />
+        </div>
+        <div class="form-field">
+          <label for="country">Pays</label>
+          <input id="country" type="text" formControlName="country" />
+        </div>
+        <div class="form-field">
+          <label for="full">Adresse complete</label>
+          <input id="full" type="text" formControlName="full" />
+        </div>
+      </div>
+    </section>
+
+    <section class="info-card" formGroupName="contact">
+      <h2>Contact</h2>
+      <div class="field-grid">
+        <div class="form-field">
+          <label for="phone">Telephone</label>
+          <input id="phone" type="text" formControlName="phone" />
+        </div>
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input id="email" type="email" formControlName="email" />
+        </div>
+      </div>
+    </section>
+
+    <section class="info-card">
+      <div class="section-header">
+        <h2>Horaires (page localisation)</h2>
+        <button type="button" class="btn btn--ghost" (click)="addOpeningHour()">
+          <span class="material-symbols-outlined">add</span>
+          Ajouter
+        </button>
+      </div>
+      <div class="rows" formArrayName="openingHours">
+        @for (row of openingHoursArray.controls; track row; let i = $index) {
+          <div class="row" [formGroupName]="i">
+            <input type="text" placeholder="Jour" formControlName="day" />
+            <input type="text" placeholder="Horaires" formControlName="hours" />
+            <button type="button" class="btn btn--danger" (click)="removeOpeningHour(i)">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="info-card">
+      <div class="section-header">
+        <h2>Horaires (footer)</h2>
+        <button type="button" class="btn btn--ghost" (click)="addFooterHour()">
+          <span class="material-symbols-outlined">add</span>
+          Ajouter
+        </button>
+      </div>
+      <div class="rows" formArrayName="footerHours">
+        @for (row of footerHoursArray.controls; track row; let i = $index) {
+          <div class="row" [formGroupName]="i">
+            <input type="text" placeholder="Jour" formControlName="day" />
+            <input type="text" placeholder="Horaires" formControlName="hours" />
+            <button type="button" class="btn btn--danger" (click)="removeFooterHour(i)">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="info-card">
+      <h2>Acces & transports</h2>
+      <div class="form-field">
+        <label for="parkingInfo">Parking</label>
+        <input id="parkingInfo" type="text" formControlName="parkingInfo" />
+      </div>
+      <div class="section-header">
+        <h3>Transports</h3>
+        <button type="button" class="btn btn--ghost" (click)="addTransport()">
+          <span class="material-symbols-outlined">add</span>
+          Ajouter
+        </button>
+      </div>
+      <div class="rows" formArrayName="transportInfo">
+        @for (item of transportArray.controls; track item; let i = $index) {
+          <div class="row">
+            <input type="text" placeholder="Ex: Bus ligne 1" [formControlName]="i" />
+            <button type="button" class="btn btn--danger" (click)="removeTransport(i)">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+
+    @if (error) {
+      <div class="form-error">
+        <span class="material-symbols-outlined">error</span>
+        {{ error }}
+      </div>
+    }
+  </form>
+</div>

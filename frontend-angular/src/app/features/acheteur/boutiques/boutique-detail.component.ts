@@ -2,10 +2,12 @@ import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
-import { BOUTIQUE_CATEGORIES, type BoutiqueCategory } from '../../../core/models/boutique.model';
+import { BOUTIQUE_CATEGORIES } from '../../../core/models/boutique.model';
 import { ShopService } from '../../../core/services/shop/shop.service';
+import { ShopCategoryService } from '../../../core/services/shop/shop-category.service';
 import { OpeningHoursService } from '../../../core/services/shop/opening-hours.service';
 import type { Shop } from '../../../core/models/shop/shop.model';
+import type { ShopCategory } from '../../../core/models/shop/shopCategory.model';
 import { StockService } from '../../../core/services/product/stock.service';
 import type { CatalogProduct } from '../../../core/models/product/catalog-product.model';
 import { NoticeDto, NoticeService } from '../../../core/services/notice/notice.service';
@@ -13,7 +15,8 @@ import { NoticeDto, NoticeService } from '../../../core/services/notice/notice.s
 interface BoutiqueDetail {
   id: string;
   name: string;
-  category: BoutiqueCategory;
+  categoryId?: string;
+  categoryLabel: string;
   logoUrl?: string;
   bannerUrl?: string;
   description: string;
@@ -73,9 +76,12 @@ export class BoutiqueDetailComponent implements OnInit {
 
   reviews = signal<Review[]>([]);
 
+  private categoryMap = new Map<string, string>();
+
   constructor(
     private route: ActivatedRoute,
     private shopService: ShopService,
+    private shopCategoryService: ShopCategoryService,
     private openingHours: OpeningHoursService,
     private stockService: StockService,
     private noticeService: NoticeService
@@ -99,10 +105,12 @@ export class BoutiqueDetailComponent implements OnInit {
     forkJoin({
       shop: this.shopService.getShopById(id),
       products: this.stockService.getCatalogForShop(id),
+      categories: this.shopCategoryService.getShopCategories().pipe(catchError(() => of([] as ShopCategory[]))),
       notices: this.noticeService.getNoticesByShop(id).pipe(catchError(() => of([] as NoticeDto[]))),
       favoriteStatus: this.shopService.isFavoriteShop(id).pipe(catchError(() => of({ isFavorite: false })))
     }).subscribe({
-      next: ({ shop, products, notices, favoriteStatus }) => {
+      next: ({ shop, products, categories, notices, favoriteStatus }) => {
+        this.categoryMap = new Map((categories || []).map(cat => [cat._id, cat.value]));
         const reviews = this.mapNoticesToReviews(notices);
         const summary = this.computeRatingSummary(notices);
 
@@ -123,7 +131,9 @@ export class BoutiqueDetailComponent implements OnInit {
   }
 
   private mapShopToDetail(shop: Shop, ratingInfo?: { rating: number; reviewCount: number }): BoutiqueDetail {
-    const category = this.normalizeCategory(shop.shop_category?.value);
+    const categoryId = this.extractCategoryId(shop.shop_category);
+    const categoryValue = this.extractCategoryValue(shop.shop_category);
+    const categoryLabel = this.getCategoryLabelByIdOrValue(categoryId, categoryValue);
     const floor = this.extractFloor(shop.door);
     const zone = this.extractZone(shop.door);
     const { rating, reviewCount } = ratingInfo ?? { rating: 0, reviewCount: 0 };
@@ -133,7 +143,8 @@ export class BoutiqueDetailComponent implements OnInit {
     return {
       id: shop._id,
       name: shop.name,
-      category,
+      categoryId,
+      categoryLabel,
       logoUrl: shop.logo,
       bannerUrl: shop.banner,
       description: shop.description ?? '',
@@ -218,10 +229,23 @@ export class BoutiqueDetailComponent implements OnInit {
     return match ? Number.parseInt(match[1], 10) : 0;
   }
 
-  private normalizeCategory(value?: string): BoutiqueCategory {
-    const normalized = (value ?? '').toUpperCase();
-    const match = BOUTIQUE_CATEGORIES.find(c => c.value === normalized);
-    return (match?.value as BoutiqueCategory) ?? 'AUTRE';
+  private getCategoryLabelByIdOrValue(id?: string, value?: string): string {
+    if (value) return value;
+    if (!id) return 'Autre';
+    const mapped = this.categoryMap.get(id);
+    if (mapped) return mapped;
+    const match = BOUTIQUE_CATEGORIES.find(c => c.value === id);
+    return match?.label ?? id;
+  }
+
+  private extractCategoryId(category: Shop['shop_category']): string | undefined {
+    if (!category) return undefined;
+    return typeof category === 'string' ? category : category._id;
+  }
+
+  private extractCategoryValue(category: Shop['shop_category']): string | undefined {
+    if (!category || typeof category === 'string') return undefined;
+    return category.value;
   }
 
   private mapCatalogProducts(items: CatalogProduct[]): Product[] {
@@ -246,8 +270,8 @@ export class BoutiqueDetailComponent implements OnInit {
     return Math.round((3.5 + (n % 15) / 10) * 10) / 10;
   }
 
-  getCategoryLabel(category: BoutiqueCategory): string {
-    return BOUTIQUE_CATEGORIES.find(c => c.value === category)?.label ?? category;
+  getCategoryLabel(category: string): string {
+    return category || 'Autre';
   }
 
   toggleFavorite(): void {

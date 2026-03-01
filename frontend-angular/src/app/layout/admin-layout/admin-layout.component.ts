@@ -59,6 +59,15 @@ export class AdminLayoutComponent {
         { label: 'Notifications', route: '/admin/communication/notifications' }
       ]
     },
+    {
+      label: 'Configuration',
+      route: '/admin/configuration',
+      icon: 'settings',
+      children: [
+        { label: 'Service', route: '/admin/configuration/service' },
+        { label: 'Information', route: '/admin/configuration/info-center' }
+      ]
+    },
     { label: 'Support client', route: '/admin/support', icon: 'support_agent' },
     // { label: 'Rôles & Permissions', route: '/admin/roles', icon: 'admin_panel_settings' }
   ];

@@ -32,14 +32,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   mode: '#f59e0b',
   Mode: '#f59e0b',
   food: '#10b981',
-  Restaurant: '#10b981',
+ 'Restaurant/Food': '#10b981',
   tech: '#3b82f6',
-  Technologie: '#3b82f6',
+  'Tech & Électronique': '#3b82f6',
   beauty: '#ec4899',
-  Beauté: '#ec4899',
+  'Beauté & Bien-être': '#ec4899',
   sport: '#ef4444',
   Sport: '#ef4444',
-  other: '#8b5cf6',
+  'Maison & Décoration': '#8b5cf6',
   Autre: '#8b5cf6',
   default: '#94a3b8'
 };

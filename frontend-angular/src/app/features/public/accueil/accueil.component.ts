@@ -5,6 +5,10 @@ import { EventService } from '../../../core/services/events/event.service';
 import { EventEntity } from '../../../core/models/events/event.model';
 import { ShopCategoryService } from '../../../core/services/shop/shop-category.service';
 import { ShopService } from '../../../core/services/shop/shop.service';
+import { ServiceCenterService } from '../../../core/services/config/service-center.service';
+import type { ServiceCenterConfig } from '../../../core/models/config/service-center.model';
+import { InfoCenterService } from '../../../core/services/config/info-center.service';
+import type { InfoCenter } from '../../../core/models/config/info-center.model';
 import { forkJoin } from 'rxjs';
 import * as THREE from 'three';
 
@@ -34,6 +38,12 @@ interface Category {
   count: number;
 }
 
+interface ServiceCard {
+  icon: string;
+  title: string;
+  description: string;
+}
+
 @Component({
   selector: 'app-accueil',
   standalone: true,
@@ -45,6 +55,8 @@ export class AccueilComponent implements OnInit, AfterViewInit, OnDestroy {
   private eventService = inject(EventService);
   private shopCategoryService = inject(ShopCategoryService);
   private shopService = inject(ShopService);
+  private serviceCenter = inject(ServiceCenterService);
+  private infoCenterService = inject(InfoCenterService);
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
 
@@ -83,7 +95,36 @@ export class AccueilComponent implements OnInit, AfterViewInit, OnDestroy {
     'auto': 'directions_car',
   };
 
+  /** Mapping icône par nom de service (insensible à la casse) */
+  private readonly serviceIcons: Record<string, string> = {
+    'parking': 'local_parking',
+    'parking gratuit': 'local_parking',
+    'wifi': 'wifi',
+    'wi-fi': 'wifi',
+    'espace enfants': 'child_care',
+    'accessibilite': 'accessible',
+    'accessibilite pmr': 'accessible',
+    'distributeur': 'local_atm',
+    'distributeurs': 'local_atm',
+    'dab': 'local_atm',
+    'navette': 'local_taxi',
+    'navettes': 'local_taxi',
+    'conciergerie': 'support_agent',
+    'information': 'info',
+    'accueil': 'info',
+    'securite': 'verified_user',
+    'restauration': 'restaurant'
+  };
+
   categories: Category[] = [];
+
+  infoCenter = signal<InfoCenter | null>(null);
+
+  private readonly fallbackInfo = {
+    addressFull: 'Ankorondrano, Antananarivo 101, Madagascar',
+    hoursSummary: 'Lun-Sam: 09h-21h | Dim: 10h-20h',
+    phone: '+261 20 22 123 45'
+  };
 
   featuredBoutiques = signal<FeaturedBoutique[]>([
     { id: '1', name: 'Mode & Style', category: 'Mode', description: 'Prêt-à-porter tendance pour toute la famille', ratingAvg: 0, ratingCount: 0 },
@@ -100,6 +141,8 @@ export class AccueilComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadCategories();
     this.loadTopBoutiques();
     this.loadEvents();
+    this.loadServices();
+    this.loadInfoCenter();
   }
 
   ngAfterViewInit(): void {
@@ -600,14 +643,39 @@ export class AccueilComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  services = [
-    { icon: 'local_parking', title: 'Parking gratuit', description: '2000 places avec 2h gratuites' },
-    { icon: 'wifi', title: 'WiFi gratuit', description: 'Connexion haut débit dans tout le centre' },
-    { icon: 'child_care', title: 'Espace enfants', description: 'Aire de jeux surveillée' },
-    { icon: 'accessible', title: 'Accessibilité', description: 'Accès PMR et fauteuils disponibles' },
-    { icon: 'local_atm', title: 'Distributeurs', description: 'Plusieurs DAB dans le centre' },
-    { icon: 'local_taxi', title: 'Navettes', description: 'Service de navettes gratuites' }
-  ];
+  services: ServiceCard[] = [];
+
+  private loadServices(): void {
+    this.serviceCenter.getAll().subscribe({
+      next: (items: ServiceCenterConfig[]) => {
+        const mapped = (items || []).map((item) => ({
+          title: item.value,
+          description: item.description || 'Service disponible dans le centre',
+          icon: this.getServiceIconByName(item.value)
+        }));
+
+        this.services = mapped.length > 0 ? mapped : this.getDefaultServices();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.services = this.getDefaultServices();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private loadInfoCenter(): void {
+    this.infoCenterService.getAll().subscribe({
+      next: (items: InfoCenter[]) => {
+        this.infoCenter.set(items?.[0] || null);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.infoCenter.set(null);
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -628,6 +696,39 @@ export class AccueilComponent implements OnInit, AfterViewInit, OnDestroy {
   private getCategoryIconByName(name: string): string {
     const key = (name || '').toLowerCase().trim();
     return this.categoryIcons[key] || 'category';
+  }
+
+  private getServiceIconByName(name: string): string {
+    const key = (name || '').toLowerCase().trim();
+    return this.serviceIcons[key] || 'star';
+  }
+
+  private getDefaultServices(): ServiceCard[] {
+    return [
+      { icon: 'local_parking', title: 'Parking gratuit', description: '2000 places avec 2h gratuites' },
+      { icon: 'wifi', title: 'WiFi gratuit', description: 'Connexion haut debit dans tout le centre' },
+      { icon: 'child_care', title: 'Espace enfants', description: 'Aire de jeux surveillee' },
+      { icon: 'accessible', title: 'Accessibilite', description: 'Acces PMR et fauteuils disponibles' },
+      { icon: 'local_atm', title: 'Distributeurs', description: 'Plusieurs DAB dans le centre' },
+      { icon: 'local_taxi', title: 'Navettes', description: 'Service de navettes gratuites' }
+    ];
+  }
+
+  getInfoAddress(): string {
+    return this.infoCenter()?.address?.full || this.fallbackInfo.addressFull;
+  }
+
+  getInfoHoursSummary(): string {
+    return this.infoCenter()?.hoursSummary || this.fallbackInfo.hoursSummary;
+  }
+
+  getInfoPhone(): string {
+    return this.infoCenter()?.contact?.phone || this.fallbackInfo.phone;
+  }
+
+  getMapsLink(): string {
+    const address = this.getInfoAddress();
+    return `https://maps.google.com/?q=${encodeURIComponent(address)}`;
   }
 
   private mapEntityToHomeEvent(entity: EventEntity): Event {
