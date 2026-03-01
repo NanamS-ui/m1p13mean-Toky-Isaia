@@ -9,7 +9,7 @@
             "src": "frontend-angular/package.json",
             "use": "@vercel/static-build",
             "config": {
-                "distDir": "dist/m1p13mean-Isaia-Toky"
+                "distDir": "dist/m1p13mean-Isaia-Toky/browser"
             }
         }
     ],
