@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit,ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InfoCenterService } from '../../../../core/services/config/info-center.service';
@@ -18,7 +18,7 @@ export class InfoCenterConfigComponent implements OnInit {
 
   form!: FormGroup;
 
-  constructor(private fb: FormBuilder, private infoCenter: InfoCenterService) {}
+  constructor(private fb: FormBuilder, private infoCenter: InfoCenterService,private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -45,6 +45,7 @@ export class InfoCenterConfigComponent implements OnInit {
     });
 
     this.loadInfo();
+    this.cdr.detectChanges();
   }
 
   get openingHoursArray(): FormArray {
