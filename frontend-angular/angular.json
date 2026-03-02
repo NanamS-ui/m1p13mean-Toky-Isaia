@@ -18,11 +18,12 @@
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/m1p13mean-Isaia-Toky",
+            "baseHref": "/",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
-                "glob": "**/*",
+                "glob": "*/",
                 "input": "public"
               }
             ],
@@ -43,6 +44,13 @@
                   "maximumWarning": "16kB",
                   "maximumError": "32kB"
                 }
+              ],
+              "allowedCommonJsDependencies": [
+                "html2canvas",
+                "canvg",
+                "core-js",
+                "raf",
+                "rgbcolor"
               ],
               "outputHashing": "all",
               "fileReplacements": [
