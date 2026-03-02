@@ -19,7 +19,7 @@ interface NavItem {
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './acheteur-layout.component.html',
-  styleUrl: './acheteur-layout.component.css'
+  styleUrl: './acheteur-layout.component.css',
 })
 export class AcheteurLayoutComponent implements OnInit {
   auth = inject(AuthService);
@@ -27,7 +27,7 @@ export class AcheteurLayoutComponent implements OnInit {
   cartService = inject(CartService);
   messengerService = inject(MessengerService);
   notificationService = inject(NotificationService);
-  
+
   sidebarOpen = true;
 
   cartItemsCount = this.cartService.totalItems;
@@ -38,13 +38,13 @@ export class AcheteurLayoutComponent implements OnInit {
   ngOnInit(): void {
     this.messengerService.getUnreadCount().subscribe({
       next: (res) => this.unreadMessages.set(Number(res?.count || 0)),
-      error: () => this.unreadMessages.set(0)
+      error: () => this.unreadMessages.set(0),
     });
 
     this.notificationService.loadUnreadCount();
     this.notificationService.getUnreadCount$().subscribe({
       next: (count) => this.unreadNotifications.set(Number(count || 0)),
-      error: () => this.unreadNotifications.set(0)
+      error: () => this.unreadNotifications.set(0),
     });
   }
 
@@ -65,6 +65,7 @@ export class AcheteurLayoutComponent implements OnInit {
   }
 
   navItems: NavItem[] = [
+    { route: '/accueil', label: 'Home', icon: 'home' },
     { route: '/acheteur/accueil', label: 'Accueil', icon: 'home' },
     { route: '/acheteur/boutiques', label: 'Boutiques', icon: 'storefront' },
     { route: '/acheteur/produits', label: 'Produits', icon: 'inventory_2' },
@@ -78,13 +79,13 @@ export class AcheteurLayoutComponent implements OnInit {
       icon: 'contact_support',
       children: [
         { route: '/acheteur/messagerie', label: 'Messagerie' },
-        { route: '/acheteur/reclamation-feedback', label: 'Réclamation & feedback' }
-      ]
+        { route: '/acheteur/reclamation-feedback', label: 'Réclamation & feedback' },
+      ],
     },
   ];
 
   bottomNavItems: NavItem[] = [
     { route: '/acheteur/profil', label: 'Mon profil', icon: 'person' },
-    { route: '/acheteur/notifications', label: 'Notifications', icon: 'notifications' }
+    { route: '/acheteur/notifications', label: 'Notifications', icon: 'notifications' },
   ];
 }

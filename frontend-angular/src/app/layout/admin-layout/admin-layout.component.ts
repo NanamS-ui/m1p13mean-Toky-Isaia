@@ -28,6 +28,7 @@ export class AdminLayoutComponent {
   private expandedGroups = signal<Record<string, boolean>>({});
 
   navItems: NavItem[] = [
+    { route: '/accueil', label: 'Home', icon: 'home' },
     { label: 'Dashboard', route: '/admin', icon: 'dashboard' },
     {
       label: 'Gestion des boutiques',

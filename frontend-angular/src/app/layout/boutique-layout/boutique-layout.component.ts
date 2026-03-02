@@ -31,6 +31,7 @@ export class BoutiqueLayoutComponent {
   pendingReviews = 2;
 
   navItems: NavItem[] = [
+    { route: '/accueil', label: 'Home', icon: 'home' },
     { route: '/boutique/dashboard', label: 'Tableau de bord', icon: 'dashboard' },
     // { route: '/boutique/profil', label: 'Ma boutique', icon: 'store' },
     { route: '/boutique/profil/list', label: 'Mes boutiques', icon: 'store' },
