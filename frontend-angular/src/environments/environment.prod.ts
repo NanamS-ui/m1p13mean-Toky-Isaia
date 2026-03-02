@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://backend-korus-center-tan.vercel.app/api'
+  apiBaseUrl: 'https://korus-center-backend.vercel.app/api'
 };
