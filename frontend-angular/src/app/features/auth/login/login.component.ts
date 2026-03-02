@@ -49,7 +49,7 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     const { email, password } = this.form.getRawValue();
     this.auth.login(email, password).pipe(
-      timeout(5000),
+      timeout(10000),
       catchError((err) => {
         if (err?.name === 'TimeoutError') {
           this.error = "La connexion est trop lente. Veuillez réessayer.";
