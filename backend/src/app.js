@@ -11,14 +11,16 @@ connectDB().catch((err) => {
 const app = express();
 app.use(cors());
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Limite plus stricte en prod Vercel, plus large en local.
+const bodyLimit = process.env.VERCEL ? "4mb" : "50mb";
+app.use(express.json({ limit: bodyLimit }));
+app.use(express.urlencoded({ limit: bodyLimit, extended: true }));
 
 app.get("/api/health", (req, res) => {
 	res.status(200).json({
 		ok: true,
 		dbReadyState: mongoose.connection.readyState,
-		hasMongoUri: Boolean(process.env.MONGO_URI)
+		hasMongoUri: Boolean(process.env.MONGO_URI),
 	});
 });
 
@@ -61,6 +63,25 @@ app.use("/api/status_support_clients", require("./routes/supportClient/StatusSup
 app.use("/api/type_support_clients", require("./routes/supportClient/TypeSupportClientRoute"));
 app.use("/api/support_clients", require("./routes/supportClient/SupportClientRoute"));
 app.use("/api/notifications", require("./routes/communication/NotificationRoute"));
+
+// Gestion d'erreurs de parsing body (raw-body / body-parser)
+app.use((err, req, res, next) => {
+	if (err?.type === "entity.too.large") {
+		return res.status(413).json({ message: "Payload too large", limit: bodyLimit });
+	}
+
+	if (
+		err?.type === "request.size.invalid" ||
+		(typeof err?.message === "string" && err.message.includes("request size did not match content length"))
+	) {
+		return res.status(400).json({
+			message: "Invalid request body size (content-length mismatch).",
+			hint: "On Vercel, avoid large JSON/base64 uploads; upload files directly to Cloudinary or reduce payload size.",
+		});
+	}
+
+	return next(err);
+});
 
 
 
